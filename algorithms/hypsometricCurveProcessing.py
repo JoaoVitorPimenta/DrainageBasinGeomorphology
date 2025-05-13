@@ -84,8 +84,8 @@ def calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback):
 
         areasList = cumulativeAreas.tolist()
 
-        elevations.insert(0,'Absolute elevation basin '+str(basin.id()))
-        areasList.insert(0,'Absolute area basin '+str(basin.id()))
+        elevations.insert(0,'Absolute elevation (m) basin '+str(basin.id()))
+        areasList.insert(0,'Absolute area (m2) basin '+str(basin.id()))
 
         return elevations, areasList
 
@@ -147,8 +147,8 @@ def plotGraphHypsometricCurve(drainageBasinLayer,demLayer,path,absoluteValues,fe
     if absoluteValues is True:
         fig.update_layout(
         title='Hypsometric graph',
-        xaxis_title='Absolute area',
-        yaxis_title='Absolute elevation'
+        xaxis_title='Absolute area (m2)',
+        yaxis_title='Absolute elevation (m)'
     )
         fig.show()
         fig.write_html(path)
