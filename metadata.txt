@@ -12,8 +12,8 @@ email=jvpjoaopimenta@gmail.com
 
 about=Studying and analyzing the geomorphology of drainage basins is essential to understand the dynamics of the processes that occur in them and their interactions with the environment and human activities. In this context, the "Drainage Basin Geomorphology" plugin aims to provide tools that help the user to quickly analyze characteristics of the drainage basin.
 
-tracker=https://github.com/JoaoVitorPimenta/qgis-plugin-drainage-basin-geomorphology/issues
-repository=https://github.com/JoaoVitorPimenta/qgis-plugin-drainage-basin-geomorphology
+tracker=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues
+repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,7 +25,7 @@ hasProcessingProvider=yes
 # Tags are comma separated with spaces allowed
 tags=basin, drainage, geomorphology, hydrology, morphology, morphometric, morphometry, watershed
 
-homepage=https://github.com/JoaoVitorPimenta/qgis-plugin-drainage-basin-geomorphology
+homepage=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
 category=Analysis
 icon=icon.png
 # experimental flag
