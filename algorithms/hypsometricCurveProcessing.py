@@ -144,18 +144,21 @@ def plotGraphHypsometricCurve(drainageBasinLayer,demLayer,path,absoluteValues,fe
         fig.add_trace(go.Scatter(x=cumulativeAreas, y=heights, mode='lines',
                                  name='basin '+ str(basin.id())+' Integral = '+str(round(hypsometricIntegral[1],2))))
 
-        if absoluteValues is True:
-            fig.update_layout(
-            title='Hypsometric graph',
-            xaxis_title='Absolute area',
-            yaxis_title='Absolute elevation'
-        )
-
+    if absoluteValues is True:
         fig.update_layout(
-            title='Hypsometric graph',
-            xaxis_title='Normalized area (a/A)',
-            yaxis_title='Normalized elevation (h/H)'
-        )
+        title='Hypsometric graph',
+        xaxis_title='Absolute area',
+        yaxis_title='Absolute elevation'
+    )
+        fig.show()
+        fig.write_html(path)
+        return
+
+    fig.update_layout(
+        title='Hypsometric graph',
+        xaxis_title='Relative area (a/A)',
+        yaxis_title='Relative height (h/H)'
+    )
 
     fig.show()
 
