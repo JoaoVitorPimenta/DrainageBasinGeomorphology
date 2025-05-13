@@ -157,9 +157,11 @@ to my parents, friends and teachers.
 |-------------|----------------|---------------------|
 | Pixel elevation data     | Pixel elevation count × (Pixel width × Pixel height) (cumulative)            | Elevation difference × Area (cumulative)                 |
 
+Strahler (1952)
+
 ## Hypsometric curve
 
-| Normalized elevation     | Normalized area | Hypsometric integral |
+| Relative height     | Relative area | Hypsometric integral |
 |-------------|----------------|---------------------|
 | (Elevation - Minimum elevation)/(Maximum elevation - Minimum elevation)     | Pixel elevation count × (Pixel width × Pixel height) (cumulative)   |Integral of the curve formed by elevation and area, using the trapezoidal rule.                 |
 
