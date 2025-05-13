@@ -89,19 +89,19 @@ def calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback):
 
         return elevations, areasList
 
-    normalizedHeights = (np.array(elevations) - minElevation)/(maxElevation - minElevation)
-    normalizedHeightsList = normalizedHeights.tolist()
+    relativeHeights = (np.array(elevations) - minElevation)/(maxElevation - minElevation)
+    relativeHeightsList = relativeHeights.tolist()
 
     minArea = min(cumulativeAreas)
     maxArea = max(cumulativeAreas)
 
-    normalizedAreas = (np.array(cumulativeAreas) - minArea)/(maxArea - minArea)
-    normalizedAreasList = normalizedAreas.tolist()
+    relativeAreas = (np.array(cumulativeAreas) - minArea)/(maxArea - minArea)
+    relativeAreasList = relativeAreas.tolist()
 
-    normalizedHeightsList.insert(0,'Normalized elevation (h/H) basin '+str(basin.id()))
-    normalizedAreasList.insert(0,'Normalized area (a/A) basin '+str(basin.id()))
+    relativeHeightsList.insert(0,'Relative height (h/H) basin '+str(basin.id()))
+    relativeAreasList.insert(0,'Relative area (a/A) basin '+str(basin.id()))
 
-    return normalizedHeightsList, normalizedAreasList
+    return relativeHeightsList, relativeAreasList
 
 def calculateHI(elevations,areas,basin):
     elevationsWOTitle = elevations[1:]
