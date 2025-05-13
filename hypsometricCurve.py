@@ -92,7 +92,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.ABSOLUTE_VALUES,
-                self.tr('Use absolute values instead of normalized values'),
+                self.tr('Use absolute values instead of relative values'),
                 defaultValue=False,
             )
         )
