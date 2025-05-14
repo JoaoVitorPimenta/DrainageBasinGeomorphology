@@ -39,7 +39,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterBoolean)
-from .algorithms.hypsometricCurveProcessing import executeHypsometricCurveProcessing,plotGraphHypsometricCurve
+from .algorithms.hypsometricCurvesProcessing import executeHypsometricCurvesProcessing,plotGraphHypsometricCurves
 
 class hypsometricCurveCalc(QgsProcessingAlgorithm):
     '''
@@ -59,7 +59,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    HYPSOMETRIC_CURVE_DATA = 'HYPSOMETRIC_CURVE_DATA'
+    HYPSOMETRIC_CURVES_DATA = 'HYPSOMETRIC_CURVES_DATA'
     GRAPH = 'GRAPH'
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
@@ -102,8 +102,8 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         # algorithm is run in QGIS).
         self.addParameter(
             QgsProcessingParameterFileDestination(
-                self.HYPSOMETRIC_CURVE_DATA,
-                self.tr('Hypsometric curve data'),
+                self.HYPSOMETRIC_CURVES_DATA,
+                self.tr('Hypsometric curves data'),
                 fileFilter=('CSV files (*.csv)')
             )
         )
@@ -128,14 +128,14 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
-        pathHypsometric = self.parameterAsFileOutput(parameters, self.HYPSOMETRIC_CURVE_DATA, context)
+        pathHypsometric = self.parameterAsFileOutput(parameters, self.HYPSOMETRIC_CURVES_DATA, context)
 
         absoluteValues = self.parameterAsBoolean(parameters, self.ABSOLUTE_VALUES, context)
 
         pathGraph = self.parameterAsFileOutput(parameters, self.GRAPH, context)
 
-        executeHypsometricCurveProcessing(basinSource,demLayer,pathHypsometric,absoluteValues,feedback)
-        plotGraphHypsometricCurve(basinSource,demLayer,pathGraph,absoluteValues,feedback)
+        executeHypsometricCurvesProcessing(basinSource,demLayer,pathHypsometric,absoluteValues,feedback)
+        plotGraphHypsometricCurves(basinSource,demLayer,pathGraph,absoluteValues,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -143,7 +143,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         # statistics, etc. These should all be included in the returned
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
-        return {self.HYPSOMETRIC_CURVE_DATA: pathHypsometric,
+        return {self.HYPSOMETRIC_CURVES_DATA: pathHypsometric,
                 self.GRAPH: pathGraph}
 
     def name(self):
@@ -154,7 +154,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate hypsometric curve'
+        return 'Calculate hypsometric curves'
 
     def displayName(self):
         '''

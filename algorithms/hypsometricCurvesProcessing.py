@@ -113,12 +113,12 @@ def calculateHI(elevations,areas,basin):
 
     return listHI
 
-def exportHypsometricCurve(listsWithData,path):
+def exportHypsometricCurves(listsWithData,path):
     with open(path, 'w', newline='') as arquivo:
         writer = csv.writer(arquivo)
         writer.writerows(itertools.zip_longest(*listsWithData))
 
-def executeHypsometricCurveProcessing(drainageBasinLayer,demLayer,path,absoluteValues,feedback):
+def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absoluteValues,feedback):
     verifyLibs()
 
     listsWithData = []
@@ -129,9 +129,9 @@ def executeHypsometricCurveProcessing(drainageBasinLayer,demLayer,path,absoluteV
         listsWithData.append(heights)
         listsWithData.append(cumulativeAreas)
         listsWithData.append(hypsometricIntegral)
-    exportHypsometricCurve(listsWithData,path)
+    exportHypsometricCurves(listsWithData,path)
 
-def plotGraphHypsometricCurve(drainageBasinLayer,demLayer,path,absoluteValues,feedback):
+def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,feedback):
     verifyLibs()
 
     fig = go.Figure()

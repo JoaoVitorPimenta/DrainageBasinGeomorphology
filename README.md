@@ -43,8 +43,8 @@ Vector layer containing the drainage network of the drainage basins.
 **Output:**  
 **All morphometric parameters** - All morphometric parameters calculated, for each basin, in .csv.
 
-## Calculate hypsometric curve
-This tool calculates and plots the hypsometric curve, with absolute or normalized values ​​(from 0 to 1). The hypsometric curve represents the area above a certain elevation.
+## Calculate hypsometric curves
+This tool calculates and plots the hypsometric curves, with absolute or relative values ​​(from 0 to 1). The hypsometric curves represents the area above a certain elevation.
 
 **Inputs:**  
 **Drainage basins** - Vector layer containing drainage basin features.
@@ -52,9 +52,9 @@ This tool calculates and plots the hypsometric curve, with absolute or normalize
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
 **Output:**  
-**Hypsometric curve** - The data used to create the hypsometric curve, for each basin, in .csv.
+**Hypsometric curves** - The data used to create the hypsometric curves, for each basin, in .csv.
 
-**Graphs** - The folder that will store graph file in .html format.
+**Graph** - The graph with the hypsometric curves, for each basin, in .html.
 
 ## Calculate linear parameters
 This tool calculates linear parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.

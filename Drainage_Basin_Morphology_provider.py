@@ -37,7 +37,7 @@ from .allMorphometricParameters import allMorphometricParameters
 from .linearParameters import linearParametersCalc
 from .shapeParameters import shapeParametersCalc
 from .reliefParameters import reliefParametersCalc
-from .hypsometricCurve import hypsometricCurveCalc
+from .hypsometricCurves import hypsometricCurveCalc
 from .EAV import EAVCalc
 
 class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
