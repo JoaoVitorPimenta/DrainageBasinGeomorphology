@@ -155,7 +155,7 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,f
         return
 
     fig.update_layout(
-        title='Hypsometric graph',
+        title='Graph comparing the hypsometric curves of the drainage basins',
         xaxis_title='Relative area (a/A)',
         yaxis_title='Relative height (h/H)'
     )
