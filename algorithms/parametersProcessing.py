@@ -514,15 +514,24 @@ def formatGdfRelief(gdfLinear,gdfShape,gdfRelief,basin):
 def calculateMorphometrics(drainageBasinLayer,streamLayer,demLayer,path,feedback):
     verifyLibs()
 
+    feedback.setProgress(0)
+    total = drainageBasinLayer.featureCount() + 1
+    step = 100.0 / total if total else 0
+
     gdfConcatenateds = []
 
-    for basin in drainageBasinLayer.getFeatures():
+    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
+
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
+        if feedback.isCanceled():
+            return
         gdfStream = createGdfStream(streamsInside)
         obtainFirstAndLastPoint(gdfStream)
         createOrderColumn(gdfStream)
         fillOrder(gdfStream)
         calculateStreamLength(gdfStream)
+        if feedback.isCanceled():
+            return
         gdfLinear = createGdfLinear(gdfStream)
         calculateStreamNumber(gdfStream,gdfLinear)
         calculateTotalStreamLength(gdfStream,gdfLinear)
@@ -533,6 +542,8 @@ def calculateMorphometrics(drainageBasinLayer,streamLayer,demLayer,path,feedback
         calculateBifurcationRatioMean(gdfLinear)
         calculateRhoCoefficient(gdfLinear)
         calculateSinuosityIndex(gdfStream,gdfLinear)
+        if feedback.isCanceled():
+            return
         gdfShape = createGdfShape(basin)
         calculateAreaPerimeter(gdfShape)
         calculateFitnessRatio(gdfShape,gdfLinear)
@@ -551,6 +562,8 @@ def calculateMorphometrics(drainageBasinLayer,streamLayer,demLayer,path,feedback
         calculateLemniscateRatio(gdfShape)
         calculateShapeIndex(gdfShape)
         calculateCompactnessCoefficient(gdfShape)
+        if feedback.isCanceled():
+            return
         gdfRelief = createGdfRelief()
         calculateMinMaxMeanElevation(demLayer,basin,gdfRelief,feedback)
         calculateRelief(gdfRelief)
@@ -559,25 +572,43 @@ def calculateMorphometrics(drainageBasinLayer,streamLayer,demLayer,path,feedback
         calculateRuggednessNumber(gdfRelief,gdfLinear)
         calculateDissectionIndex(gdfRelief)
         calculateGradientRatio(gdfStream,gdfLinear,demLayer,gdfRelief)
+        if feedback.isCanceled():
+            return
         gdfConcatenated = createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin)
         gdfConcatenateds.append(gdfConcatenated)
 
+        barProgress = int((idx + 1) * step)
+        feedback.setProgress(barProgress)
+        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+
+    if feedback.isCanceled():
+        return
     gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfConcatenateds, ignore_index=True))
     gdfFinal.to_csv(path, index=False, header=False)
+
+    feedback.setProgress(100)
     return
 
 def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
     verifyLibs()
 
+    feedback.setProgress(0)
+    total = drainageBasinLayer.featureCount() + 1
+    step = 100.0 / total if total else 0
+
     gdfsLinear = []
 
-    for basin in drainageBasinLayer.getFeatures():
+    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
+        if feedback.isCanceled():
+            return
         gdfStream = createGdfStream(streamsInside)
         obtainFirstAndLastPoint(gdfStream)
         createOrderColumn(gdfStream)
         fillOrder(gdfStream)
         calculateStreamLength(gdfStream)
+        if feedback.isCanceled():
+            return
         gdfLinear = createGdfLinear(gdfStream)
         calculateStreamNumber(gdfStream,gdfLinear)
         calculateTotalStreamLength(gdfStream,gdfLinear)
@@ -588,6 +619,8 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
         calculateBifurcationRatioMean(gdfLinear)
         calculateRhoCoefficient(gdfLinear)
         calculateSinuosityIndex(gdfStream,gdfLinear)
+        if feedback.isCanceled():
+            return
         gdfShape = createGdfShape(basin)
         calculateAreaPerimeter(gdfShape)
         calculateFitnessRatio(gdfShape,gdfLinear)
@@ -600,25 +633,43 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
         calculateConstantChannel(gdfLinear)
         calculateDrainageIntensity(gdfLinear)
         calculateInfiltrationNumber(gdfLinear)
+        if feedback.isCanceled():
+            return
         gdfFormated = formatGdfLinear(gdfLinear,basin)
         gdfsLinear.append(gdfFormated)
 
+        barProgress = int((idx + 1) * step)
+        feedback.setProgress(barProgress)
+        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+
+    if feedback.isCanceled():
+        return
     gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsLinear, ignore_index=True))
     gdfFinal.to_csv(path, index=False, header=False)
+
+    feedback.setProgress(100)
     return
 
 def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
     verifyLibs()
 
+    feedback.setProgress(0)
+    total = drainageBasinLayer.featureCount() + 1
+    step = 100.0 / total if total else 0
+
     gdfsShape = []
 
-    for basin in drainageBasinLayer.getFeatures():
+    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
+        if feedback.isCanceled():
+            return
         gdfStream = createGdfStream(streamsInside)
         obtainFirstAndLastPoint(gdfStream)
         createOrderColumn(gdfStream)
         fillOrder(gdfStream)
         calculateStreamLength(gdfStream)
+        if feedback.isCanceled():
+            return
         gdfShape = createGdfShape(basin)
         calculateAreaPerimeter(gdfShape)
         calculateBasinLength(gdfStream,gdfShape,basin,feedback)
@@ -628,28 +679,48 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
         calculateLemniscateRatio(gdfShape)
         calculateShapeIndex(gdfShape)
         calculateCompactnessCoefficient(gdfShape)
+        if feedback.isCanceled():
+            return
         gdfFormated = formatGdfShape(gdfShape,basin)
         gdfsShape.append(gdfFormated)
 
+        barProgress = int((idx + 1) * step)
+        feedback.setProgress(barProgress)
+        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+
+    if feedback.isCanceled():
+        return
     gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsShape, ignore_index=True))
     gdfFinal.to_csv(path, index=False, header=False)
+
+    feedback.setProgress(100)
     return
 
 def calculateReliefParameters(drainageBasinLayer,streamLayer,demLayer,path, feedback):
     verifyLibs()
-    
+
+    feedback.setProgress(0)
+    total = drainageBasinLayer.featureCount() + 1
+    step = 100.0 / total if total else 0
+
     gdfsRelief = []
 
-    for basin in drainageBasinLayer.getFeatures():
+    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
+        if feedback.isCanceled():
+            return
         gdfStream = createGdfStream(streamsInside)
         obtainFirstAndLastPoint(gdfStream)
         createOrderColumn(gdfStream)
         fillOrder(gdfStream)
         calculateStreamLength(gdfStream)
+        if feedback.isCanceled():
+            return
         gdfLinear = createGdfLinear(gdfStream)
         calculateStreamNumber(gdfStream,gdfLinear)
         calculateTotalStreamLength(gdfStream,gdfLinear)
+        if feedback.isCanceled():
+            return
         gdfShape = createGdfShape(basin)
         calculateAreaPerimeter(gdfShape)
         calculateBasinLength(gdfStream,gdfShape,basin,feedback)
@@ -660,6 +731,8 @@ def calculateReliefParameters(drainageBasinLayer,streamLayer,demLayer,path, feed
         calculateLemniscateRatio(gdfShape)
         calculateShapeIndex(gdfShape)
         calculateCompactnessCoefficient(gdfShape)
+        if feedback.isCanceled():
+            return
         gdfRelief = createGdfRelief()
         calculateMinMaxMeanElevation(demLayer,basin,gdfRelief, feedback)
         calculateRelief(gdfRelief)
@@ -668,9 +741,19 @@ def calculateReliefParameters(drainageBasinLayer,streamLayer,demLayer,path, feed
         calculateRuggednessNumber(gdfRelief,gdfLinear)
         calculateDissectionIndex(gdfRelief)
         calculateGradientRatio(gdfStream,gdfLinear,demLayer,gdfRelief)
+        if feedback.isCanceled():
+            return
         gdfFormated = formatGdfRelief(gdfLinear,gdfShape,gdfRelief,basin)
         gdfsRelief.append(gdfFormated)
-        
+
+        barProgress = int((idx + 1) * step)
+        feedback.setProgress(barProgress)
+        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+
+    if feedback.isCanceled():
+        return    
     gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsRelief, ignore_index=True))
     gdfFinal.to_csv(path, index=False, header=False)
+
+    feedback.setProgress(100)
     return

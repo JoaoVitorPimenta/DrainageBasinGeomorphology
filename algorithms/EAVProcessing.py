@@ -86,8 +86,15 @@ def EAVprocessing(demLayer,basin,feedback):
 def calculateEAV(drainageBasinLayer,demLayer,path,feedback):
     verifyLibs()
 
+    feedback.setProgress(0)
+    total = drainageBasinLayer.featureCount() + 1
+    step = 100.0 / total if total else 0
+
     listsWithData = []
-    for basin in drainageBasinLayer.getFeatures():
+
+    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
+        if feedback.isCanceled():
+            return
         elevations, cumulativeAreas, cumulativeVolumes = EAVprocessing(demLayer,basin,feedback)
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
@@ -98,6 +105,14 @@ def calculateEAV(drainageBasinLayer,demLayer,path,feedback):
         listsWithData.append(cumulativeAreas)
         listsWithData.append(cumulativeVolumes)
 
+        barProgress = int((idx + 1) * step)
+        feedback.setProgress(barProgress)
+        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+
+    if feedback.isCanceled():
+            return
     with open(path, 'w', newline='') as arquivo:
         writer = csv.writer(arquivo)
         writer.writerows(itertools.zip_longest(*listsWithData))
+
+    feedback.setProgress(100)

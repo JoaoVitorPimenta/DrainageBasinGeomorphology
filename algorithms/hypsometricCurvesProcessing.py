@@ -121,22 +121,46 @@ def exportHypsometricCurves(listsWithData,path):
 def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absoluteValues,feedback):
     verifyLibs()
 
+    feedback.setProgress(0)
+    total = drainageBasinLayer.featureCount() + 1
+    step = 100.0 / total if total else 0
+
     listsWithData = []
-    for basin in drainageBasinLayer.getFeatures():
+
+    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
+        if feedback.isCanceled():
+            return
         heights, cumulativeAreas = calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback)
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
+        if feedback.isCanceled():
+            return
         listsWithData.append(heights)
         listsWithData.append(cumulativeAreas)
         listsWithData.append(hypsometricIntegral)
+
+        barProgress = int((idx + 1) * step)
+        feedback.setProgress(barProgress)
+        feedback.setProgressText('Basin '+str(basin.id())+' processing data completed')
+
+    if feedback.isCanceled():
+            return
     exportHypsometricCurves(listsWithData,path)
+
+    feedback.setProgress(100)
 
 def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,feedback):
     verifyLibs()
 
+    feedback.setProgress(0)
+    total = drainageBasinLayer.featureCount() + 1
+    step = 100.0 / total if total else 0
+
     fig = go.Figure()
 
-    for basin in drainageBasinLayer.getFeatures():
+    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
+        if feedback.isCanceled():
+            return
         heights, cumulativeAreas = calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback)
 
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
@@ -144,9 +168,13 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,f
         fig.add_trace(go.Scatter(x=cumulativeAreas, y=heights, mode='lines',
                                  name='basin '+ str(basin.id())+' Integral = '+str(round(hypsometricIntegral[1],2))))
 
+        barProgress = int((idx + 1) * step)
+        feedback.setProgress(barProgress)
+        feedback.setProgressText('Basin '+str(basin.id())+' processing graph completed')
+
     if absoluteValues is True:
         fig.update_layout(
-        title='Hypsometric graph',
+        title='Graph comparing the hypsometric curves of the drainage basins',
         xaxis_title='Absolute area (m2)',
         yaxis_title='Absolute elevation (m)'
     )
@@ -160,6 +188,10 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,f
         yaxis_title='Relative height (h/H)'
     )
 
+    if feedback.isCanceled():
+            return
     fig.show()
 
     fig.write_html(path)
+
+    feedback.setProgress(100)
