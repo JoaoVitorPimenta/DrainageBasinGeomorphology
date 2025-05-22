@@ -42,7 +42,7 @@ def verifyLibs():
         except ImportError:
             raise QgsProcessingException('Numpy library not found, please install it and try again.')
 
-def EAVprocessing(demLayer,basin,feedback):
+def EAVprocessing(demLayer,basin,distanceContour,feedback):
     basinGeom = basin.geometry()
 
     extent = demLayer.extent()
@@ -75,6 +75,17 @@ def EAVprocessing(demLayer,basin,feedback):
 
     areas = np.array(countElevations) * (pixelWidth * pixelHeight)
     cumulativeAreas = np.cumsum(areas)
+
+    if distanceContour != 0:
+        minElevation = min(elevations)
+        maxElevation = max(elevations)
+
+        elevationCurves = np.arange(minElevation, maxElevation, distanceContour)
+        interpAreas = np.interp(elevationCurves, elevations, cumulativeAreas)
+
+        elevations = elevationCurves.tolist()
+        cumulativeAreas = interpAreas
+
     cumulativeAreasList = cumulativeAreas.tolist()
 
     deltaElev = np.diff(elevations)
@@ -83,7 +94,7 @@ def EAVprocessing(demLayer,basin,feedback):
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def calculateEAV(drainageBasinLayer,demLayer,path,feedback):
+def calculateEAV(drainageBasinLayer,demLayer,path,distanceContour,feedback):
     verifyLibs()
 
     feedback.setProgress(0)
@@ -95,7 +106,7 @@ def calculateEAV(drainageBasinLayer,demLayer,path,feedback):
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        elevations, cumulativeAreas, cumulativeVolumes = EAVprocessing(demLayer,basin,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVprocessing(demLayer,basin,distanceContour,feedback)
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
         cumulativeAreas.insert(0,'Area basin '+str(basin.id()))

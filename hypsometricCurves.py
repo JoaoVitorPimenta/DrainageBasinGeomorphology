@@ -38,7 +38,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterBoolean)
+                       QgsProcessingParameterBoolean,
+                       QgsProcessingParameterNumber)
 from .algorithms.hypsometricCurvesProcessing import executeHypsometricCurvesProcessing,plotGraphHypsometricCurves
 
 class hypsometricCurveCalc(QgsProcessingAlgorithm):
@@ -64,6 +65,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     ABSOLUTE_VALUES = 'ABSOLUTE_VALUES'
+    DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
 
     def initAlgorithm(self, config):
         '''
@@ -94,6 +96,16 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
                 self.ABSOLUTE_VALUES,
                 self.tr('Use absolute values instead of relative values'),
                 defaultValue=False,
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.DISTANCE_BETWEEN_CONTOUR_LINES,
+                self.tr('Distance between contour lines'),
+                optional=True,
+                defaultValue=None,
+                minValue=0
             )
         )
 
@@ -132,10 +144,12 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
 
         absoluteValues = self.parameterAsBoolean(parameters, self.ABSOLUTE_VALUES, context)
 
+        distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
+
         pathGraph = self.parameterAsFileOutput(parameters, self.GRAPH, context)
 
-        executeHypsometricCurvesProcessing(basinSource,demLayer,pathHypsometric,absoluteValues,feedback)
-        plotGraphHypsometricCurves(basinSource,demLayer,pathGraph,absoluteValues,feedback)
+        executeHypsometricCurvesProcessing(basinSource,demLayer,pathHypsometric,absoluteValues,distanceCurves,feedback)
+        plotGraphHypsometricCurves(basinSource,demLayer,pathGraph,absoluteValues,distanceCurves,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -189,7 +203,8 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
-        <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
+        <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins.
+        <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
         <strong>Hypsometric curve data: </strong>File with elevation and accumulated area data used to form the hypsometric curve.
         <strong>Graph: </strong>Graph containing the hypsometric curves of all river basins for comparison between them.
 

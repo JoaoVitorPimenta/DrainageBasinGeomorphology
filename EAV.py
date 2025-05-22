@@ -37,7 +37,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterRasterLayer,
-                       QgsProcessingParameterFileDestination)
+                       QgsProcessingParameterFileDestination,
+                       QgsProcessingParameterNumber)
 from .algorithms.EAVProcessing import calculateEAV
 
 class EAVCalc(QgsProcessingAlgorithm):
@@ -61,6 +62,8 @@ class EAVCalc(QgsProcessingAlgorithm):
     ELEVATION_AREA_VOLUME_DATA = 'ELEVATION_AREA_VOLUME_DATA'
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
+    DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
+
 
     def initAlgorithm(self, config):
         '''
@@ -83,6 +86,16 @@ class EAVCalc(QgsProcessingAlgorithm):
                 self.DEM,
                 self.tr('DEM'),
                 [QgsProcessing.TypeRaster]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.DISTANCE_BETWEEN_CONTOUR_LINES,
+                self.tr('Distance between contour lines'),
+                optional=True,
+                defaultValue=None,
+                minValue=0
             )
         )
 
@@ -109,9 +122,11 @@ class EAVCalc(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
+        distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
+
         path = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
-        calculateEAV(basinSource,demLayer,path,feedback)
+        calculateEAV(basinSource,demLayer,path,distanceCurves,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -165,6 +180,7 @@ class EAVCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
+        <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
         <strong>Elevation area volume data: </strong>File with elevation - area - volume data calculated individually for each basin.
         
         The use of a projected CRS is recommended.

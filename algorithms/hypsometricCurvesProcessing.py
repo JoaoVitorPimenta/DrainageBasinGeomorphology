@@ -44,7 +44,7 @@ def verifyLibs():
         except ImportError:
             raise QgsProcessingException('Numpy library not found, please install it and try again.')
 
-def calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback):
+def calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feedback):
     pixelWidth = demLayer.rasterUnitsPerPixelX()
     pixelHeight = demLayer.rasterUnitsPerPixelY()
 
@@ -80,6 +80,13 @@ def calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback):
     minElevation = min(elevations)
     maxElevation = max(elevations)
 
+    if distanceContour != 0:
+        elevationCurves = np.arange(minElevation, maxElevation, distanceContour)
+        interpAreas = np.interp(elevationCurves, elevations[::-1], cumulativeAreas[::-1])
+
+        elevations = elevationCurves[::-1]
+        cumulativeAreas = interpAreas[::-1]
+
     if absoluteValues is True:
 
         areasList = cumulativeAreas.tolist()
@@ -89,7 +96,7 @@ def calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback):
 
         return elevations, areasList
 
-    relativeHeights = (np.array(elevations) - minElevation)/(maxElevation - minElevation)
+    relativeHeights = (np.array(elevations) - min(elevations))/(max(elevations) - min(elevations))
     relativeHeightsList = relativeHeights.tolist()
 
     minArea = min(cumulativeAreas)
@@ -118,7 +125,7 @@ def exportHypsometricCurves(listsWithData,path):
         writer = csv.writer(arquivo)
         writer.writerows(itertools.zip_longest(*listsWithData))
 
-def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absoluteValues,feedback):
+def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absoluteValues,distanceContour,feedback):
     verifyLibs()
 
     feedback.setProgress(0)
@@ -130,7 +137,7 @@ def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absolute
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        heights, cumulativeAreas = calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback)
+        heights, cumulativeAreas = calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feedback)
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
         if feedback.isCanceled():
@@ -149,7 +156,7 @@ def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absolute
 
     feedback.setProgress(100)
 
-def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,feedback):
+def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,distanceContour,feedback):
     verifyLibs()
 
     feedback.setProgress(0)
@@ -161,7 +168,7 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,f
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        heights, cumulativeAreas = calculateHypsometricCurve(demLayer,basin,absoluteValues,feedback)
+        heights, cumulativeAreas = calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feedback)
 
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
