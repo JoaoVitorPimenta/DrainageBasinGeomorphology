@@ -81,6 +81,10 @@ def EAVprocessing(demLayer,basin,distanceContour,feedback):
         maxElevation = max(elevations)
 
         elevationCurves = np.arange(minElevation, maxElevation, distanceContour)
+
+        if maxElevation not in elevationCurves:
+            elevationCurves = np.append(elevationCurves,maxElevation)
+
         interpAreas = np.interp(elevationCurves, elevations, cumulativeAreas)
 
         elevations = elevationCurves.tolist()

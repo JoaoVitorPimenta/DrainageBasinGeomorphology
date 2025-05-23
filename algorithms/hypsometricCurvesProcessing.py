@@ -82,19 +82,24 @@ def calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feed
 
     if distanceContour != 0:
         elevationCurves = np.arange(minElevation, maxElevation, distanceContour)
+
+        if maxElevation not in elevationCurves:
+            elevationCurves = np.append(elevationCurves,maxElevation)
+
         interpAreas = np.interp(elevationCurves, elevations[::-1], cumulativeAreas[::-1])
 
-        elevations = elevationCurves[::-1]
+        elevations = elevationCurves[::-1].tolist()
         cumulativeAreas = interpAreas[::-1]
 
     if absoluteValues is True:
+        elevationsList = elevations
 
         areasList = cumulativeAreas.tolist()
 
-        elevations.insert(0,'Absolute elevation (m) basin '+str(basin.id()))
+        elevationsList.insert(0,'Absolute elevation (m) basin '+str(basin.id()))
         areasList.insert(0,'Absolute area (m2) basin '+str(basin.id()))
 
-        return elevations, areasList
+        return elevationsList, areasList
 
     relativeHeights = (np.array(elevations) - min(elevations))/(max(elevations) - min(elevations))
     relativeHeightsList = relativeHeights.tolist()
