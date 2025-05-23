@@ -76,6 +76,10 @@ def EAVprocessing(demLayer,basin,distanceContour,feedback):
     areas = np.array(countElevations) * (pixelWidth * pixelHeight)
     cumulativeAreas = np.cumsum(areas)
 
+    deltaElev = np.diff(elevations)
+    volumes = cumulativeAreas[1:] * deltaElev
+    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+
     if distanceContour != 0:
         minElevation = min(elevations)
         maxElevation = max(elevations)
@@ -86,15 +90,13 @@ def EAVprocessing(demLayer,basin,distanceContour,feedback):
             elevationCurves = np.append(elevationCurves,maxElevation)
 
         interpAreas = np.interp(elevationCurves, elevations, cumulativeAreas)
+        interpVolumes = np.interp(elevationCurves, elevations, cumulativeVolumes)
 
         elevations = elevationCurves.tolist()
         cumulativeAreas = interpAreas
+        cumulativeVolumes = interpVolumes
 
     cumulativeAreasList = cumulativeAreas.tolist()
-
-    deltaElev = np.diff(elevations)
-    volumes = cumulativeAreas[1:] * deltaElev
-    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
