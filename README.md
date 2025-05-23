@@ -159,6 +159,8 @@ to my parents, friends and teachers.
 
 Strahler (1952)
 
+If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area and volume values ​​will be interpolated to the contour lines input by the user.
+
 ## Hypsometric curve
 
 | Relative height     | Relative area | Hypsometric integral |
@@ -170,6 +172,8 @@ Strahler (1952)
 | Elevation     | Area (cumulative)   |Integral of the curve formed by elevation and area, using the trapezoidal rule.                 |
 
 Strahler (1952)
+
+If the user inputs contour lines, the values ​​will be calculated taking into account all DEM elevations, and then area values ​​will be interpolated for the contour lines the user input.
 
 ## References
 - Horton, R. E. (1932). Drainage-basin characteristics. Transactions of the American Geophysical Union, 13, 350–361.
