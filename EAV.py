@@ -38,8 +38,9 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterNumber)
-from .algorithms.EAVProcessing import calculateEAV
+                       QgsProcessingParameterNumber,
+                       QgsProcessingParameterFolderDestination)
+from .algorithms.EAVProcessing import calculateEAV,plotGraphEAVCurves
 
 class EAVCalc(QgsProcessingAlgorithm):
     '''
@@ -63,6 +64,7 @@ class EAVCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
+    GRAPHS = 'GRAPHS'
 
 
     def initAlgorithm(self, config):
@@ -110,6 +112,12 @@ class EAVCalc(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterFolderDestination(
+                self.GRAPHS,
+                self.tr('Graphs'))
+            )
+
     def processAlgorithm(self, parameters, context, feedback):
         '''
         Here is where the processing itself takes place.
@@ -124,9 +132,12 @@ class EAVCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
-        path = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
+        pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
-        calculateEAV(basinSource,demLayer,path,distanceCurves,feedback)
+        pathGraph = self.parameterAsString(parameters, self.GRAPHS, context)
+
+        calculateEAV(basinSource,demLayer,pathData,distanceCurves,feedback)
+        plotGraphEAVCurves(basinSource,demLayer,pathGraph,distanceCurves,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -134,7 +145,8 @@ class EAVCalc(QgsProcessingAlgorithm):
         # statistics, etc. These should all be included in the returned
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
-        return {self.ELEVATION_AREA_VOLUME_DATA: path}
+        return {self.ELEVATION_AREA_VOLUME_DATA: pathData,
+                self.GRAPHS: pathGraph}
 
     def name(self):
         '''
@@ -182,7 +194,8 @@ class EAVCalc(QgsProcessingAlgorithm):
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
         <strong>Elevation area volume data: </strong>File with elevation - area - volume data calculated individually for each basin.
-        
+        <strong>Graphs: </strong>Folder containing the elevation-area-volume graph for each basin individually.        
+
         The use of a projected CRS is recommended.
                 </p>
             </body>

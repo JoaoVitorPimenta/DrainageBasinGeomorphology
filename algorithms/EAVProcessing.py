@@ -32,9 +32,12 @@ __revision__ = '$Format:%H$'
 
 from qgis.core import QgsPointXY, QgsProcessingException
 from collections import Counter
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import numpy as np
 import csv
 import itertools
+import os
 
 def verifyLibs():
         try:
@@ -42,6 +45,10 @@ def verifyLibs():
         except ImportError:
             raise QgsProcessingException('Numpy library not found, please install it and try again.')
 
+        try:
+            import plotly
+        except ImportError:
+            raise QgsProcessingException('Plotly library not found, please install it and try again.')
 def EAVprocessing(demLayer,basin,distanceContour,feedback):
     basinGeom = basin.geometry()
 
@@ -133,3 +140,67 @@ def calculateEAV(drainageBasinLayer,demLayer,path,distanceContour,feedback):
         writer.writerows(itertools.zip_longest(*listsWithData))
 
     feedback.setProgress(100)
+
+def plotGraphEAVCurves(drainageBasinLayer,demLayer,path,distanceContour,feedback):
+    verifyLibs()
+
+    os.makedirs(path, exist_ok=True)
+
+    feedback.setProgress(0)
+    total = drainageBasinLayer.featureCount() + 1
+    step = 100.0 / total if total else 0
+
+    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
+        if feedback.isCanceled():
+            return
+
+        fig = go.Figure()
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+        elevations, cumulativeAreas, cumulativeVolumes = EAVprocessing(demLayer,basin,distanceContour,feedback)
+
+        fig.add_trace(go.Scatter(
+                                x=cumulativeVolumes,
+                                y=elevations,
+                                mode='lines',
+                                name='Volume - Elevation basin '+str(basin.id())
+                                ),
+                                secondary_y=False
+                                )
+        fig.add_trace(go.Scatter(x=cumulativeAreas,
+                                y=elevations,
+                                mode='lines',
+                                name='Area - Elevation basin '+str(basin.id())
+                                ),
+                                secondary_y=True
+                                )
+
+        fig.data[1].update(xaxis='x2')
+
+        fig.update_layout(
+            title='Area x Volume x Elevation',
+            xaxis=dict(title='Volume (m³)'),
+            yaxis=dict(title='Elevation (m)'),
+            xaxis2=dict(title='Area (m²)',
+                        overlaying='x',
+                        side='top',
+                        autorange='reversed'),
+            yaxis2=dict(
+                        title='Elevation (m)',
+                        overlaying='y',
+                        side='right',
+                        position=1
+                        )
+                            )
+
+        outputHTML = os.path.join(path, 'GRAPH_BASIN_'+str(basin.id())+'.html')
+        fig.write_html(outputHTML)
+
+        barProgress = int((idx + 1) * step)
+        feedback.setProgress(barProgress)
+        feedback.setProgressText('Basin '+str(basin.id())+' processing graph completed')
+
+        fig.show()
+
+    feedback.setProgress(100)
+    
