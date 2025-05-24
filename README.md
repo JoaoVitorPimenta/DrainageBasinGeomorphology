@@ -18,6 +18,20 @@ Then select the ZIP containing this plugin -> install plugin or place this plugi
 # Tools
 This plugin offers tools for studying the geomorphology of drainage basins, are they:
 
+## Calculate all morphometric parameters
+This tool calculates all morphometric parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - 
+Vector layer containing the drainage network of the drainage basins.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Output:**  
+**All morphometric parameters** - All morphometric parameters calculated, for each basin, in .csv.
+
 ## Calculate Elevation Area Volume.
 This tool calculates the elevation to area volume ratio for all features provided in the drainage basin layer as input.
 
@@ -32,20 +46,6 @@ This tool calculates the elevation to area volume ratio for all features provide
 **Elevation area volume data** - Elevation Area Volume data, for each basin, in .csv.
 
 **Graphs** - Graphs with elevation-area and elevation-volume curves, for each basin, stored in .HTML format in a folder.
-
-## Calculate all morphometric parameters
-This tool calculates all morphometric parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
-
-**Inputs:**  
-**Drainage basins** - Vector layer containing drainage basin features.
-
-**Channel network** - 
-Vector layer containing the drainage network of the drainage basins.
-
-**DEM** - Digital Elevation Model in the area of the drainage basins.
-
-**Output:**  
-**All morphometric parameters** - All morphometric parameters calculated, for each basin, in .csv.
 
 ## Calculate hypsometric curves
 This tool calculates and plots the hypsometric curves, with absolute or relative values ​​(from 0 to 1). The hypsometric curves represents the area above a certain elevation.
