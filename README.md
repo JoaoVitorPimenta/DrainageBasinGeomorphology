@@ -32,7 +32,7 @@ Vector layer containing the drainage network of the drainage basins.
 **Output:**  
 **All morphometric parameters** - All morphometric parameters calculated, for each basin, in .csv.
 
-## Calculate Elevation Area Volume
+## Calculate elevation area volume
 This tool calculates the elevation to area volume ratio for all features provided in the drainage basin layer as input.
 
 **Inputs:**  
