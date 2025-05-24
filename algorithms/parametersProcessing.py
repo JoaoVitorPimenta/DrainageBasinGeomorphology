@@ -47,7 +47,11 @@ def verifyLibs():
             import numpy
         except ImportError:
             raise QgsProcessingException('Numpy library not found, please install it and try again.')
-
+        
+        try:
+            import geopandas
+        except ImportError:
+            raise QgsProcessingException('Geopandas library not found, please install it and try again.')
 def getStreamsInsideBasin(streamLayer, drainageBasin,feedback):
     streamsWithin = []
 

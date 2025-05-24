@@ -177,7 +177,7 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,d
 
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
-        fig.add_trace(go.Scatter(x=cumulativeAreas, y=heights, mode='lines',
+        fig.add_trace(go.Scatter(x=cumulativeAreas,y=heights, mode='lines',
                                  name='basin '+ str(basin.id())+' Integral = '+str(round(hypsometricIntegral[1],2))))
 
         barProgress = int((idx + 1) * step)
@@ -203,7 +203,6 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,d
     if feedback.isCanceled():
             return
     fig.show()
-
     fig.write_html(path)
 
     feedback.setProgress(100)
