@@ -26,8 +26,12 @@ This tool calculates the elevation to area volume ratio for all features provide
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
+**Distance between contour lines** - The spacing between contour lines, between the first and last contour lines.
+
 **Output:**  
-**Elevation Area Volume** - Elevation Area Volume data, for each basin, in .csv.
+**Elevation area volume data** - Elevation Area Volume data, for each basin, in .csv.
+
+**Graphs** - Graphs with elevation-area and elevation-volume curves, for each basin, stored in .HTML format in a folder.
 
 ## Calculate all morphometric parameters
 This tool calculates all morphometric parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
@@ -50,6 +54,8 @@ This tool calculates and plots the hypsometric curves, with absolute or relative
 **Drainage basins** - Vector layer containing drainage basin features.
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Distance between contour lines** - The spacing between contour lines, between the first and last contour lines.
 
 **Output:**  
 **Hypsometric curves** - The data used to create the hypsometric curves, for each basin, in .csv.
