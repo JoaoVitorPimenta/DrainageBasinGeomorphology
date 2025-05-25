@@ -161,7 +161,7 @@ to my parents, friends and teachers.
 
 | Elevation (m)     | Area (m2) | Volume (m3) |
 |-------------|----------------|---------------------|
-| Pixel elevation data     | Pixel elevation count × (Pixel width × Pixel height) (cumulative)            | Elevation difference × area mean (cumulative)                 |
+| Pixel elevation data     | Pixel elevation count × (Pixel width × Pixel height) (cumulative)            | Elevation difference × area mean (trapezoid rule) (cumulative)                 |
 
 Strahler (1952)
 
