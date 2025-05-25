@@ -84,7 +84,7 @@ def EAVprocessing(demLayer,basin,distanceContour,feedback):
     cumulativeAreas = np.cumsum(areas)
 
     deltaElev = np.diff(elevations)
-    volumes = cumulativeAreas[1:] * deltaElev
+    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
     cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
 
     if distanceContour != 0:
