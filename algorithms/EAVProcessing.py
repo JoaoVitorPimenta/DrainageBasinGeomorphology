@@ -178,7 +178,7 @@ def plotGraphEAVCurves(drainageBasinLayer,demLayer,path,distanceContour,feedback
         fig.data[1].update(xaxis='x2')
 
         fig.update_layout(
-            title='Area x Volume x Elevation',
+            title='Elevation x Area x Volume graph',
             xaxis=dict(title='Volume (m3)'),
             yaxis=dict(title='Elevation (m)'),
             xaxis2=dict(title='Area (m2)',
