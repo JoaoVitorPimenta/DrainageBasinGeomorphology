@@ -68,7 +68,8 @@ def calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feed
     if not validDataInsideBasin:
         feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and some calculations may be compromised')
 
-    counterValues = Counter(validDataInsideBasin)
+    filteredData = [nonMaskValue for nonMaskValue in validDataInsideBasin if not np.ma.is_masked(nonMaskValue)]
+    counterValues = Counter(filteredData)
     counterValuesOrdered = sorted(counterValues.items(),reverse=True)
 
     elevations = [item[0] for item in counterValuesOrdered]
