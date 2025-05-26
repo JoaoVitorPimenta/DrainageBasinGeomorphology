@@ -65,8 +65,7 @@ def EAVprocessing(demLayer,basin,distanceContour,feedback):
             x = extent.xMinimum() + col * pixelWidth + pixelWidth/2
             y = extent.yMaximum() - row * pixelHeight - pixelHeight/2
             point = QgsPointXY(x,y)
-            
-            
+
             if basinGeom.contains(point):
                 value = array[0,row,col]
                 validDataInsideBasin.append(value)
