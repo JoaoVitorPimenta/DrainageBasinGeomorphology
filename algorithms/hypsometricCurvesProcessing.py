@@ -152,7 +152,7 @@ def exportHypsometricCurves(listsWithData,path):
         writer = csv.writer(arquivo)
         writer.writerows(itertools.zip_longest(*listsWithData))
 
-def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,pathCsv,absoluteValues,distanceContour,feedback):
+def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteValues,distanceContour,feedback):
     verifyLibs()
 
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
@@ -161,11 +161,15 @@ def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,pathCsv,absol
     total = drainageBasinLayer.featureCount() + 1
     step = 100.0 / total if total else 0
 
+    fig = go.Figure()
+
     listsWithData = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
+        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
+
         heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,feedback)
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
@@ -175,32 +179,12 @@ def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,pathCsv,absol
         listsWithData.append(cumulativeAreas)
         listsWithData.append(hypsometricIntegral)
 
-        barProgress = int((idx + 1) * step)
-        feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin '+str(basin.id())+' processing data completed')
+        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
 
-    if feedback.isCanceled():
-            return
-    exportHypsometricCurves(listsWithData,pathCsv)
-
-    feedback.setProgress(100)
-
-def plotGraphHypsometricCurves(drainageBasinLayer,demArray,noData,gt,proj,cols,rows,pathHTML,absoluteValues,distanceContour, feedback):
-    verifyLibs()
-
-    feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount() + 1
-    step = 100.0 / total if total else 0
-
-    fig = go.Figure()
-
-    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,feedback)
 
-        hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
-
+        feedback.setProgressText('Basin '+str(basin.id())+' graph starting...')
         fig.add_trace(go.Scatter(
                                 x=cumulativeAreas,
                                 y=heights,
@@ -218,7 +202,7 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demArray,noData,gt,proj,cols,r
         yaxis_title='Absolute elevation (m)'
     )
         fig.show()
-        fig.write_html(pathHTML)
+        fig.write_html(pathHtml)
         return
 
     fig.update_layout(
@@ -230,14 +214,10 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demArray,noData,gt,proj,cols,r
     if feedback.isCanceled():
             return
     fig.show()
-    fig.write_html(pathHTML)
+    fig.write_html(pathHtml)
+
+    if feedback.isCanceled():
+            return
+    exportHypsometricCurves(listsWithData,pathCsv)
 
     feedback.setProgress(100)
-
-def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteValues,distanceContour,feedback):
-
-    demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
-
-    executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,pathCsv,absoluteValues,distanceContour,feedback)
-
-    plotGraphHypsometricCurves(drainageBasinLayer,demArray,noData,gt,proj,cols,rows,pathHtml,absoluteValues,distanceContour,feedback)

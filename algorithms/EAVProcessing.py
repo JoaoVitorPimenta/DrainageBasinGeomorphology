@@ -140,6 +140,7 @@ def runEAV(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
+        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
         elevations, cumulativeAreas, cumulativeVolumes = EAVprocessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback)
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
@@ -150,13 +151,12 @@ def runEAV(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback
         listsWithData.append(cumulativeAreas)
         listsWithData.append(cumulativeVolumes)
 
-        barProgress = int((idx + 1) * step)
-        feedback.setProgress(barProgress)
         feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
 
         if feedback.isCanceled():
             return
 
+        feedback.setProgressText('Basin '+str(basin.id())+' graph starting...')
         fig = go.Figure()
         fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -199,11 +199,9 @@ def runEAV(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin '+str(basin.id())+' processing graph completed')
+        feedback.setProgressText('Basin '+str(basin.id())+' graph completed')
 
         fig.show()
-
-    feedback.setProgress(100)
 
     if feedback.isCanceled():
             return

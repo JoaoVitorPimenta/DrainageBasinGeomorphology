@@ -540,7 +540,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
     gdfConcatenateds = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-
+        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
         if feedback.isCanceled():
             return
@@ -618,6 +618,7 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
     gdfsLinear = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
+        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
         if feedback.isCanceled():
             return
@@ -679,6 +680,7 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
     gdfsShape = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
+        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
         if feedback.isCanceled():
             return
@@ -725,6 +727,7 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
     gdfsRelief = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
+        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
         if feedback.isCanceled():
             return
