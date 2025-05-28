@@ -40,7 +40,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterBoolean,
                        QgsProcessingParameterNumber)
-from .algorithms.hypsometricCurvesProcessing import executeHypsometricCurvesProcessing,plotGraphHypsometricCurves
+from .algorithms.hypsometricCurvesProcessing import runHypsometricCurves,verifyLibs
 
 class hypsometricCurveCalc(QgsProcessingAlgorithm):
     '''
@@ -148,8 +148,8 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
 
         pathGraph = self.parameterAsFileOutput(parameters, self.GRAPH, context)
 
-        executeHypsometricCurvesProcessing(basinSource,demLayer,pathHypsometric,absoluteValues,distanceCurves,feedback)
-        plotGraphHypsometricCurves(basinSource,demLayer,pathGraph,absoluteValues,distanceCurves,feedback)
+        verifyLibs()
+        runHypsometricCurves(basinSource,demLayer,pathHypsometric,pathGraph,absoluteValues,distanceCurves,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

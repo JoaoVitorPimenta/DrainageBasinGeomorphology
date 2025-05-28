@@ -34,36 +34,55 @@ from qgis.core import QgsPointXY, QgsProcessingException
 from collections import Counter
 import plotly.graph_objects as go
 import numpy as np
+from osgeo import gdal, ogr
 import csv
 import itertools
-import os
 
 def verifyLibs():
         try:
             import numpy
         except ImportError:
             raise QgsProcessingException('Numpy library not found, please install it and try again.')
+        try:
+            import plotly
+        except ImportError:
+            raise QgsProcessingException('Plotly library not found, please install it and try again.')
 
-def calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feedback):
-    pixelWidth = demLayer.rasterUnitsPerPixelX()
-    pixelHeight = demLayer.rasterUnitsPerPixelY()
+def loadDEM(demLayer):
+    DEMpath = demLayer.dataProvider().dataSourceUri().split('|')[0]
+    ds = gdal.Open(DEMpath)
+    band = ds.GetRasterBand(1)
+    demArray = band.ReadAsArray()
+    noData = band.GetNoDataValue() if band.GetNoDataValue() is not None else -9999
+    gt = ds.GetGeoTransform()
+    proj = ds.GetProjection()
+    rows, cols = demArray.shape
+    ds = None
+    return demArray, noData, gt, proj, rows, cols
 
-    array = demLayer.as_numpy(use_masking=True,bands=[0])
+def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,feedback):
     basinGeom = basin.geometry()
-    extent = demLayer.extent()
+    wkb = basinGeom.asWkb()
+    ogrGeom = ogr.CreateGeometryFromWkb(wkb)
 
-    validDataInsideBasin = []
+    rasterDrive = gdal.GetDriverByName('MEM')
+    vectorDrive = ogr.GetDriverByName('Memory')
+    vectorDriveSource    = vectorDrive.CreateDataSource('wrk')
+    vectorLayer = vectorDriveSource.CreateLayer('lyr', None, ogr.wkbUnknown)
+    featureDef   = vectorLayer.GetLayerDefn()
+    ogrFeat  = ogr.Feature(featureDef)
+    ogrFeat.SetGeometry(ogrGeom)
+    vectorLayer.CreateFeature(ogrFeat)
+    ogrFeat = None
 
-    for row in range(demLayer.height()):
-        for col in range(demLayer.width()):
-            x = extent.xMinimum() + col * pixelWidth + pixelWidth/2
-            y = extent.yMaximum() - row * pixelHeight - pixelHeight/2
-            point = QgsPointXY(x,y)
+    maskDS = rasterDrive.Create('', cols, rows, 1, gdal.GDT_Byte)
+    maskDS.SetGeoTransform(gt)
+    maskDS.SetProjection(proj)
+    gdal.RasterizeLayer(maskDS, [1], vectorLayer, burn_values=[1])
 
-
-            if basinGeom.contains(point):
-                value = array[0,row,col]
-                validDataInsideBasin.append(value)
+    mask = maskDS.GetRasterBand(1).ReadAsArray()
+    validMask = (mask == 1) & (demArray != noData)
+    validDataInsideBasin = demArray[validMask].tolist()
 
     if not validDataInsideBasin:
         feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and some calculations may be compromised')
@@ -75,6 +94,8 @@ def calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feed
     elevations = [item[0] for item in counterValuesOrdered]
     countElevations = [item[1] for item in counterValuesOrdered]
 
+    pixelWidth  = abs(gt[1])
+    pixelHeight = abs(gt[5])
     areas = np.array(countElevations) * (pixelWidth * pixelHeight)
     cumulativeAreas = np.cumsum(areas)
 
@@ -131,8 +152,10 @@ def exportHypsometricCurves(listsWithData,path):
         writer = csv.writer(arquivo)
         writer.writerows(itertools.zip_longest(*listsWithData))
 
-def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absoluteValues,distanceContour,feedback):
+def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,pathCsv,absoluteValues,distanceContour,feedback):
     verifyLibs()
+
+    demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
 
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount() + 1
@@ -143,7 +166,7 @@ def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absolute
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        heights, cumulativeAreas = calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feedback)
+        heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,feedback)
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
         if feedback.isCanceled():
@@ -158,11 +181,11 @@ def executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,path,absolute
 
     if feedback.isCanceled():
             return
-    exportHypsometricCurves(listsWithData,path)
+    exportHypsometricCurves(listsWithData,pathCsv)
 
     feedback.setProgress(100)
 
-def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,distanceContour,feedback):
+def plotGraphHypsometricCurves(drainageBasinLayer,demArray,noData,gt,proj,cols,rows,pathHTML,absoluteValues,distanceContour, feedback):
     verifyLibs()
 
     feedback.setProgress(0)
@@ -174,7 +197,7 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,d
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        heights, cumulativeAreas = calculateHypsometricCurve(demLayer,basin,absoluteValues,distanceContour,feedback)
+        heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,feedback)
 
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
@@ -195,7 +218,7 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,d
         yaxis_title='Absolute elevation (m)'
     )
         fig.show()
-        fig.write_html(path)
+        fig.write_html(pathHTML)
         return
 
     fig.update_layout(
@@ -207,6 +230,14 @@ def plotGraphHypsometricCurves(drainageBasinLayer,demLayer,path,absoluteValues,d
     if feedback.isCanceled():
             return
     fig.show()
-    fig.write_html(path)
+    fig.write_html(pathHTML)
 
     feedback.setProgress(100)
+
+def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteValues,distanceContour,feedback):
+
+    demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
+
+    executeHypsometricCurvesProcessing(drainageBasinLayer,demLayer,pathCsv,absoluteValues,distanceContour,feedback)
+
+    plotGraphHypsometricCurves(drainageBasinLayer,demArray,noData,gt,proj,cols,rows,pathHtml,absoluteValues,distanceContour,feedback)

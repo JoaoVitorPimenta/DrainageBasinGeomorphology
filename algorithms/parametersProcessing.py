@@ -36,6 +36,7 @@ from shapely import get_point, force_2d
 from math import pi
 from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException
 import geopandas as gpd
+from osgeo import gdal, ogr
 
 def verifyLibs():
         try:
@@ -353,27 +354,41 @@ def createGdfRelief():
     gdfRelief = gpd.GeoDataFrame(index=[0])
     return gdfRelief
 
-def calculateMinMaxMeanElevation(demLayer,basin,gdfRelief,feedback):
+def loadDEM(demLayer):
+    DEMpath = demLayer.dataProvider().dataSourceUri().split('|')[0]
+    ds = gdal.Open(DEMpath)
+    band = ds.GetRasterBand(1)
+    demArray = band.ReadAsArray()
+    noData = band.GetNoDataValue() if band.GetNoDataValue() is not None else -9999
+    gt = ds.GetGeoTransform()
+    proj = ds.GetProjection()
+    rows, cols = demArray.shape
+    ds = None
+    return demArray, noData, gt, proj, rows, cols
 
+def calculateMinMaxMeanElevation(demArray,noData,gt,proj,rows,cols,basin,gdfRelief,feedback):
     basinGeom = basin.geometry()
+    wkb = basinGeom.asWkb()
+    ogrGeom = ogr.CreateGeometryFromWkb(wkb)
 
-    extent = demLayer.extent()
+    rasterDrive = gdal.GetDriverByName('MEM')
+    vectorDrive = ogr.GetDriverByName('Memory')
+    vectorDriveSource    = vectorDrive.CreateDataSource('wrk')
+    vectorLayer = vectorDriveSource.CreateLayer('lyr', None, ogr.wkbUnknown)
+    featureDef   = vectorLayer.GetLayerDefn()
+    ogrFeat  = ogr.Feature(featureDef)
+    ogrFeat.SetGeometry(ogrGeom)
+    vectorLayer.CreateFeature(ogrFeat)
+    ogrFeat = None
 
-    pixelWidth = demLayer.rasterUnitsPerPixelX()
-    pixelHeight = demLayer.rasterUnitsPerPixelY()
+    maskDS = rasterDrive.Create('', cols, rows, 1, gdal.GDT_Byte)
+    maskDS.SetGeoTransform(gt)
+    maskDS.SetProjection(proj)
+    gdal.RasterizeLayer(maskDS, [1], vectorLayer, burn_values=[1])
 
-    array = demLayer.as_numpy(use_masking=True,bands=[0])
-    validDataInsideBasin = []
-
-    for row in range(demLayer.height()):
-        for col in range(demLayer.width()):
-            x = extent.xMinimum() + col * pixelWidth + pixelWidth/2
-            y = extent.yMaximum() - row * pixelHeight - pixelHeight/2
-            point = QgsPointXY(x,y)
-
-            if basinGeom.contains(point):
-                value = array[0,row,col]
-                validDataInsideBasin.append(value)
+    mask = maskDS.GetRasterBand(1).ReadAsArray()
+    validMask = (mask == 1) & (demArray != noData)
+    validDataInsideBasin = demArray[validMask].tolist()
 
     if not validDataInsideBasin:
         feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and the calculation of some parameters for this basin may be compromised')
@@ -462,7 +477,7 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
 
     gdfLinearFloat = gdfLinear.astype(float)
     gdfReliefFloat = gdfRelief.astype(float)
-    print(gdfLinearFloat.index)
+
     gdfLinearFloat.loc[-1] = gdfLinear.columns
     gdfLinearFloat.index = gdfLinearFloat.index + 1
     gdfLinearFloat.sort_index(inplace=True)
@@ -505,7 +520,7 @@ def formatGdfShape(gdfShape,basin):
     gdfShapeFloat.columns = range(gdfShapeFloat.shape[1])
     return gdfShapeFloat
 
-def formatGdfRelief(gdfLinear,gdfShape,gdfRelief,basin):
+def formatGdfRelief(gdfRelief,basin):
     gdfRelief.columns = [f'{col} basin ' + str(basin.id()) for col in gdfRelief.columns]
     gdfReliefFloat = gdfRelief.astype(float)
 
@@ -515,7 +530,7 @@ def formatGdfRelief(gdfLinear,gdfShape,gdfRelief,basin):
     gdfReliefFloat.columns = range(gdfReliefFloat.shape[1])
     return gdfReliefFloat
 
-def calculateMorphometrics(drainageBasinLayer,streamLayer,demLayer,path,feedback):
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback):
     verifyLibs()
 
     feedback.setProgress(0)
@@ -569,7 +584,7 @@ def calculateMorphometrics(drainageBasinLayer,streamLayer,demLayer,path,feedback
         if feedback.isCanceled():
             return
         gdfRelief = createGdfRelief()
-        calculateMinMaxMeanElevation(demLayer,basin,gdfRelief,feedback)
+        calculateMinMaxMeanElevation(demArray,noData,gt,proj,rows,cols,basin,gdfRelief,feedback)
         calculateRelief(gdfRelief)
         calculateReliefRatio(gdfRelief,gdfShape)
         calculateRelativeRelief(gdfRelief,gdfShape)
@@ -700,7 +715,7 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
     feedback.setProgress(100)
     return
 
-def calculateReliefParameters(drainageBasinLayer,streamLayer,demLayer,path, feedback):
+def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback):
     verifyLibs()
 
     feedback.setProgress(0)
@@ -738,7 +753,7 @@ def calculateReliefParameters(drainageBasinLayer,streamLayer,demLayer,path, feed
         if feedback.isCanceled():
             return
         gdfRelief = createGdfRelief()
-        calculateMinMaxMeanElevation(demLayer,basin,gdfRelief, feedback)
+        calculateMinMaxMeanElevation(demArray,noData,gt,proj,rows,cols,basin,gdfRelief,feedback)
         calculateRelief(gdfRelief)
         calculateReliefRatio(gdfRelief,gdfShape)
         calculateRelativeRelief(gdfRelief,gdfShape)
@@ -747,7 +762,7 @@ def calculateReliefParameters(drainageBasinLayer,streamLayer,demLayer,path, feed
         calculateGradientRatio(gdfStream,gdfLinear,demLayer,gdfRelief)
         if feedback.isCanceled():
             return
-        gdfFormated = formatGdfRelief(gdfLinear,gdfShape,gdfRelief,basin)
+        gdfFormated = formatGdfRelief(gdfRelief,basin)
         gdfsRelief.append(gdfFormated)
 
         barProgress = int((idx + 1) * step)
@@ -761,3 +776,13 @@ def calculateReliefParameters(drainageBasinLayer,streamLayer,demLayer,path, feed
 
     feedback.setProgress(100)
     return
+
+def runAllMorphometricParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback):
+    demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
+
+    calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback)
+
+def runReliefParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback):
+    demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
+
+    calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback)

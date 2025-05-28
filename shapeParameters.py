@@ -37,7 +37,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFileDestination)
-from .algorithms.parametersProcessing import calculateShapeParameters
+from .algorithms.parametersProcessing import calculateShapeParameters,verifyLibs
 
 class shapeParametersCalc(QgsProcessingAlgorithm):
     '''
@@ -111,6 +111,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
 
+        verifyLibs()
         calculateShapeParameters(basinSource,channelNetwork,path,feedback)
 
         # Return the results of the algorithm. In this case our only result is

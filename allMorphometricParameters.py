@@ -38,7 +38,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination)
-from .algorithms.parametersProcessing import calculateMorphometrics
+from .algorithms.parametersProcessing import runAllMorphometricParameters,verifyLibs
 
 class allMorphometricParameters(QgsProcessingAlgorithm):
     '''
@@ -122,7 +122,8 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
 
         path = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS, context)
 
-        calculateMorphometrics(basinSource,channelNetwork,demLayer,path,feedback)
+        verifyLibs()
+        runAllMorphometricParameters(basinSource,channelNetwork,demLayer,path,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

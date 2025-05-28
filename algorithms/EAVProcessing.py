@@ -30,10 +30,11 @@ __copyright__ = '(C) 2025 by João Vitor Pimenta'
 
 __revision__ = '$Format:%H$'
 
-from qgis.core import QgsPointXY, QgsProcessingException
+from qgis.core import QgsProcessingException
 from collections import Counter
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from osgeo import gdal, ogr
 import numpy as np
 import csv
 import itertools
@@ -44,42 +45,58 @@ def verifyLibs():
             import numpy
         except ImportError:
             raise QgsProcessingException('Numpy library not found, please install it and try again.')
-
         try:
             import plotly
         except ImportError:
             raise QgsProcessingException('Plotly library not found, please install it and try again.')
-def EAVprocessing(demLayer,basin,distanceContour,feedback):
+
+def loadDEM(demLayer):
+    DEMpath = demLayer.dataProvider().dataSourceUri().split('|')[0]
+    ds = gdal.Open(DEMpath)
+    band = ds.GetRasterBand(1)
+    demArray = band.ReadAsArray()
+    noData = band.GetNoDataValue() if band.GetNoDataValue() is not None else -9999
+    gt = ds.GetGeoTransform()
+    proj = ds.GetProjection()
+    rows, cols = demArray.shape
+    ds = None
+    return demArray, noData, gt, proj, rows, cols
+
+def EAVprocessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback):
     basinGeom = basin.geometry()
+    wkb = basinGeom.asWkb()
+    ogrGeom = ogr.CreateGeometryFromWkb(wkb)
 
-    extent = demLayer.extent()
+    rasterDrive = gdal.GetDriverByName('MEM')
+    vectorDrive = ogr.GetDriverByName('Memory')
+    vectorDriveSource    = vectorDrive.CreateDataSource('wrk')
+    vectorLayer = vectorDriveSource.CreateLayer('lyr', None, ogr.wkbUnknown)
+    featureDef   = vectorLayer.GetLayerDefn()
+    ogrFeat  = ogr.Feature(featureDef)
+    ogrFeat.SetGeometry(ogrGeom)
+    vectorLayer.CreateFeature(ogrFeat)
+    ogrFeat = None
 
-    pixelWidth = demLayer.rasterUnitsPerPixelX()
-    pixelHeight = demLayer.rasterUnitsPerPixelY()
+    maskDS = rasterDrive.Create('', cols, rows, 1, gdal.GDT_Byte)
+    maskDS.SetGeoTransform(gt)
+    maskDS.SetProjection(proj)
+    gdal.RasterizeLayer(maskDS, [1], vectorLayer, burn_values=[1])
 
-    array = demLayer.as_numpy(use_masking=True,bands=[0])
-    validDataInsideBasin = []
-
-    for row in range(demLayer.height()):
-        for col in range(demLayer.width()):
-            x = extent.xMinimum() + col * pixelWidth + pixelWidth/2
-            y = extent.yMaximum() - row * pixelHeight - pixelHeight/2
-            point = QgsPointXY(x,y)
-
-            if basinGeom.contains(point):
-                value = array[0,row,col]
-                validDataInsideBasin.append(value)
+    mask = maskDS.GetRasterBand(1).ReadAsArray()
+    validMask = (mask == 1) & (demArray != noData)
+    validDataInsideBasin = demArray[validMask].tolist()
 
     if not validDataInsideBasin:
         feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and some calculations may be compromised')
 
-    filteredData = [nonMaskValue for nonMaskValue in validDataInsideBasin if not np.ma.is_masked(nonMaskValue)]
-    counterValues = Counter(filteredData)
+    counterValues = Counter(validDataInsideBasin)
     counterValuesOrdered = sorted(counterValues.items())
 
     elevations = [item[0] for item in counterValuesOrdered]
     countElevations = [item[1] for item in counterValuesOrdered]
 
+    pixelWidth  = abs(gt[1])
+    pixelHeight = abs(gt[5])
     areas = np.array(countElevations) * (pixelWidth * pixelHeight)
     cumulativeAreas = np.cumsum(areas)
 
@@ -107,19 +124,23 @@ def EAVprocessing(demLayer,basin,distanceContour,feedback):
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def calculateEAV(drainageBasinLayer,demLayer,path,distanceContour,feedback):
+def runEAV(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback):
     verifyLibs()
 
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount() + 1
     step = 100.0 / total if total else 0
 
+    os.makedirs(pathHtml, exist_ok=True)
+
+    demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
+
     listsWithData = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        elevations, cumulativeAreas, cumulativeVolumes = EAVprocessing(demLayer,basin,distanceContour,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVprocessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback)
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
         cumulativeAreas.insert(0,'Area basin '+str(basin.id()))
@@ -133,31 +154,11 @@ def calculateEAV(drainageBasinLayer,demLayer,path,distanceContour,feedback):
         feedback.setProgress(barProgress)
         feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
 
-    if feedback.isCanceled():
-            return
-    with open(path, 'w', newline='') as arquivo:
-        writer = csv.writer(arquivo)
-        writer.writerows(itertools.zip_longest(*listsWithData))
-
-    feedback.setProgress(100)
-
-def plotGraphEAVCurves(drainageBasinLayer,demLayer,path,distanceContour,feedback):
-    verifyLibs()
-
-    os.makedirs(path, exist_ok=True)
-
-    feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount() + 1
-    step = 100.0 / total if total else 0
-
-    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
 
         fig = go.Figure()
         fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-        elevations, cumulativeAreas, cumulativeVolumes = EAVprocessing(demLayer,basin,distanceContour,feedback)
 
         fig.add_trace(go.Scatter(
                                 x=cumulativeVolumes,
@@ -193,7 +194,7 @@ def plotGraphEAVCurves(drainageBasinLayer,demLayer,path,distanceContour,feedback
                         )
                             )
 
-        outputHTML = os.path.join(path, 'GRAPH_BASIN_'+str(basin.id())+'.html')
+        outputHTML = os.path.join(pathHtml, 'GRAPH_BASIN_'+str(basin.id())+'.html')
         fig.write_html(outputHTML)
 
         barProgress = int((idx + 1) * step)
@@ -203,4 +204,12 @@ def plotGraphEAVCurves(drainageBasinLayer,demLayer,path,distanceContour,feedback
         fig.show()
 
     feedback.setProgress(100)
-    
+
+    if feedback.isCanceled():
+            return
+    with open(pathCsv, 'w', newline='') as arquivo:
+        writer = csv.writer(arquivo)
+        writer.writerows(itertools.zip_longest(*listsWithData))
+
+    feedback.setProgress(100)
+

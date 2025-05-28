@@ -40,7 +40,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterFolderDestination)
-from .algorithms.EAVProcessing import calculateEAV,plotGraphEAVCurves
+from .algorithms.EAVProcessing import runEAV, verifyLibs
 
 class EAVCalc(QgsProcessingAlgorithm):
     '''
@@ -136,8 +136,8 @@ class EAVCalc(QgsProcessingAlgorithm):
 
         pathGraph = self.parameterAsString(parameters, self.GRAPHS, context)
 
-        calculateEAV(basinSource,demLayer,pathData,distanceCurves,feedback)
-        plotGraphEAVCurves(basinSource,demLayer,pathGraph,distanceCurves,feedback)
+        verifyLibs()
+        runEAV(basinSource,demLayer,pathData,pathGraph,distanceCurves,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

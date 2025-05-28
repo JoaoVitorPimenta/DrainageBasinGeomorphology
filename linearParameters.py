@@ -37,7 +37,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFileDestination)
-from .algorithms.parametersProcessing import calculateLinearParameters
+from .algorithms.parametersProcessing import calculateLinearParameters,verifyLibs
 
 class linearParametersCalc(QgsProcessingAlgorithm):
     '''
@@ -111,6 +111,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
 
         path = self.parameterAsFileOutput(parameters, self.LINEAR_PARAMETERS, context)
 
+        verifyLibs()
         calculateLinearParameters(basinSource,channelNetwork,path,feedback)
 
         # Return the results of the algorithm. In this case our only result is

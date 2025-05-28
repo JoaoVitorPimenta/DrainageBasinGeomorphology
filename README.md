@@ -10,6 +10,8 @@ The following technologies were used in processing the algorithms of this plugin
 - GeoPandas  
 - Numpy  
 - Plotly  
+- GDAL  
+- OGR
 
 ## Installation
 With QGIS open, follow these steps: plugins -> manage and install plugins -> install from ZIP
