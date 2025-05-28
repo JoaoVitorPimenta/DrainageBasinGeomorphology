@@ -145,7 +145,7 @@ to my parents, friends and teachers.
 | Shape        | Circulatory Ratio | _Rc_   | _4πA / P²_         | Measures circularity.                                   |          Miller (1953)     |
 | Shape        | Elongation Ratio | _Re_    | _(2 × √(A/π)) / Lb_ | Ratio of diameter of equivalent-area circle to basin length.              |   Schumm (1956)             |
 | Shape        | Form Factor   | _Ff_        | _A / Lb²_          | Measures compactness of area relative to length.                           |  Horton, R. E. (1932)              |
-| Shape        | Lemniscate Ratio | _K_     | _P² / (4πA)_       | Inverse of circulatory ratio.                                              |   Chorley et al. (1957)             |
+| Shape        | Lemniscate Ratio | _K_     | _Lb² / 4A_       | index of adjustment of drainage basin shape to the ideal.                                              |   Chorley et al. (1957)             |
 | Shape        | Shape Index   | _Sb_        | _Lb² / A_          | Inverse of Form Factor.                                                    |     Horton (1932)           |
 | Shape        | Compactness Coefficient | _Cc_ | _P / 2 × √(πA)_    | Compactness normalized for a circle.                                       |      Horton (1932)          |
 | Relief       | Minimum Elevation | _Emin_   | Direct measurement | Minimum elevation within basin.                                            | DEM Data           |
@@ -156,7 +156,7 @@ to my parents, friends and teachers.
 | Relief       | Relative Relief | _Rhp_      | _Emax / P_           | Ratio of relief to basin area.                                            |  Melton (1957)  |
 | Relief       | Ruggedness Number | _Rn_     | _Bh × Dd_          | Product of relief and drainage density.                                   | Strahler (1954)      |
 | Relief       | Dissection Index | _Di_      | _(Emax - Emin) / Emax_           | Ratio of relief to perimeter.                                             | Nir Dov (1957)      |
-| Relief       | Gradient Ratio | _Gr_       | _Bh / Lch_         | Ratio of relief to main channel length.                                   |  Sreedevi (2005)  |
+| Relief       | Gradient Ratio | _Gr_       | _(Relief source - Relief mouth) / Lch_         | Ratio between the difference in altitude of the main channel and its length.                                   |  Sreedevi (2005)  |
 
 
 ## Elevation - Area - Volume
