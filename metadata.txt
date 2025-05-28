@@ -6,7 +6,7 @@
 name=Drainage Basin Geomorphology
 qgisMinimumVersion=3.40
 description=This plugin provides tools for geomorphological analysis in drainage basins.
-version=0.2
+version=0.3
 author=João Vitor Pimenta
 email=jvpjoaopimenta@gmail.com
 
@@ -21,6 +21,10 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        0.3
+        -refactors the code, greatly increases the performance of the tools
+        -fixes formula information in README
+
         0.2
         -adds the contour lines as input to the EAV and hypsometric curve tools
         -adds EAV graphs as output in EAV tool
