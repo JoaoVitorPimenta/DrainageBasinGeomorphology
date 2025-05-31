@@ -209,6 +209,8 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         <strong>Graph: </strong>Graph containing the hypsometric curves of all river basins for comparison between them.
 
         The use of a projected CRS is recommended.
+                       
+        If you have any questions, suggestions, errors or need information/training about the plugin, please contact: jvpjoaopimentadev@gmail.com
                 </p>
             </body>
         </html>

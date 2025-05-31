@@ -197,6 +197,8 @@ class EAVCalc(QgsProcessingAlgorithm):
         <strong>Graphs: </strong>Folder containing the elevation-area-volume graph for each basin individually.        
 
         The use of a projected CRS is recommended.
+                       
+        If you have any questions, suggestions, errors or need information/training about the plugin, please contact: jvpjoaopimentadev@gmail.com
                 </p>
             </body>
         </html>

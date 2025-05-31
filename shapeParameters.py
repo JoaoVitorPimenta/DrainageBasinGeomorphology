@@ -169,6 +169,8 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
         
         The use of a projected CRS is recommended.
+                       
+        If you have any questions, suggestions, errors or need information/training about the plugin, please contact: jvpjoaopimentadev@gmail.com
                 </p>
             </body>
         </html>

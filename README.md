@@ -111,6 +111,9 @@ to my parents, friends and teachers.
 
 " If I have seen farther than others, it is because I have stood on the shoulders of giants. " - Isaac Newton
 
+## Contact
+If you have any questions, suggestions, errors or need information/training about the plugin, please contact: jvpjoaopimentadev@gmail.com
+
 ## License
 [GNU General Public License, version 3](https://www.gnu.org/licenses/gpl-3.0.html)
 
