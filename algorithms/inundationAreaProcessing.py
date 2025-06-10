@@ -172,10 +172,10 @@ def calcInundationArea(arrayInsideBasin, waterElevation, waterHeight, waterArea,
     inundatedBand.SetNoDataValue(noDataValue)
 
     driver = ogr.GetDriverByName("Memory")
-    shapefile_ds = driver.CreateDataSource('memory')
+    shapefileDs = driver.CreateDataSource('memory')
 
     srs = osr.SpatialReference(wkt=proj)
-    layer = shapefile_ds.CreateLayer("vetor", srs=srs, geom_type=ogr.wkbPolygon)
+    layer = shapefileDs.CreateLayer("vetor", srs=srs, geom_type=ogr.wkbPolygon)
 
     fieldDefn = ogr.FieldDefn("value", ogr.OFTInteger)
     layer.CreateField(fieldDefn)
