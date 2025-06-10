@@ -534,7 +534,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
     verifyLibs()
 
     feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount() + 1
+    total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     gdfConcatenateds = []
@@ -605,14 +605,13 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
     gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfConcatenateds, ignore_index=True))
     gdfFinal.to_csv(path, index=False, header=False)
 
-    feedback.setProgress(100)
     return
 
 def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
     verifyLibs()
 
     feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount() + 1
+    total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     gdfsLinear = []
@@ -667,14 +666,13 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
     gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsLinear, ignore_index=True))
     gdfFinal.to_csv(path, index=False, header=False)
 
-    feedback.setProgress(100)
     return
 
 def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
     verifyLibs()
 
     feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount() + 1
+    total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     gdfsShape = []
@@ -714,14 +712,13 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
     gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsShape, ignore_index=True))
     gdfFinal.to_csv(path, index=False, header=False)
 
-    feedback.setProgress(100)
     return
 
 def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback):
     verifyLibs()
 
     feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount() + 1
+    total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     gdfsRelief = []
@@ -777,7 +774,6 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
     gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsRelief, ignore_index=True))
     gdfFinal.to_csv(path, index=False, header=False)
 
-    feedback.setProgress(100)
     return
 
 def runAllMorphometricParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback):

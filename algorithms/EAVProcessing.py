@@ -128,7 +128,7 @@ def runEAV(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback
     verifyLibs()
 
     feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount() + 1
+    total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     os.makedirs(pathHtml, exist_ok=True)
@@ -205,9 +205,8 @@ def runEAV(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback
 
     if feedback.isCanceled():
             return
-    with open(pathCsv, 'w', newline='') as arquivo:
-        writer = csv.writer(arquivo)
+    feedback.setProgressText('Basin '+str(basin.id())+' graph completed')
+    with open(pathCsv, 'w', newline='') as archive:
+        writer = csv.writer(archive)
         writer.writerows(itertools.zip_longest(*listsWithData))
-
-    feedback.setProgress(100)
 

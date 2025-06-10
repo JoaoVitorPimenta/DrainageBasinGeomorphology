@@ -158,7 +158,7 @@ def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteVa
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
 
     feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount() + 1
+    total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     fig = go.Figure()
@@ -219,5 +219,3 @@ def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteVa
     if feedback.isCanceled():
             return
     exportHypsometricCurves(listsWithData,pathCsv)
-
-    feedback.setProgress(100)
