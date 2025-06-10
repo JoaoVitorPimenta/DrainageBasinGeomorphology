@@ -228,7 +228,7 @@ class InundationCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Inundation area'
+        return 'Calculate inundated area'
 
     def displayName(self):
         '''
@@ -272,8 +272,9 @@ class InundationCalc(QgsProcessingAlgorithm):
 
         The use of a projected CRS is recommended.
                        
-        If you have any questions, suggestions, errors or need information/training about the plugin, please contact: jvpjoaopimentadev@gmail.com
-                </p>
+        If you need more information about how the plugin works, such as the calculations it performs, among other things, access: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
+        If you have found any bugs, errors or have any requests to make, among other things, please acess: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues
+        If you need training for the plugin, or want to contact the plugin author for any reason, send an email to: jvpjoaopimentadev@gmail.com                </p>
             </body>
         </html>
                     """)

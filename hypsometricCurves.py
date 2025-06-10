@@ -199,18 +199,20 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates elevation - area - volume for each basin feature individually.               
+        This tool calculates hypsometric curve for each basin feature individually and plot a graph to compare them.              
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins.
         <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
         <strong>Hypsometric curve data: </strong>File with elevation and accumulated area data used to form the hypsometric curve.
-        <strong>Graph: </strong>Graph containing the hypsometric curves of all river basins for comparison between them.
+        <strong>Graph: </strong>Graph containing the hypsometric curves of all drainage basins for comparison between them.
 
         The use of a projected CRS is recommended.
                        
-        If you have any questions, suggestions, errors or need information/training about the plugin, please contact: jvpjoaopimentadev@gmail.com
+        If you need more information about how the plugin works, such as the calculations it performs, among other things, access: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
+        If you have found any bugs, errors or have any requests to make, among other things, please acess: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues
+        If you need training for the plugin, or want to contact the plugin author for any reason, send an email to: jvpjoaopimentadev@gmail.com
                 </p>
             </body>
         </html>

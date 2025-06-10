@@ -102,6 +102,25 @@ This tool calculates shape parameters of the watershed as shown in the table bel
 **Output:**  
 **Shape parameters** - Shape parameters calculated, for each basin, in .csv.
 
+## Calculate inundated area
+This tool calculates the inundated area from the EAV curve, it uses the elevation associated with a user-given curve parameter, and then plots the area below that elevation.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Parameter** - The elevation - area - volume graph variable to be used to calculate the elevation of the inundated area.
+
+**Parameter value** - The numerical value of the elevation - area - volume graph variable to be used to calculate the elevation of the inundated area.
+
+**Nodata value for output band** - The NoDataValue value of the output raster layer band.
+
+**Output:**  
+**Inundation raster** - The raster of the inundated area, the raster band represents the depth related to the inundated area, that is, the bathymetry.
+
+**Inundation vector** - The vector with the inundated area, in the vector attribute table has the EAV curve variables related to the parameter provided by the user.
+
 ## Recommendations 
 All inputs must be in a projected coordinate system for consistent results.
 
@@ -185,6 +204,22 @@ If the user inputs contour lines, the values ​​will be calculated taking int
 Strahler (1952)
 
 If the user inputs contour lines, the values ​​will be calculated taking into account all DEM elevations, and then area values ​​will be interpolated for the contour lines the user input.
+
+## Inundated area
+
+| Elevation (m)     | Area (m2) | Volume (m3) |
+|-------------|----------------|---------------------|
+| Fist elevation from curve     | First area from curve            | First volume from curve                 |
+| ...                           | ...                              | ... |
+| Interpolated elevation or elevation provided by the user (if the user has chosen the elevation parameter)   | Interpolated area or area provided by the user (if the user has chosen the area parameter) | Interpolated volume or volume provided by the user (if the user has chosen the volume parameter) |
+| ...                           | ...                              | ... |
+| Last elevation from curve     | Last area from curve             | Last volume from curve 
+
+The inundated area, in both raster and vector layers, is the area of ​​pixels below the interpolated or given elevation. (Bathymetry)
+
+The inundated raster layer band is the elevation value of the pixels minus the lowest elevation value within the basin.
+
+The attribute table of the vector layer contains information about all the parameters associated with what was provided by the user. (Example: if the volume of X is provided, the attribute table will have the height, elevation and interpolated area for X)
 
 ## References
 - Horton, R. E. (1932). Drainage-basin characteristics. Transactions of the American Geophysical Union, 13, 350–361.
