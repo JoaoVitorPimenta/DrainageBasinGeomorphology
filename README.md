@@ -215,7 +215,7 @@ If the user inputs contour lines, the values ​​will be calculated taking int
 | ...                           | ...                              | ... |
 | Last elevation from curve     | Last area from curve             | Last volume from curve 
 
-The inundated area, in both raster and vector layers, is the area of ​​pixels below the interpolated or given elevation. (Bathymetry)
+The inundated area, in both raster and vector layers, is the area of ​​pixels below the interpolated or given elevation (bathymetry).
 
 The inundated raster layer band is the elevation value of the pixels minus the lowest elevation value within the basin.
 
