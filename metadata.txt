@@ -37,7 +37,7 @@ changelog=
         -Plugin experimental version release
 
 # Tags are comma separated with spaces allowed
-tags=basin, drainage, geomorphology, hydrology, morphology, morphometric, morphometry, watershed
+tags=basin, drainage, geomorphology, hydrology, morphology, morphometric, morphometry, watershed, inundation
 
 homepage=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
 category=Analysis
