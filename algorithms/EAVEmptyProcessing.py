@@ -125,8 +125,6 @@ def EAVEmptyprocessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,f
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
 def runEAVEmpty(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback):
-    verifyLibs()
-
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
