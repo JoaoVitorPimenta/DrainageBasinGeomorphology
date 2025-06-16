@@ -181,15 +181,29 @@ If you have any questions, suggestions, errors or need information/training abou
 | Relief       | Gradient Ratio | _Gr_       | _(Relief source - Relief mouth) / Lch_         | Ratio between the difference in altitude of the main channel and its length.                                   |  Sreedevi (2005)  |
 
 
-## Elevation - Area - Volume
+## Elevation - area - volume empty
 
 | Elevation (m)     | Area (m2) | Volume (m3) |
 |-------------|----------------|---------------------|
-| Pixel elevation data     | Pixel elevation count × (Pixel width × Pixel height) (cumulative)            | Elevation difference × area mean (trapezoid rule) (cumulative)                 |
+| Pixel elevation data crescent     | Pixel elevation count × (Pixel width × Pixel height) (cumulative)            | Elevation difference × area mean (trapezoid rule) (cumulative)                 |
 
 Strahler (1952)
 
 If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area and volume values ​​will be interpolated to the contour lines input by the user.
+
+This tool calculates the empty volume of the DEM by elevation, it is analogous to the "fill" volume of other tools.
+
+## Elevation - area - volume solid
+
+| Elevation (m)     | Area (m2) | Volume (m3) |
+|-------------|----------------|---------------------|
+| Pixel elevation data decrescent     | Pixel elevation count × (Pixel width × Pixel height) (cumulative)            | Absolute elevation difference × area mean (trapezoid rule) (cumulative)                 |
+
+Strahler (1952)
+
+If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area and volume values ​​will be interpolated to the contour lines input by the user.
+
+This tool calculates the solid volume of the DEM by elevation, it is analogous to the "cut" volume of other tools.
 
 ## Hypsometric curve
 
