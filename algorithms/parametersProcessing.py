@@ -62,26 +62,25 @@ def getStreamsInsideBasin(streamLayer, drainageBasin,feedback):
 
     return streamsWithin
 def createGdfStream(streams):
-    geometries_2d = []
-    
+    geometries2d = []
+
     for feat in streams:
         geom = feat.geometry()
-        
-        geom_2d = QgsGeometry(geom.constGet().clone())
-        if geom_2d.constGet().is3D():
-            geom_2d.get().dropZValue()
-        if geom_2d.constGet().isMeasure():
-            geom_2d.get().dropMValue()
-        
-        if not geom_2d.isMultipart():
-            geometries_2d.append(geom_2d)
+
+        if geom.constGet().is3D():
+            geom.get().dropZValue()
+        if geom.constGet().isMeasure():
+            geom.get().dropMValue()
+
+        if not geom.isMultipart():
+            geometries2d.append(geom)
         else:
-            multi_geom = geom_2d.asGeometryCollection()
-            if multi_geom:
-                geometries_2d.append(multi_geom[0])
+            multiGeom = geom.asGeometryCollection()
+            if multiGeom:
+                geometries2d.append(multiGeom[0])
 
     gdfStream = gpd.GeoDataFrame(
-        geometry=[g for g in geometries_2d if not g.isEmpty()]
+        geometry=geometries2d
     )
     return gdfStream
 def obtainFirstAndLastPoint(gdfStream):
