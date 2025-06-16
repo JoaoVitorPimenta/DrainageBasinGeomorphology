@@ -30,7 +30,7 @@ __copyright__ = '(C) 2025 by João Vitor Pimenta'
 
 __revision__ = '$Format:%H$'
 
-from qgis.core import QgsPointXY, QgsProcessingException
+from qgis.core import QgsProcessingException
 from collections import Counter
 import plotly.graph_objects as go
 import numpy as np
