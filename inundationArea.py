@@ -264,7 +264,7 @@ class InundationCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
-        <strong>Parameter: </strong>It is the parameter of the EAV curve to be used to calculate the inundated area.
+        <strong>Parameter: </strong>It is the parameter of the EAV (empty) curve to be used to calculate the inundated area.
         <strong>Parameter value: </strong>It is the numerical value of the parameter.
         <strong>Nodata value for output band: </strong>The value of nodata values ​​for the output layers.
         <strong>Inundation raster: </strong>Path to the folder containing the inundated area rasters, the band represents the depth (bathymetry).

@@ -187,14 +187,14 @@ class EAVSolidCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates elevation - area - volume for each basin feature individually.               
+        This tool calculates elevation - area - volume (solid) for each basin feature individually.               
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
-        <strong>Elevation area volume data: </strong>File with elevation - area - volume data calculated individually for each basin.
-        <strong>Graphs: </strong>Folder containing the elevation-area-volume graph for each basin individually.        
+        <strong>Elevation area volume data: </strong>File with elevation - area - volume (solid) data calculated individually for each basin.
+        <strong>Graphs: </strong>Folder containing the elevation-area-volume (solid) graph for each basin individually.        
 
         The use of a projected CRS is recommended.
 

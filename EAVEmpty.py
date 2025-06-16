@@ -187,17 +187,17 @@ class EAVEmptyCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates elevation - area - volume for each basin feature individually.               
+        This tool calculates elevation - area - volume (empty) for each basin feature individually.               
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
-        <strong>Elevation area volume data: </strong>File with elevation - area - volume data calculated individually for each basin.
-        <strong>Graphs: </strong>Folder containing the elevation-area-volume graph for each basin individually.        
+        <strong>Elevation area volume data: </strong>File with elevation - area - volume (empty) data calculated individually for each basin.
+        <strong>Graphs: </strong>Folder containing the elevation-area-volume (empty) graph for each basin individually.        
 
         The use of a projected CRS is recommended.
-                       
+
         If you need more information about how the plugin works, such as the calculations it performs, among other things, access: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
         If you have found any bugs, errors or have any requests to make, among other things, please acess: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues
         If you need training for the plugin, or want to contact the plugin author for any reason, send an email to: jvpjoaopimentadev@gmail.com                </p>
