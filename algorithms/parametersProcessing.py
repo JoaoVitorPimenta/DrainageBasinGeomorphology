@@ -30,20 +30,12 @@ __copyright__ = '(C) 2025 by João Vitor Pimenta'
 
 __revision__ = '$Format:%H$'
 
-from shapely.geometry import Point, LineString
-from shapely.wkt import loads
-from shapely import get_point, force_2d
 from math import pi
-from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException
+from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException, QgsGeometry
 import geopandas as gpd
 from osgeo import gdal, ogr
 
 def verifyLibs():
-        try:
-            import shapely
-        except ImportError:
-            raise QgsProcessingException('Shapely library not found, please install it and try again.')
-
         try:
             import numpy
         except ImportError:
@@ -70,14 +62,34 @@ def getStreamsInsideBasin(streamLayer, drainageBasin,feedback):
 
     return streamsWithin
 def createGdfStream(streams):
-    streamsGeom = [loads(feat.geometry().asWkt()) for feat in streams]
-    streamsGeom2D = force_2d(streamsGeom)
-    gdfStream = gpd.GeoDataFrame(geometry=[streamLine.geoms[0] for streamLine in streamsGeom2D])
-    return gdfStream
+    geometries_2d = []
+    
+    for feat in streams:
+        geom = feat.geometry()
+        
+        geom_2d = QgsGeometry(geom.constGet().clone())
+        if geom_2d.constGet().is3D():
+            geom_2d.get().dropZValue()
+        if geom_2d.constGet().isMeasure():
+            geom_2d.get().dropMValue()
+        
+        if not geom_2d.isMultipart():
+            geometries_2d.append(geom_2d)
+        else:
+            multi_geom = geom_2d.asGeometryCollection()
+            if multi_geom:
+                geometries_2d.append(multi_geom[0])
 
+    gdfStream = gpd.GeoDataFrame(
+        geometry=[g for g in geometries_2d if not g.isEmpty()]
+    )
+    return gdfStream
 def obtainFirstAndLastPoint(gdfStream):
-    gdfStream['first'] = get_point(gdfStream.geometry, 0)
-    gdfStream['last'] = get_point(gdfStream.geometry, -1)
+    #gdfStream['first'] = get_point(gdfStream.geometry, 0)
+    #gdfStream['last'] = get_point(gdfStream.geometry, -1)
+    coords = gdfStream.geometry.apply(lambda geom: [geom.coords[0], geom.coords[-1]])
+    gdfStream['first'] = coords.str[0]
+    gdfStream['last'] = coords.str[1]
     return
 
 def createOrderColumn(gdfStream):
@@ -202,8 +214,12 @@ def calculateSinuosityIndex(gdfStream,gdfLinear):
     firstPoint = filterMaxOrder.iloc[-1]['last']
     lastPoint = filterMaxOrder.iloc[0]['first']
 
-    straightLine = LineString([firstPoint, lastPoint])
-    straightLineLength = straightLine.length/1000
+    straightLine = QgsGeometry.fromPolylineXY([
+        QgsPointXY(firstPoint[0], firstPoint[1]),
+        QgsPointXY(lastPoint[0], lastPoint[1])
+    ])
+
+    straightLineLength = straightLine.length()/1000
 
     totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream Length Total (km)'].values[0]
     sinuosityIndex = totalLength/straightLineLength
@@ -238,29 +254,29 @@ def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
     firstPoint = filterMaxOrder.iloc[-1]['last']
     lastPoint = filterMaxOrder.iloc[0]['first']
 
-    dx = lastPoint.x - firstPoint.x
-    dy = lastPoint.y - firstPoint.y
+    dx = lastPoint[0] - firstPoint[1]
+    dy = lastPoint[1] - firstPoint[1]
 
     minX, minY, maxX, maxY = gdfShape.total_bounds
     maxDimBasin = max(maxX - minX, maxY - minY)
     mult = maxDimBasin*10
 
-    firstExtended = Point(firstPoint.x - dx * mult, firstPoint.y - dy * mult)
-    lastExtended = Point(lastPoint.x + dx * mult, lastPoint.y + dy * mult)
+    firstExtended = QgsPointXY(firstPoint[0] - dx * mult, firstPoint[1] - dy * mult)
+    lastExtended = QgsPointXY(lastPoint[0] + dx * mult, lastPoint[1] + dy * mult)
 
-    parallelLine = LineString([firstExtended, lastExtended])
-    intersection = parallelLine.intersection(gdfShape.boundary)
+    parallelLine = QgsGeometry.fromPolylineXY([firstExtended, lastExtended])
+    intersection = parallelLine.intersection(QgsGeometry.fromWkt(gdfShape.boundary.iloc[0].wkt))
 
-    if intersection.iloc[0].is_empty:
+    if intersection.isEmpty():
         feedback.pushWarning('A parallel line between higher order channels does not intersect the perimeter of the basin'+str(basin.id())+', the drainage network has errors!')
         gdfShape['Basin Length (Lg) (km)'] = None
         return
 
-    pointsIntersection = [p for p in intersection.iloc[0].geoms]
-    pointsOrdered = sorted(pointsIntersection, key=lambda p: p.y)
+    pointsIntersection = intersection.asMultiPoint()
+    pointsOrdered = sorted(pointsIntersection, key=lambda p: p.y())
 
-    basinLengthLine = LineString(pointsOrdered)
-    basinLength = basinLengthLine.length
+    basinLengthLine = QgsGeometry.fromPolylineXY(pointsOrdered)
+    basinLength = basinLengthLine.length()
     gdfShape['Basin Length (Lg) (km)'] = basinLength/1000
     return
 
@@ -450,8 +466,8 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief):
     firstPoint = filterMaxOrder.iloc[-1]['last']
     lastPoint = filterMaxOrder.iloc[0]['first']
     
-    firstPointQgs = QgsPointXY(firstPoint.x, firstPoint.y)
-    lastPointQgs = QgsPointXY(lastPoint.x, lastPoint.y)
+    firstPointQgs = QgsPointXY(firstPoint[0], firstPoint[1])
+    lastPointQgs = QgsPointXY(lastPoint[0], lastPoint[1])
 
     identificatorFirst = dem.dataProvider().identify(firstPointQgs, QgsRaster.IdentifyFormatValue)
     identificatorLast = dem.dataProvider().identify(lastPointQgs, QgsRaster.IdentifyFormatValue)
