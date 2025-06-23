@@ -84,8 +84,6 @@ def createGdfStream(streams):
     )
     return gdfStream
 def obtainFirstAndLastPoint(gdfStream):
-    #gdfStream['first'] = get_point(gdfStream.geometry, 0)
-    #gdfStream['last'] = get_point(gdfStream.geometry, -1)
     coords = gdfStream.geometry.apply(lambda geom: [geom.coords[0], geom.coords[-1]])
     gdfStream['first'] = coords.str[0]
     gdfStream['last'] = coords.str[1]
@@ -141,6 +139,90 @@ def fillOrder(gdfStream):
 
     for index in gdfStream.index:
         findOrder(gdfStream, streamMap, index)
+
+def mergeStreams(gdf):
+    if gdf.empty:
+        return
+
+    gdf['processed'] = False
+    newRows = []
+    indicesToRemove = []
+
+    for idx in gdf.index:
+        if gdf.loc[idx, 'processed']:
+            continue
+
+        currentIdx = idx
+        chain = [currentIdx]
+        gdf.loc[currentIdx, 'processed'] = True
+        currentOrder = gdf.loc[currentIdx, 'order']
+
+        while True:
+            currentStart = gdf.loc[currentIdx, 'first']
+            candidates = gdf[
+                (gdf['last'] == currentStart) & 
+                (gdf['order'] == currentOrder) & 
+                (~gdf['processed'])
+            ]
+
+            if len(candidates) != 1:
+                break
+
+            nextIdx = candidates.index[0]
+            chain.insert(0, nextIdx)
+            gdf.loc[nextIdx, 'processed'] = True
+            currentIdx = nextIdx
+
+        currentIdx = idx
+
+        while True:
+            currentEnd = gdf.loc[currentIdx, 'last']
+            candidates = gdf[
+                (gdf['first'] == currentEnd) & 
+                (gdf['order'] == currentOrder) & 
+                (~gdf['processed'])
+            ]
+
+            if len(candidates) != 1:
+                break
+
+            nextIdx = candidates.index[0]
+            chain.append(nextIdx)
+            gdf.loc[nextIdx, 'processed'] = True
+            currentIdx = nextIdx
+
+        if len(chain) > 1:
+            geoms = gdf.loc[chain, 'geometry'].tolist()
+
+            allCoords = []
+            for i, geom in enumerate(geoms):
+                if i == 0:
+                    allCoords.extend(geom.coords[:])
+                else:
+                    allCoords.extend(geom.coords[1:])
+            
+            newGeom = geoms[0].__class__(allCoords)
+            
+            newRows.append({
+                'geometry': newGeom,
+                'first': allCoords[0],
+                'last': allCoords[-1],
+                'order': currentOrder
+            })
+            
+            indicesToRemove.extend(chain)
+
+    gdf.drop(indicesToRemove, inplace=True)
+    
+    for row in newRows:
+        newIndex = gdf.index.max() + 1 if not gdf.empty else 0
+        gdf.loc[newIndex] = row
+    
+    gdf.drop(columns=['processed'], inplace=True, errors='ignore')
+    
+    if not gdf.index.is_unique:
+        gdf.reset_index(drop=True, inplace=True)
+    return
 
 def calculateStreamLength(gdfStream):
     gdfStream['length'] = gdfStream.geometry.length
@@ -563,6 +645,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
         obtainFirstAndLastPoint(gdfStream)
         createOrderColumn(gdfStream)
         fillOrder(gdfStream)
+        mergeStreams(gdfStream)
         calculateStreamLength(gdfStream)
         if feedback.isCanceled():
             return
