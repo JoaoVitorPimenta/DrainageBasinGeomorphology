@@ -84,6 +84,8 @@ def createGdfStream(streams):
     )
     return gdfStream
 def obtainFirstAndLastPoint(gdfStream):
+    if gdfStream.empty:
+        return
     coords = gdfStream.geometry.apply(lambda geom: [geom.coords[0], geom.coords[-1]])
     gdfStream['first'] = coords.str[0]
     gdfStream['last'] = coords.str[1]
@@ -628,8 +630,6 @@ def formatGdfRelief(gdfRelief,basin):
     return gdfReliefFloat
 
 def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback):
-    verifyLibs()
-
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -706,8 +706,6 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
     return
 
 def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
-    verifyLibs()
-
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -767,8 +765,6 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
     return
 
 def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
-    verifyLibs()
-
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -813,8 +809,6 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
     return
 
 def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback):
-    verifyLibs()
-
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
