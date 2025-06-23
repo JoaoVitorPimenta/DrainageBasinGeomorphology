@@ -38,9 +38,9 @@ from .linearParameters import linearParametersCalc
 from .shapeParameters import shapeParametersCalc
 from .reliefParameters import reliefParametersCalc
 from .hypsometricCurves import hypsometricCurveCalc
-from .EAVEmpty import EAVEmptyCalc
-from .EAVSolid import EAVSolidCalc
-from .EAVCutFill import EAVCutFillCalc
+from .EAVBelow import EAVBelowCalc
+from .EAVAbove import EAVAboveCalc
+from .EAVAboveBelow import EAVAboveBelowCalc
 from .inundationArea import InundationCalc
 
 class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
@@ -67,9 +67,9 @@ class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
         self.addAlgorithm(shapeParametersCalc())
         self.addAlgorithm(reliefParametersCalc())
         self.addAlgorithm(hypsometricCurveCalc())
-        self.addAlgorithm(EAVEmptyCalc())
-        self.addAlgorithm(EAVSolidCalc())
-        self.addAlgorithm(EAVCutFillCalc())
+        self.addAlgorithm(EAVBelowCalc())
+        self.addAlgorithm(EAVAboveCalc())
+        self.addAlgorithm(EAVAboveBelowCalc())
         self.addAlgorithm(InundationCalc())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())

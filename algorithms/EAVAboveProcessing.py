@@ -38,6 +38,7 @@ from osgeo import gdal, ogr
 import numpy as np
 import csv
 import itertools
+import bisect
 import os
 
 def verifyLibs():
@@ -62,7 +63,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def EAVSolidProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback):
+def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -99,10 +100,28 @@ def EAVSolidProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,f
     pixelHeight = abs(gt[5])
     areas = np.array(countElevations) * (pixelWidth * pixelHeight)
     cumulativeAreas = np.cumsum(areas)
+    minElevation = min(elevations)
 
-    deltaElev = abs(np.diff(elevations))
-    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
-    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+    if baseLevel != 0:
+        if baseLevel not in elevations:
+            elevationsWithBaseLevel = sorted(elevations + [baseLevel],reverse=True)
+
+            if distanceContour == 0:
+                cumulativeAreas = np.interp(elevationsWithBaseLevel, elevations[::-1], cumulativeAreas[::-1])
+                elevations = elevationsWithBaseLevel
+
+            if distanceContour != 0:
+                elevations = elevationsWithBaseLevel
+                insertIndex = bisect.bisect_left(elevations, baseLevel)
+                if baseLevel < minElevation:
+                    cumulativeAreas = np.insert(cumulativeAreas, insertIndex, cumulativeAreas[0])
+                if baseLevel > minElevation:
+                    cumulativeAreas = np.insert(cumulativeAreas, insertIndex, np.nan)
+
+        negElevations = [-e for e in elevations]
+        index = bisect.bisect_right(negElevations, -baseLevel)
+        elevations = elevations[:index]
+        cumulativeAreas = cumulativeAreas[:index]
 
     if distanceContour != 0:
         minElevation = min(elevations)
@@ -113,18 +132,20 @@ def EAVSolidProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,f
         if maxElevation not in elevationCurves:
             elevationCurves = np.append(elevationCurves,maxElevation)
 
-        interpAreas = np.interp(elevationCurves, elevations, cumulativeAreas)
-        interpVolumes = np.interp(elevationCurves, elevations, cumulativeVolumes)
+        interpAreas = np.interp(elevationCurves, elevations[::-1], cumulativeAreas[::-1])
 
-        elevations = elevationCurves.tolist()
-        cumulativeAreas = interpAreas
-        cumulativeVolumes = interpVolumes
+        elevations = elevationCurves[::-1].tolist()
+        cumulativeAreas = interpAreas[::-1]
+
+    deltaElev = abs(np.diff(elevations))
+    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
+    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
 
     cumulativeAreasList = cumulativeAreas.tolist()
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVSolid(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback):
+def runEAVAbove(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,feedback):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -139,7 +160,7 @@ def runEAVSolid(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,fee
         if feedback.isCanceled():
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVSolidProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,feedback)
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
         cumulativeAreas.insert(0,'Area basin '+str(basin.id()))

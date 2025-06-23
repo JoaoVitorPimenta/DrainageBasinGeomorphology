@@ -39,10 +39,11 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterNumber,
-                       QgsProcessingParameterFolderDestination)
-from .algorithms.EAVSolidProcessing import runEAVSolid, verifyLibs
+                       QgsProcessingParameterFolderDestination,
+                       QgsProcessingParameterBoolean)
+from .algorithms.EAVAboveBelowProcessing import runEAVAboveBelow, verifyLibs
 
-class EAVSolidCalc(QgsProcessingAlgorithm):
+class EAVAboveBelowCalc(QgsProcessingAlgorithm):
     '''
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -64,6 +65,9 @@ class EAVSolidCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
+    BASE_LEVEL_MINIMUM = 'BASE_LEVEL_MINIMUM'
+    BASE_LEVEL_MAXIMUM = 'BASE_LEVEL_MAXIMUM'
+    SUBTRACTS_VOLUME_BELOW = 'SUBTRACTS_VOLUME_BELOW'
     GRAPHS = 'GRAPHS'
 
 
@@ -101,6 +105,36 @@ class EAVSolidCalc(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.BASE_LEVEL_MINIMUM,
+                self.tr('Minimum level'),
+                type=QgsProcessingParameterNumber.Double,
+                optional=True,
+                defaultValue=None,
+                minValue=0
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.BASE_LEVEL_MAXIMUM,
+                self.tr('Maximum level'),
+                type=QgsProcessingParameterNumber.Double,
+                optional=True,
+                defaultValue=None,
+                minValue=0
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.SUBTRACTS_VOLUME_BELOW,
+                self.tr('Subtracts values below from values above, instead of subtracting values above from values below'),
+                defaultValue=False,
+            )
+        )
+
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
@@ -132,12 +166,18 @@ class EAVSolidCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
+        minLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL_MINIMUM, context)
+
+        maxLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL_MAXIMUM, context)
+
+        subtractsBelow = self.parameterAsBoolean(parameters, self.SUBTRACTS_VOLUME_BELOW, context)
+
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
         pathGraph = self.parameterAsString(parameters, self.GRAPHS, context)
 
         verifyLibs()
-        runEAVSolid(basinSource,demLayer,pathData,pathGraph,distanceCurves,feedback)
+        runEAVAboveBelow(basinSource,demLayer,pathData,pathGraph,distanceCurves,minLevel,maxLevel,subtractsBelow,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -156,7 +196,7 @@ class EAVSolidCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate elevation-area-volume solid'
+        return 'Calculate elevation-area-volume above and below'
 
     def displayName(self):
         '''
@@ -187,14 +227,14 @@ class EAVSolidCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates elevation - area - volume (solid) for each basin feature individually.               
+        This tool calculates elevation - area - volume (above/below) for each basin feature individually.               
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
-        <strong>Elevation area volume data: </strong>File with elevation - area - volume (solid) data calculated individually for each basin.
-        <strong>Graphs: </strong>Folder containing the elevation-area-volume (solid) graph for each basin individually.        
+        <strong>Elevation area volume data: </strong>File with elevation - area - volume (above/below) data calculated individually for each basin.
+        <strong>Graphs: </strong>Folder containing the elevation-area-volume (above/below) graph for each basin individually.        
 
         The use of a projected CRS is recommended.
 
@@ -209,4 +249,4 @@ class EAVSolidCalc(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return EAVSolidCalc()
+        return EAVAboveBelowCalc()

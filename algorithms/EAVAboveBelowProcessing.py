@@ -38,6 +38,7 @@ from osgeo import gdal, ogr
 import numpy as np
 import csv
 import itertools
+import bisect
 import os
 
 def verifyLibs():
@@ -62,7 +63,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def EAVCutFillProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback):
+def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,minimumLevel,maximumLevel,subtractsBelow,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -93,22 +94,119 @@ def EAVCutFillProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour
     counterValuesFillOrdered = sorted(counterValues.items())
     counterValuesCutOrdered = sorted(counterValues.items(),reverse=True)
 
-    elevations = [item[0] for item in counterValuesFillOrdered]
+    elevationsFill = [item[0] for item in counterValuesFillOrdered]
+    originalElevationsFill = [item[0] for item in counterValuesFillOrdered]
     countElevations = [item[1] for item in counterValuesFillOrdered]
 
     elevationsCut = [item[0] for item in counterValuesCutOrdered]
+    originalElevationsCut = [item[0] for item in counterValuesCutOrdered]
     countElevationsCut = [item[1] for item in counterValuesCutOrdered]
 
     pixelWidth  = abs(gt[1])
     pixelHeight = abs(gt[5])
 
+    maxElevation = max(elevationsFill)
+    minElevation = min(elevationsFill)
+
     areasFill = np.array(countElevations) * (pixelWidth * pixelHeight)
+    originalCumulativeAreasFill = np.cumsum(areasFill)
     cumulativeAreasFill = np.cumsum(areasFill)
 
     areasCut = np.array(countElevationsCut) * (pixelWidth * pixelHeight)
+    originalCumulativeAreasFill = np.cumsum(areasCut)
     cumulativeAreasCut = np.cumsum(areasCut)
 
-    deltaElevFill = np.diff(elevations)
+    if maximumLevel != 0:
+        elevationsWithMaximumLevelFill = sorted(elevationsFill)
+        elevationsWithMaximumLevelCut = sorted(elevationsCut, reverse=True)
+        if maximumLevel not in elevationsFill:
+            elevationsWithMaximumLevelFill = sorted(elevationsFill + [maximumLevel])
+            elevationsWithMaximumLevelCut = sorted(elevationsCut + [maximumLevel], reverse=True)
+
+            if distanceContour == 0:
+                cumulativeAreasFill = np.interp(elevationsWithMaximumLevelFill, elevationsFill, cumulativeAreasFill)
+                cumulativeAreasCut = np.interp(elevationsWithMaximumLevelCut, elevationsCut[::-1], cumulativeAreasCut[::-1])
+
+            if distanceContour != 0:
+                insertIndexFill = bisect.bisect_right(elevationsFill, maximumLevel)
+                neg_elevations = [-e for e in elevationsWithMaximumLevelCut]
+                insetIndexCut = bisect.bisect_left(neg_elevations, -maximumLevel)
+
+                if maximumLevel > maxElevation:
+                    cumulativeAreasFill = np.insert(cumulativeAreasFill, insertIndexFill, cumulativeAreasFill[-1])
+                    cumulativeAreasCut = np.insert(cumulativeAreasCut, insetIndexCut, 0)
+                if maximumLevel < maxElevation:
+                    cumulativeAreasFill = np.insert(cumulativeAreasFill, insertIndexFill, np.nan)
+                    cumulativeAreasCut = np.insert(cumulativeAreasCut, insetIndexCut, np.nan)
+
+            indexCrescent = bisect.bisect_right(elevationsWithMaximumLevelFill, maximumLevel)
+
+            negElevations = [-e for e in elevationsWithMaximumLevelCut]
+            indexDecrescent = bisect.bisect_left(negElevations, -maximumLevel)
+
+            elevationsFill = elevationsWithMaximumLevelFill[:indexCrescent]
+            cumulativeAreasFill = cumulativeAreasFill[:indexCrescent]
+
+            elevationsCut = elevationsWithMaximumLevelCut[indexDecrescent:]
+            cumulativeAreasCut = cumulativeAreasCut[indexDecrescent:]
+
+    if minimumLevel != 0:
+        elevationsWithMaximumMinimumLevelCut = sorted(elevationsCut,reverse=True)
+        elevationsWithMaximumMinimumLevelFill = sorted(elevationsFill)
+        if minimumLevel not in elevationsCut:
+            elevationsWithMaximumMinimumLevelCut = sorted(elevationsCut + [minimumLevel],reverse=True)
+            elevationsWithMaximumMinimumLevelFill = sorted(elevationsFill + [minimumLevel])
+
+            if distanceContour == 0:
+                cumulativeAreasCut = np.interp(elevationsWithMaximumMinimumLevelCut, elevationsCut[::-1], cumulativeAreasCut[::-1])
+                cumulativeAreasFill = np.interp(elevationsWithMaximumMinimumLevelFill, elevationsFill, cumulativeAreasFill)
+
+            if distanceContour != 0:
+                insertIndexFill = bisect.bisect_left(elevationsFill, minimumLevel)
+                neg_elevations = [-e for e in elevationsWithMaximumLevelCut]
+                insetIndexCut = bisect.bisect_left(neg_elevations, -minimumLevel)
+                if minimumLevel < minElevation:
+                    cumulativeAreasCut = np.insert(cumulativeAreasCut, insetIndexCut, cumulativeAreasCut[-1])
+                    cumulativeAreasFill = np.insert(cumulativeAreasFill, insertIndexFill, 0)
+                if minimumLevel > minElevation:
+                    cumulativeAreasCut = np.insert(cumulativeAreasCut, insetIndexCut, np.nan)
+                    cumulativeAreasFill = np.insert(cumulativeAreasFill, insertIndexFill, np.nan)
+
+        indexCrescent = bisect.bisect_left(elevationsWithMaximumMinimumLevelFill, minimumLevel)
+
+        negElevations = [-e for e in elevationsWithMaximumMinimumLevelCut]
+        indexDecrescent = bisect.bisect_right(negElevations, -minimumLevel)
+
+        elevationsCut = elevationsWithMaximumMinimumLevelCut[:indexDecrescent]
+        cumulativeAreasCut = cumulativeAreasCut[:indexDecrescent]
+
+        elevationsFill = elevationsWithMaximumMinimumLevelFill[indexCrescent:]
+        cumulativeAreasFill = cumulativeAreasFill[indexCrescent:]
+
+    if distanceContour != 0:
+        minElevation = min(elevationsFill)
+        maxElevation = max(elevationsFill)
+
+        elevationCurvesFill = np.arange(minElevation, maxElevation, distanceContour)
+        if maxElevation not in elevationCurvesFill:
+            elevationCurvesFill = np.append(elevationCurvesFill,maxElevation)
+        interpAreasFill = np.interp(elevationCurvesFill, originalElevationsFill, originalCumulativeAreasFill, left=0)
+
+        elevationsFill = elevationCurvesFill.tolist()
+        cumulativeAreasFill = interpAreasFill
+
+        minElevation = min(elevationsCut)
+        maxElevation = max(elevationsCut)
+
+        elevationCurvesCut = np.arange(minElevation, maxElevation, distanceContour)
+        if maxElevation not in elevationCurvesCut:
+            elevationCurvesCut = np.append(elevationCurvesCut,maxElevation)
+        interpAreasCut = np.interp(elevationCurvesCut, originalElevationsCut[::-1], originalCumulativeAreasFill[::-1], right=0)
+
+        elevationsCut = elevationCurvesCut[::-1].tolist()
+        cumulativeAreasCut = interpAreasCut[::-1]
+
+    deltaElevFill = np.diff(elevationsFill)
     volumesFill = ((cumulativeAreasFill[1:] + cumulativeAreasFill[:-1])/2) * deltaElevFill
     cumulativeVolumesFill = np.concatenate(([0], np.cumsum(volumesFill)))
 
@@ -116,33 +214,24 @@ def EAVCutFillProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour
     volumesCut = ((cumulativeAreasCut[1:] + cumulativeAreasCut[:-1])/2) * deltaElevCut
     cumulativeVolumesCut = np.concatenate(([0], np.cumsum(volumesCut)))
 
-    cumulativeAreas = cumulativeAreasFill - cumulativeAreasCut[::-1]
-    cumulativeVolumes = cumulativeVolumesFill - cumulativeVolumesCut[::-1]
+    cumulativeAreas = cumulativeAreasCut[::-1] - cumulativeAreasFill
+    cumulativeVolumes = cumulativeVolumesCut[::-1] - cumulativeVolumesFill
 
-    elevationWithVolumeZero = np.interp(0, cumulativeVolumes, elevations)
+    elevationWithVolumeZero = np.interp(0, cumulativeVolumes[::-1], elevationsFill[::-1])
+
+    if subtractsBelow is True:
+        cumulativeAreas = cumulativeAreasFill - cumulativeAreasCut[::-1]
+        cumulativeVolumes = cumulativeVolumesFill - cumulativeVolumesCut[::-1]
+
+        elevationWithVolumeZero = np.interp(0, cumulativeVolumes, elevationsFill)
+
     feedback.pushInfo('The elevation for the cut/fill volume to be 0 in basin '+str(basin.id())+' is: '+str(elevationWithVolumeZero))
-
-    if distanceContour != 0:
-        minElevation = min(elevations)
-        maxElevation = max(elevations)
-
-        elevationCurves = np.arange(minElevation, maxElevation, distanceContour)
-
-        if maxElevation not in elevationCurves:
-            elevationCurves = np.append(elevationCurves,maxElevation)
-
-        interpAreas = np.interp(elevationCurves, elevations, cumulativeAreas)
-        interpVolumes = np.interp(elevationCurves, elevations, cumulativeVolumes)
-
-        elevations = elevationCurves.tolist()
-        cumulativeAreasFill = interpAreas
-        cumulativeVolumesFill = interpVolumes
 
     cumulativeAreasList = cumulativeAreas.tolist()
     cumulativeVolumesList = cumulativeVolumes.tolist()
-    return elevations, cumulativeAreasList, cumulativeVolumesList
+    return elevationsFill, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVCutFill(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback):
+def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,minimumLevel,maximumLevel,subtractsBelow,feedback):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -157,7 +246,7 @@ def runEAVCutFill(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,f
         if feedback.isCanceled():
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVCutFillProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,minimumLevel,maximumLevel,subtractsBelow,feedback)
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
         cumulativeAreas.insert(0,'Area basin '+str(basin.id()))

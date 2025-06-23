@@ -38,6 +38,7 @@ from osgeo import gdal, ogr
 import numpy as np
 import csv
 import itertools
+import bisect
 import os
 
 def verifyLibs():
@@ -62,7 +63,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def EAVEmptyprocessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback):
+def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -99,10 +100,27 @@ def EAVEmptyprocessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,f
     pixelHeight = abs(gt[5])
     areas = np.array(countElevations) * (pixelWidth * pixelHeight)
     cumulativeAreas = np.cumsum(areas)
+    maxElevation = max(elevations)
 
-    deltaElev = np.diff(elevations)
-    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
-    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+    if baseLevel != 0:
+        if baseLevel not in elevations:
+            elevationsWithBaseLevel = sorted(elevations + [baseLevel])
+
+            if distanceContour == 0:
+                cumulativeAreas = np.interp(elevationsWithBaseLevel, elevations, cumulativeAreas)
+                elevations = elevationsWithBaseLevel
+
+            if distanceContour != 0:
+                elevations = elevationsWithBaseLevel
+                insertIndex = bisect.bisect_left(elevations, baseLevel)
+                if baseLevel > maxElevation:
+                    cumulativeAreas = np.insert(cumulativeAreas, insertIndex, cumulativeAreas[-1])
+                if baseLevel < maxElevation:
+                    cumulativeAreas = np.insert(cumulativeAreas, insertIndex, np.nan)
+
+        index = bisect.bisect_right(elevations, baseLevel)
+        elevations = elevations[:index]
+        cumulativeAreas = cumulativeAreas[:index]
 
     if distanceContour != 0:
         minElevation = min(elevations)
@@ -114,17 +132,19 @@ def EAVEmptyprocessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,f
             elevationCurves = np.append(elevationCurves,maxElevation)
 
         interpAreas = np.interp(elevationCurves, elevations, cumulativeAreas)
-        interpVolumes = np.interp(elevationCurves, elevations, cumulativeVolumes)
 
         elevations = elevationCurves.tolist()
         cumulativeAreas = interpAreas
-        cumulativeVolumes = interpVolumes
+
+    deltaElev = np.diff(elevations)
+    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
+    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
 
     cumulativeAreasList = cumulativeAreas.tolist()
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVEmpty(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,feedback):
+def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,feedback):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -139,7 +159,7 @@ def runEAVEmpty(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,fee
         if feedback.isCanceled():
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVEmptyprocessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,feedback)
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
         cumulativeAreas.insert(0,'Area basin '+str(basin.id()))

@@ -40,9 +40,9 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterFolderDestination)
-from .algorithms.EAVEmptyProcessing import runEAVEmpty, verifyLibs
+from .algorithms.EAVAboveProcessing import runEAVAbove, verifyLibs
 
-class EAVEmptyCalc(QgsProcessingAlgorithm):
+class EAVAboveCalc(QgsProcessingAlgorithm):
     '''
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -64,6 +64,7 @@ class EAVEmptyCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
+    BASE_LEVEL = 'BASE_LEVEL'
     GRAPHS = 'GRAPHS'
 
 
@@ -101,6 +102,17 @@ class EAVEmptyCalc(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.BASE_LEVEL,
+                self.tr('Base level'),
+                type=QgsProcessingParameterNumber.Double,
+                optional=True,
+                defaultValue=None,
+                minValue=0
+            )
+        )
+
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
@@ -132,12 +144,14 @@ class EAVEmptyCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
+        baseLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL, context)
+
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
         pathGraph = self.parameterAsString(parameters, self.GRAPHS, context)
 
         verifyLibs()
-        runEAVEmpty(basinSource,demLayer,pathData,pathGraph,distanceCurves,feedback)
+        runEAVAbove(basinSource,demLayer,pathData,pathGraph,distanceCurves,baseLevel,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -156,7 +170,7 @@ class EAVEmptyCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate elevation-area-volume empty'
+        return 'Calculate elevation-area-volume above'
 
     def displayName(self):
         '''
@@ -187,14 +201,14 @@ class EAVEmptyCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates elevation - area - volume (empty) for each basin feature individually.               
+        This tool calculates elevation - area - volume (above) for each basin feature individually.               
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
-        <strong>Elevation area volume data: </strong>File with elevation - area - volume (empty) data calculated individually for each basin.
-        <strong>Graphs: </strong>Folder containing the elevation-area-volume (empty) graph for each basin individually.        
+        <strong>Elevation area volume data: </strong>File with elevation - area - volume (above) data calculated individually for each basin.
+        <strong>Graphs: </strong>Folder containing the elevation-area-volume (above) graph for each basin individually.        
 
         The use of a projected CRS is recommended.
 
@@ -209,4 +223,4 @@ class EAVEmptyCalc(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return EAVEmptyCalc()
+        return EAVAboveCalc()
