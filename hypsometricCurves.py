@@ -65,6 +65,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     ABSOLUTE_VALUES = 'ABSOLUTE_VALUES'
+    AREA_BELOW = 'AREA_BELOW'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
 
     def initAlgorithm(self, config):
@@ -109,6 +110,14 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.AREA_BELOW,
+                self.tr('Count area below elevation, instead of above'),
+                defaultValue=False,
+            )
+        )
+
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
@@ -144,12 +153,14 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
 
         absoluteValues = self.parameterAsBoolean(parameters, self.ABSOLUTE_VALUES, context)
 
+        areaBelow = self.parameterAsBoolean(parameters, self.AREA_BELOW, context)
+
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
         pathGraph = self.parameterAsFileOutput(parameters, self.GRAPH, context)
 
         verifyLibs()
-        runHypsometricCurves(basinSource,demLayer,pathHypsometric,pathGraph,absoluteValues,distanceCurves,feedback)
+        runHypsometricCurves(basinSource,demLayer,pathHypsometric,pathGraph,absoluteValues,distanceCurves,areaBelow,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
