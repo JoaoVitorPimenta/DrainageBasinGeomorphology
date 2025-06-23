@@ -60,7 +60,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,feedback):
+def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,areaBelow,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -90,6 +90,9 @@ def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteVa
     filteredData = [nonMaskValue for nonMaskValue in validDataInsideBasin if not np.ma.is_masked(nonMaskValue)]
     counterValues = Counter(filteredData)
     counterValuesOrdered = sorted(counterValues.items(),reverse=True)
+
+    if areaBelow is True:
+        counterValuesOrdered = sorted(counterValues.items())
 
     elevations = [item[0] for item in counterValuesOrdered]
     countElevations = [item[1] for item in counterValuesOrdered]
@@ -152,7 +155,7 @@ def exportHypsometricCurves(listsWithData,path):
         writer = csv.writer(arquivo)
         writer.writerows(itertools.zip_longest(*listsWithData))
 
-def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteValues,distanceContour,feedback):
+def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteValues,distanceContour,areaBelow,feedback):
     verifyLibs()
 
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
@@ -170,7 +173,7 @@ def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteVa
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
 
-        heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,feedback)
+        heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,areaBelow,feedback)
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
         if feedback.isCanceled():
