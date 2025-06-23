@@ -181,7 +181,7 @@ If you have any questions, suggestions, errors or need information/training abou
 | Relief       | Gradient Ratio | _Gr_       | _(Relief source - Relief mouth) / Lch_         | Ratio between the difference in altitude of the main channel and its length.                                   |  Sreedevi (2005)  |
 
 
-## Elevation - area - volume empty
+## Elevation - area - volume below
 
 | Elevation (m)     | Area (m2) | Volume (m3) |
 |-------------|----------------|---------------------|
@@ -189,11 +189,11 @@ If you have any questions, suggestions, errors or need information/training abou
 
 Strahler (1952)
 
-If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area and volume values ​​will be interpolated to the contour lines input by the user.
+If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area values ​​will be interpolated to the contour lines input by the user and then the volume will be calculated.
 
-This tool calculates the empty volume of the DEM by elevation, it is analogous to the "fill" volume of other tools.
+This tool calculates the empty volume of the DEM by elevation.
 
-## Elevation - area - volume solid
+## Elevation - area - volume above
 
 | Elevation (m)     | Area (m2) | Volume (m3) |
 |-------------|----------------|---------------------|
@@ -201,9 +201,13 @@ This tool calculates the empty volume of the DEM by elevation, it is analogous t
 
 Strahler (1952)
 
-If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area and volume values ​​will be interpolated to the contour lines input by the user.
+If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area values ​​will be interpolated to the contour lines input by the user and then the volume will be calculated.
 
-This tool calculates the solid volume of the DEM by elevation, it is analogous to the "cut" volume of other tools.
+This tool calculates the solid volume of the DEM by elevation.
+
+## Elevation - area - volume above
+
+This tool has the same logic as the calculation of the volume above and below, but it adds the two or subtracts one from the other.
 
 ## Hypsometric curve
 
