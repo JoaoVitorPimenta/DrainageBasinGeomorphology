@@ -21,6 +21,11 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        0.6
+        -add tool for calculating EAV below and above
+        -bug fixes
+        -change the inputs for tools, aiming to more personalization and specify cases
+
         0.5
         -add tool for calculating EAV with solids volumes
         -remove shapely dependency
