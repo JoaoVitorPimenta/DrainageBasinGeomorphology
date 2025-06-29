@@ -226,7 +226,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
-        <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
+        <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary.
         <strong>Elevation area volume data: </strong>File with elevation - area - volume (below) data calculated individually for each basin.
         <strong>Graphs: </strong>Folder containing the elevation-area-volume (below) graph for each basin individually.        
 
