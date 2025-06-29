@@ -65,9 +65,9 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
-    USE_ONLY_RASTER_VALUES = 'USE_ONLY_RASTER_VALUES'
+    USE_ONLY_DEM_VALUES = 'USE_ONLY_DEM_VALUES'
     BASE_LEVEL = 'BASE_LEVEL'
-    USE_MAX_VALUE_RASTER = 'USE_MAX_VALUE_RASTER'
+    USE_MAX_VALUE_DEM = 'USE_MAX_VALUE_DEM'
     GRAPHS = 'GRAPHS'
 
 
@@ -106,7 +106,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.USE_ONLY_RASTER_VALUES,
+                self.USE_ONLY_DEM_VALUES,
                 self.tr('Use only the elevation values ​​from the raster'),
                 defaultValue=False,
             )
@@ -123,7 +123,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.USE_MAX_VALUE_RASTER,
+                self.USE_MAX_VALUE_DEM,
                 self.tr('Use the maximum elevation value of the raster as base level'),
                 defaultValue=False,
             )
@@ -160,11 +160,11 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
-        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_RASTER_VALUES, context)
+        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_DEM_VALUES, context)
 
         baseLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL, context)
 
-        useMaxRasterElev = self.parameterAsBoolean(parameters, self.USE_MAX_VALUE_RASTER, context)
+        useMaxRasterElev = self.parameterAsBoolean(parameters, self.USE_MAX_VALUE_DEM, context)
 
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 

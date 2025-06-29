@@ -63,7 +63,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,minimumLevel,maximumLevel,subtractsBelow,useOnlyRasterElev,useMinRasterElev,useMaxRasterElev,feedback):
+def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,minimumLevel,maximumLevel,subtractsBelow,useOnlyDEMElev,useMinDEMElev,useMaxDEMElev,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -131,11 +131,11 @@ def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceCont
     originalCumulativeVolumesCut = np.concatenate(([0], np.cumsum(volumesCut)))
     cumulativeVolumesCut = np.concatenate(([0], np.cumsum(volumesCut)))
 
-    if useOnlyRasterElev is True:
+    if useOnlyDEMElev is True:
         distanceContour = None
-    if useMinRasterElev is True:
+    if useMinDEMElev is True:
         minimumLevel = None
-    if useMaxRasterElev is True:
+    if useMaxDEMElev is True:
         maximumLevel = None
 
     indexConstantAreaFill = np.argmax(cumulativeAreasFill)
@@ -174,6 +174,7 @@ def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceCont
     if minimumLevel is not None:
         elevationsWithMaximumMinimumLevelCut = sorted(elevationsCut,reverse=True)
         elevationsWithMaximumMinimumLevelFill = sorted(elevationsFill)
+
         if minimumLevel not in elevationsCut:
             elevationsWithMaximumMinimumLevelCut = sorted(elevationsCut + [minimumLevel],reverse=True)
             elevationsWithMaximumMinimumLevelFill = sorted(elevationsFill + [minimumLevel])
@@ -250,13 +251,17 @@ def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceCont
     cumulativeAreas = cumulativeAreasCut[::-1] - cumulativeAreasFill
     cumulativeVolumes = cumulativeVolumesCut[::-1] - cumulativeVolumesFill
 
-    elevationWithVolumeZero = np.interp(0, cumulativeVolumes[::-1], elevationsFill[::-1])
+    cumulativeVolumesToCalcZero = originalCumulativeVolumesCut[::-1] - originalCumulativeVolumesFill
+
+    elevationWithVolumeZero = np.interp(0, cumulativeVolumesToCalcZero[::-1], originalElevationsFill[::-1])
 
     if subtractsBelow is True:
         cumulativeAreas = cumulativeAreasFill - cumulativeAreasCut[::-1]
         cumulativeVolumes = cumulativeVolumesFill - cumulativeVolumesCut[::-1]
 
-        elevationWithVolumeZero = np.interp(0, cumulativeVolumes, elevationsFill)
+        cumulativeVolumesToCalcZero = originalCumulativeVolumesFill - originalCumulativeVolumesCut[::-1]
+
+        elevationWithVolumeZero = np.interp(0, cumulativeVolumesToCalcZero, originalElevationsFill)
 
     feedback.pushInfo('The elevation for the cut/fill volume to be 0 in basin '+str(basin.id())+' is: '+str(elevationWithVolumeZero))
 
@@ -264,7 +269,7 @@ def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceCont
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevationsFill, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,minimumLevel,maximumLevel,subtractsBelow,useOnlyRasterElev,useMinRasterElev,useMaxRasterElev,feedback):
+def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,minimumLevel,maximumLevel,subtractsBelow,useOnlyDEMElev,useMinDEMElev,useMaxDEMElev,feedback):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -279,7 +284,7 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
         if feedback.isCanceled():
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,minimumLevel,maximumLevel,subtractsBelow,useOnlyRasterElev,useMinRasterElev,useMaxRasterElev,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,minimumLevel,maximumLevel,subtractsBelow,useOnlyDEMElev,useMinDEMElev,useMaxDEMElev,feedback)
 
         if (elevations is None and cumulativeAreas is None and cumulativeVolumes is None):
             return

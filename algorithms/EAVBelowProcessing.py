@@ -63,7 +63,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyRasterElev,useMaxRasterElev,feedback):
+def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyDEMElev,useMaxDEMElev,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -109,9 +109,9 @@ def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
     originalCumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
     cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
 
-    if useOnlyRasterElev is True:
+    if useOnlyDEMElev is True:
         distanceContour = None
-    if useMaxRasterElev is True:
+    if useMaxDEMElev is True:
         baseLevel = None
 
     if baseLevel is not None:
@@ -161,7 +161,7 @@ def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,useOnlyRasterElev,useMaxRasterElev,feedback):
+def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,useOnlyDEMElev,useMaxDEMElev,feedback):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -176,7 +176,7 @@ def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
         if feedback.isCanceled():
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyRasterElev,useMaxRasterElev,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyDEMElev,useMaxDEMElev,feedback)
 
         if (elevations is None and cumulativeAreas is None and cumulativeVolumes is None):
             return

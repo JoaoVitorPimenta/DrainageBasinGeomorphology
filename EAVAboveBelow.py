@@ -65,11 +65,11 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
-    USE_ONLY_RASTER_VALUES = 'USE_ONLY_RASTER_VALUES'
+    USE_ONLY_DEM_VALUES = 'USE_ONLY_DEM_VALUES'
     BASE_LEVEL_MINIMUM = 'BASE_LEVEL_MINIMUM'
-    USE_MIN_VALUE_RASTER = 'USE_MIN_VALUE_RASTER'
+    USE_MIN_VALUE_DEM = 'USE_MIN_VALUE_DEM'
     BASE_LEVEL_MAXIMUM = 'BASE_LEVEL_MAXIMUM'
-    USE_MAX_VALUE_RASTER = 'USE_MAX_VALUE_RASTER'
+    USE_MAX_VALUE_DEM = 'USE_MAX_VALUE_DEM'
     SUBTRACTS_VOLUME_BELOW = 'SUBTRACTS_VOLUME_BELOW'
     GRAPHS = 'GRAPHS'
 
@@ -109,8 +109,8 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.USE_ONLY_RASTER_VALUES,
-                self.tr('Use only the elevation values ​​from the raster'),
+                self.USE_ONLY_DEM_VALUES,
+                self.tr('Use only the elevation values ​​from the DEM'),
                 defaultValue=False,
             )
         )
@@ -126,8 +126,8 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.USE_MIN_VALUE_RASTER,
-                self.tr('Use the minimum elevation value of the raster as minimum level'),
+                self.USE_MIN_VALUE_DEM,
+                self.tr('Use the minimum elevation value of the DEM as minimum level'),
                 defaultValue=False,
             )
         )
@@ -143,8 +143,8 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.USE_MAX_VALUE_RASTER,
-                self.tr('Use the maximum elevation value of the raster as maximum level'),
+                self.USE_MAX_VALUE_DEM,
+                self.tr('Use the maximum elevation value of the DEM as maximum level'),
                 defaultValue=False,
             )
         )
@@ -188,15 +188,15 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
-        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_RASTER_VALUES, context)
+        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_DEM_VALUES, context)
 
         minLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL_MINIMUM, context)
 
-        useMinRasterElev = self.parameterAsBoolean(parameters, self.USE_MIN_VALUE_RASTER, context)
+        useMinRasterElev = self.parameterAsBoolean(parameters, self.USE_MIN_VALUE_DEM, context)
 
         maxLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL_MAXIMUM, context)
 
-        useMaxRasterElev = self.parameterAsBoolean(parameters, self.USE_MAX_VALUE_RASTER, context)
+        useMaxRasterElev = self.parameterAsBoolean(parameters, self.USE_MAX_VALUE_DEM, context)
 
         subtractsBelow = self.parameterAsBoolean(parameters, self.SUBTRACTS_VOLUME_BELOW, context)
 

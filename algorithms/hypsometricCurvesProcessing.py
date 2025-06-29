@@ -60,7 +60,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,areaBelow,feedback):
+def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,areaBelow,useOnlyDEMElev,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -106,7 +106,10 @@ def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteVa
     minElevation = min(elevations)
     maxElevation = max(elevations)
 
-    if distanceContour != 0:
+    if useOnlyDEMElev is True:
+         distanceContour = None
+
+    if distanceContour is not None:
         elevationCurves = np.arange(minElevation, maxElevation, distanceContour)
 
         if maxElevation not in elevationCurves:
@@ -156,9 +159,7 @@ def exportHypsometricCurves(listsWithData,path):
         writer = csv.writer(archive)
         writer.writerows(itertools.zip_longest(*listsWithData))
 
-def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteValues,distanceContour,areaBelow,feedback):
-    verifyLibs()
-
+def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteValues,distanceContour,areaBelow,useOnlyDEMElev,feedback):
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
 
     feedback.setProgress(0)
@@ -174,7 +175,7 @@ def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteVa
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
 
-        heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,areaBelow,feedback)
+        heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,areaBelow,useOnlyDEMElev,feedback)
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
         if feedback.isCanceled():

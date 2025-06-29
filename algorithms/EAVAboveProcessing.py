@@ -63,7 +63,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback):
+def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyDEMElev,useMinDEMElev,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -109,9 +109,9 @@ def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
     originalCumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
     cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
 
-    if useOnlyRasterElev is True:
+    if useOnlyDEMElev is True:
         distanceContour = None
-    if useMinRasterElev is True:
+    if useMinDEMElev is True:
         baseLevel = None
 
     if baseLevel is not None:
@@ -161,7 +161,7 @@ def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVAbove(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback):
+def runEAVAbove(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,useOnlyDEMElev,useMinDEMElev,feedback):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -176,7 +176,7 @@ def runEAVAbove(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
         if feedback.isCanceled():
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyDEMElev,useMinDEMElev,feedback)
 
         if (elevations is None and cumulativeAreas is None and cumulativeVolumes is None):
             return

@@ -67,6 +67,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
     ABSOLUTE_VALUES = 'ABSOLUTE_VALUES'
     AREA_BELOW = 'AREA_BELOW'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
+    USE_ONLY_DEM_VALUES = 'USE_ONLY_DEM_VALUES'
 
     def initAlgorithm(self, config):
         '''
@@ -93,6 +94,23 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
+            QgsProcessingParameterNumber(
+                self.DISTANCE_BETWEEN_CONTOUR_LINES,
+                self.tr('Distance between contour lines'),
+                defaultValue=None,
+                minValue=0
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_ONLY_DEM_VALUES,
+                self.tr('Use only the elevation values ​​from the raster'),
+                defaultValue=False,
+            )
+        )
+
+        self.addParameter(
             QgsProcessingParameterBoolean(
                 self.ABSOLUTE_VALUES,
                 self.tr('Use absolute values instead of relative values'),
@@ -101,19 +119,9 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterNumber(
-                self.DISTANCE_BETWEEN_CONTOUR_LINES,
-                self.tr('Distance between contour lines'),
-                optional=True,
-                defaultValue=None,
-                minValue=0
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterBoolean(
                 self.AREA_BELOW,
-                self.tr('Count area below elevation, instead of above'),
+                self.tr('Count area below elevation instead of above'),
                 defaultValue=False,
             )
         )
@@ -157,10 +165,12 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
+        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_DEM_VALUES, context)
+
         pathGraph = self.parameterAsFileOutput(parameters, self.GRAPH, context)
 
         verifyLibs()
-        runHypsometricCurves(basinSource,demLayer,pathHypsometric,pathGraph,absoluteValues,distanceCurves,areaBelow,feedback)
+        runHypsometricCurves(basinSource,demLayer,pathHypsometric,pathGraph,absoluteValues,distanceCurves,areaBelow,useOnlyRasterElev,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -215,7 +225,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins.
-        <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary. If the value is 'Not set' or 0, then all elevation data from the DEM will be used.
+        <strong>Distance between contour lines: </strong>It is the distance between the contour lines within the basin boundary.
         <strong>Hypsometric curve data: </strong>File with elevation and accumulated area data used to form the hypsometric curve.
         <strong>Graph: </strong>Graph containing the hypsometric curves of all drainage basins for comparison between them.
 

@@ -65,9 +65,9 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
-    USE_ONLY_RASTER_VALUES = 'USE_ONLY_RASTER_VALUES'
+    USE_ONLY_DEM_VALUES = 'USE_ONLY_DEM_VALUES'
     BASE_LEVEL = 'BASE_LEVEL'
-    USE_MIN_VALUE_RASTER = 'USE_MIN_VALUE_RASTER'
+    USE_MIN_VALUE_DEM = 'USE_MIN_VALUE_DEM'
     GRAPHS = 'GRAPHS'
 
 
@@ -106,8 +106,8 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.USE_ONLY_RASTER_VALUES,
-                self.tr('Use only the elevation values ​​from the raster'),
+                self.USE_ONLY_DEM_VALUES,
+                self.tr('Use only the elevation values ​​from the DEM'),
                 defaultValue=False,
             )
         )
@@ -123,8 +123,8 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.USE_MIN_VALUE_RASTER,
-                self.tr('Use the minimum elevation value of the raster as base level'),
+                self.USE_MIN_VALUE_DEM,
+                self.tr('Use the minimum elevation value of the DEM as base level'),
                 defaultValue=False,
             )
         )
@@ -160,11 +160,11 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
-        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_RASTER_VALUES, context)
+        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_DEM_VALUES, context)
 
         baseLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL, context)
 
-        useMinRasterElev = self.parameterAsBoolean(parameters, self.USE_MIN_VALUE_RASTER, context)
+        useMinRasterElev = self.parameterAsBoolean(parameters, self.USE_MIN_VALUE_DEM, context)
 
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
