@@ -63,7 +63,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,feedback):
+def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -88,64 +88,80 @@ def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
     validDataInsideBasin = demArray[validMask].tolist()
 
     if not validDataInsideBasin:
-        feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and some calculations may be compromised')
+        feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and therefore it is not possible to calculate the elevation - area - volume.')
+        return None, None, None
 
     counterValues = Counter(validDataInsideBasin)
     counterValuesOrdered = sorted(counterValues.items(),reverse=True)
 
+    originalElevations = [item[0] for item in counterValuesOrdered]
     elevations = [item[0] for item in counterValuesOrdered]
     countElevations = [item[1] for item in counterValuesOrdered]
 
     pixelWidth  = abs(gt[1])
     pixelHeight = abs(gt[5])
     areas = np.array(countElevations) * (pixelWidth * pixelHeight)
+    originalCumulativeAreas = np.cumsum(areas)
     cumulativeAreas = np.cumsum(areas)
-    minElevation = min(elevations)
 
-    if baseLevel != 0:
+    deltaElev = abs(np.diff(elevations))
+    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
+    originalCumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+
+    if useOnlyRasterElev is True:
+        distanceContour = None
+    if useMinRasterElev is True:
+        baseLevel = None
+
+    if baseLevel is not None:
+        elevationsWithBaseLevel = sorted(elevations + [baseLevel],reverse=True)
         if baseLevel not in elevations:
             elevationsWithBaseLevel = sorted(elevations + [baseLevel],reverse=True)
 
-            if distanceContour == 0:
+            if distanceContour is None:
                 cumulativeAreas = np.interp(elevationsWithBaseLevel, elevations[::-1], cumulativeAreas[::-1])
+                cumulativeVolumes = np.interp(elevationsWithBaseLevel, elevations[::-1], cumulativeVolumes[::-1])
                 elevations = elevationsWithBaseLevel
 
-            if distanceContour != 0:
-                elevations = elevationsWithBaseLevel
-                insertIndex = bisect.bisect_left(elevations, baseLevel)
-                if baseLevel < minElevation:
-                    cumulativeAreas = np.insert(cumulativeAreas, insertIndex, cumulativeAreas[0])
-                if baseLevel > minElevation:
-                    cumulativeAreas = np.insert(cumulativeAreas, insertIndex, np.nan)
-
-        negElevations = [-e for e in elevations]
+        negElevations = [-e for e in elevationsWithBaseLevel]
         index = bisect.bisect_right(negElevations, -baseLevel)
-        elevations = elevations[:index]
+        elevations = elevationsWithBaseLevel[:index]
         cumulativeAreas = cumulativeAreas[:index]
+        cumulativeVolumes = cumulativeVolumes[:index]
 
-    if distanceContour != 0:
+    if distanceContour is not None:
         minElevation = min(elevations)
         maxElevation = max(elevations)
 
         elevationCurves = np.arange(minElevation, maxElevation, distanceContour)
-
         if maxElevation not in elevationCurves:
             elevationCurves = np.append(elevationCurves,maxElevation)
 
-        interpAreas = np.interp(elevationCurves, elevations[::-1], cumulativeAreas[::-1])
+        interpAreas = np.interp(elevationCurves, originalElevations[::-1], originalCumulativeAreas[::-1])
+        interpVolumes = np.interp(elevationCurves, originalElevations[::-1], originalCumulativeVolumes[::-1])
 
         elevations = elevationCurves[::-1].tolist()
         cumulativeAreas = interpAreas[::-1]
+        cumulativeVolumes = interpVolumes[::-1]
 
-    deltaElev = abs(np.diff(elevations))
-    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
-    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+    constantAreaCut = originalCumulativeAreas[-1]
+
+    if baseLevel is not None:
+        if baseLevel < min(originalElevations):
+            elevationsCutArray = np.array(elevations)
+            minElevationCutArray = np.min(originalElevations)
+
+            deltaH = minElevationCutArray - elevationsCutArray[elevationsCutArray < minElevationCutArray]
+            volumeCut = originalCumulativeVolumes[-1] + constantAreaCut * deltaH
+            lenVolumeCut = len(volumeCut)
+            cumulativeVolumes[-lenVolumeCut:] = volumeCut
 
     cumulativeAreasList = cumulativeAreas.tolist()
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVAbove(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,feedback):
+def runEAVAbove(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -160,7 +176,10 @@ def runEAVAbove(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
         if feedback.isCanceled():
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback)
+
+        if (elevations is None and cumulativeAreas is None and cumulativeVolumes is None):
+            return
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
         cumulativeAreas.insert(0,'Area basin '+str(basin.id()))

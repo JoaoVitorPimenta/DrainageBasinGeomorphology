@@ -65,8 +65,11 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
+    USE_ONLY_RASTER_VALUES = 'USE_ONLY_RASTER_VALUES'
     BASE_LEVEL_MINIMUM = 'BASE_LEVEL_MINIMUM'
+    USE_MIN_VALUE_RASTER = 'USE_MIN_VALUE_RASTER'
     BASE_LEVEL_MAXIMUM = 'BASE_LEVEL_MAXIMUM'
+    USE_MAX_VALUE_RASTER = 'USE_MAX_VALUE_RASTER'
     SUBTRACTS_VOLUME_BELOW = 'SUBTRACTS_VOLUME_BELOW'
     GRAPHS = 'GRAPHS'
 
@@ -99,9 +102,16 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.DISTANCE_BETWEEN_CONTOUR_LINES,
                 self.tr('Distance between contour lines'),
-                optional=True,
-                defaultValue=None,
-                minValue=0
+                type=QgsProcessingParameterNumber.Double,
+                minValue=10
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_ONLY_RASTER_VALUES,
+                self.tr('Use only the elevation values ​​from the raster'),
+                defaultValue=False,
             )
         )
 
@@ -110,9 +120,15 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
                 self.BASE_LEVEL_MINIMUM,
                 self.tr('Minimum level'),
                 type=QgsProcessingParameterNumber.Double,
-                optional=True,
-                defaultValue=None,
                 minValue=0
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_MIN_VALUE_RASTER,
+                self.tr('Use the minimum elevation value of the raster as minimum level'),
+                defaultValue=False,
             )
         )
 
@@ -121,9 +137,15 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
                 self.BASE_LEVEL_MAXIMUM,
                 self.tr('Maximum level'),
                 type=QgsProcessingParameterNumber.Double,
-                optional=True,
-                defaultValue=None,
-                minValue=0
+                minValue=1000
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_MAX_VALUE_RASTER,
+                self.tr('Use the maximum elevation value of the raster as maximum level'),
+                defaultValue=False,
             )
         )
 
@@ -166,9 +188,15 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
+        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_RASTER_VALUES, context)
+
         minLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL_MINIMUM, context)
 
+        useMinRasterElev = self.parameterAsBoolean(parameters, self.USE_MIN_VALUE_RASTER, context)
+
         maxLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL_MAXIMUM, context)
+
+        useMaxRasterElev = self.parameterAsBoolean(parameters, self.USE_MAX_VALUE_RASTER, context)
 
         subtractsBelow = self.parameterAsBoolean(parameters, self.SUBTRACTS_VOLUME_BELOW, context)
 
@@ -177,7 +205,7 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
         pathGraph = self.parameterAsString(parameters, self.GRAPHS, context)
 
         verifyLibs()
-        runEAVAboveBelow(basinSource,demLayer,pathData,pathGraph,distanceCurves,minLevel,maxLevel,subtractsBelow,feedback)
+        runEAVAboveBelow(basinSource,demLayer,pathData,pathGraph,distanceCurves,minLevel,maxLevel,subtractsBelow,useOnlyRasterElev,useMinRasterElev,useMaxRasterElev,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

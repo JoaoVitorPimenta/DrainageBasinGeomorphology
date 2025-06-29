@@ -189,7 +189,7 @@ If you have any questions, suggestions, errors or need information/training abou
 
 Strahler (1952)
 
-If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area values ​​will be interpolated to the contour lines input by the user and then the volume will be calculated.
+If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area and volumes values ​​will be interpolated to the contour lines input by the user.
 
 This tool calculates the empty volume of the DEM by elevation.
 
@@ -201,11 +201,11 @@ This tool calculates the empty volume of the DEM by elevation.
 
 Strahler (1952)
 
-If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area values ​​will be interpolated to the contour lines input by the user and then the volume will be calculated.
+If the user inputs contour lines, the values ​​will be calculated taking into account all elevations in the DEM, and then the area and volumes values ​​will be interpolated to the contour lines input by the user.
 
 This tool calculates the solid volume of the DEM by elevation.
 
-## Elevation - area - volume above
+## Elevation - area - volume above and below
 
 This tool has the same logic as the calculation of the volume above and below, but it adds the two or subtracts one from the other.
 

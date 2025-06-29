@@ -85,7 +85,8 @@ def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteVa
     validDataInsideBasin = demArray[validMask].tolist()
 
     if not validDataInsideBasin:
-        feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and some calculations may be compromised')
+        feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and therefore it is not possible to calculate the elevation - area - volume.')
+        return None, None
 
     filteredData = [nonMaskValue for nonMaskValue in validDataInsideBasin if not np.ma.is_masked(nonMaskValue)]
     counterValues = Counter(filteredData)
@@ -151,8 +152,8 @@ def calculateHI(elevations,areas,basin):
     return listHI
 
 def exportHypsometricCurves(listsWithData,path):
-    with open(path, 'w', newline='') as arquivo:
-        writer = csv.writer(arquivo)
+    with open(path, 'w', newline='') as archive:
+        writer = csv.writer(archive)
         writer.writerows(itertools.zip_longest(*listsWithData))
 
 def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteValues,distanceContour,areaBelow,feedback):

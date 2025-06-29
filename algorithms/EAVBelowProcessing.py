@@ -63,7 +63,7 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,feedback):
+def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyRasterElev,useMaxRasterElev,feedback):
     basinGeom = basin.geometry()
     wkb = basinGeom.asWkb()
     ogrGeom = ogr.CreateGeometryFromWkb(wkb)
@@ -88,41 +88,48 @@ def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
     validDataInsideBasin = demArray[validMask].tolist()
 
     if not validDataInsideBasin:
-        feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and some calculations may be compromised')
+        feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and therefore it is not possible to calculate the elevation - area - volume.')
+        return None, None, None
 
     counterValues = Counter(validDataInsideBasin)
     counterValuesOrdered = sorted(counterValues.items())
 
+    originalElevations = [item[0] for item in counterValuesOrdered]
     elevations = [item[0] for item in counterValuesOrdered]
     countElevations = [item[1] for item in counterValuesOrdered]
 
     pixelWidth  = abs(gt[1])
     pixelHeight = abs(gt[5])
     areas = np.array(countElevations) * (pixelWidth * pixelHeight)
+    originalCumulativeAreas = np.cumsum(areas)
     cumulativeAreas = np.cumsum(areas)
-    maxElevation = max(elevations)
 
-    if baseLevel != 0:
+    deltaElev = np.diff(elevations)
+    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
+    originalCumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+
+    if useOnlyRasterElev is True:
+        distanceContour = None
+    if useMaxRasterElev is True:
+        baseLevel = None
+
+    if baseLevel is not None:
+        elevationsWithBaseLevel = sorted(elevations + [baseLevel])
         if baseLevel not in elevations:
             elevationsWithBaseLevel = sorted(elevations + [baseLevel])
 
-            if distanceContour == 0:
+            if distanceContour is None:
                 cumulativeAreas = np.interp(elevationsWithBaseLevel, elevations, cumulativeAreas)
+                cumulativeVolumes = np.interp(elevationsWithBaseLevel, elevations, cumulativeVolumes)
                 elevations = elevationsWithBaseLevel
 
-            if distanceContour != 0:
-                elevations = elevationsWithBaseLevel
-                insertIndex = bisect.bisect_left(elevations, baseLevel)
-                if baseLevel > maxElevation:
-                    cumulativeAreas = np.insert(cumulativeAreas, insertIndex, cumulativeAreas[-1])
-                if baseLevel < maxElevation:
-                    cumulativeAreas = np.insert(cumulativeAreas, insertIndex, np.nan)
-
-        index = bisect.bisect_right(elevations, baseLevel)
-        elevations = elevations[:index]
+        index = bisect.bisect_right(elevationsWithBaseLevel, baseLevel)
+        elevations = elevationsWithBaseLevel[:index]
         cumulativeAreas = cumulativeAreas[:index]
+        cumulativeVolumes = cumulativeVolumes[:index]
 
-    if distanceContour != 0:
+    if distanceContour is not None:
         minElevation = min(elevations)
         maxElevation = max(elevations)
 
@@ -131,20 +138,30 @@ def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
         if maxElevation not in elevationCurves:
             elevationCurves = np.append(elevationCurves,maxElevation)
 
-        interpAreas = np.interp(elevationCurves, elevations, cumulativeAreas)
+        interpAreas = np.interp(elevationCurves, originalElevations, cumulativeAreas)
+        interpVolumes = np.interp(elevationCurves, originalElevations, cumulativeVolumes)
 
         elevations = elevationCurves.tolist()
         cumulativeAreas = interpAreas
+        cumulativeVolumes = interpVolumes
 
-    deltaElev = np.diff(elevations)
-    volumes = ((cumulativeAreas[1:] + cumulativeAreas[:-1])/2) * deltaElev
-    cumulativeVolumes = np.concatenate(([0], np.cumsum(volumes)))
+    constantAreaFill = originalCumulativeAreas[-1]
+
+    if baseLevel is not None:
+        if baseLevel > max(originalElevations):
+            elevationsFillArray = np.array(elevations)
+            maxElevationFillArray = np.max(originalElevations)
+
+            deltaH = elevationsFillArray[elevationsFillArray > maxElevationFillArray] - maxElevationFillArray
+            volumeFill = originalCumulativeVolumes[-1] + constantAreaFill * deltaH
+            lenVolumeFill = len(volumeFill)
+            cumulativeVolumes[-lenVolumeFill:] = volumeFill
 
     cumulativeAreasList = cumulativeAreas.tolist()
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,feedback):
+def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,useOnlyRasterElev,useMaxRasterElev,feedback):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -159,7 +176,10 @@ def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
         if feedback.isCanceled():
             return
         feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,feedback)
+        elevations, cumulativeAreas, cumulativeVolumes = EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyRasterElev,useMaxRasterElev,feedback)
+
+        if (elevations is None and cumulativeAreas is None and cumulativeVolumes is None):
+            return
 
         elevations.insert(0,'Elevation basin '+str(basin.id()))
         cumulativeAreas.insert(0,'Area basin '+str(basin.id()))

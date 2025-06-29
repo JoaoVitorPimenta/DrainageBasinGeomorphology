@@ -39,7 +39,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterNumber,
-                       QgsProcessingParameterFolderDestination)
+                       QgsProcessingParameterFolderDestination,
+                       QgsProcessingParameterBoolean)
 from .algorithms.EAVBelowProcessing import runEAVBelow, verifyLibs
 
 class EAVBelowCalc(QgsProcessingAlgorithm):
@@ -64,7 +65,9 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     DISTANCE_BETWEEN_CONTOUR_LINES = 'DISTANCE_BETWEEN_CONTOUR_LINES'
+    USE_ONLY_RASTER_VALUES = 'USE_ONLY_RASTER_VALUES'
     BASE_LEVEL = 'BASE_LEVEL'
+    USE_MAX_VALUE_RASTER = 'USE_MAX_VALUE_RASTER'
     GRAPHS = 'GRAPHS'
 
 
@@ -96,9 +99,16 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.DISTANCE_BETWEEN_CONTOUR_LINES,
                 self.tr('Distance between contour lines'),
-                optional=True,
-                defaultValue=None,
-                minValue=0
+                type=QgsProcessingParameterNumber.Double,
+                minValue=10
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_ONLY_RASTER_VALUES,
+                self.tr('Use only the elevation values ​​from the raster'),
+                defaultValue=False,
             )
         )
 
@@ -107,9 +117,15 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
                 self.BASE_LEVEL,
                 self.tr('Base level'),
                 type=QgsProcessingParameterNumber.Double,
-                optional=True,
-                defaultValue=None,
                 minValue=0
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_MAX_VALUE_RASTER,
+                self.tr('Use the maximum elevation value of the raster as base level'),
+                defaultValue=False,
             )
         )
 
@@ -144,14 +160,18 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
 
         distanceCurves = self.parameterAsInt(parameters, self.DISTANCE_BETWEEN_CONTOUR_LINES, context)
 
+        useOnlyRasterElev = self.parameterAsBoolean(parameters, self.USE_ONLY_RASTER_VALUES, context)
+
         baseLevel = self.parameterAsDouble(parameters, self.BASE_LEVEL, context)
+
+        useMaxRasterElev = self.parameterAsBoolean(parameters, self.USE_MAX_VALUE_RASTER, context)
 
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
         pathGraph = self.parameterAsString(parameters, self.GRAPHS, context)
 
         verifyLibs()
-        runEAVBelow(basinSource,demLayer,pathData,pathGraph,distanceCurves,baseLevel,feedback)
+        runEAVBelow(basinSource,demLayer,pathData,pathGraph,distanceCurves,baseLevel,useOnlyRasterElev,useMaxRasterElev,feedback)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
