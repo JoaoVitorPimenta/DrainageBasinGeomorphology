@@ -356,7 +356,7 @@ def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
         return
 
     pointsIntersection = intersection.asMultiPoint()
-    pointsOrdered = sorted(pointsIntersection, key=lambda p: p.y())
+    pointsOrdered = sorted(pointsIntersection, key=lambda p: (p.y(), p.x()))
 
     basinLengthLine = QgsGeometry.fromPolylineXY(pointsOrdered)
     basinLength = basinLengthLine.length()
