@@ -100,12 +100,12 @@ def EAVprocessing(demArray,noData,gt,proj,cols,rows,basin,feedback):
     return elevations, cumulativeAreasList, cumulativeVolumesList, validMask
 
 def calcInundationArea(arrayInsideBasin, waterElevation, waterHeight, waterArea, waterVolume, folderRaster, folderVector, noDataValue, proj, gt, demLayer, negativeDepth, openRasters, openVectors, basin, idx, step, feedback):
-    feedback.setProgressText('Basin '+str(basin.id())+' processing raster starting...')
+    feedback.setProgressText('Basin id '+str(basin.id())+' processing raster starting...')
 
     elevationsInundatedPixels = np.where(arrayInsideBasin < waterElevation, arrayInsideBasin, np.nan)
 
     if np.isnan(elevationsInundatedPixels).all():
-        feedback.pushWarning('There are no DEM pixels within basin '+str(basin.id())+' below water elevation, so it is not possible to generate the output layers for this basin.')
+        feedback.pushWarning('There are no DEM pixels within basin id '+str(basin.id())+' below water elevation, so it is not possible to generate the output layers for this basin.')
         return
 
     if negativeDepth is True:
@@ -144,7 +144,7 @@ def calcInundationArea(arrayInsideBasin, waterElevation, waterHeight, waterArea,
     driver = gdal.GetDriverByName("GTiff")
 
     os.makedirs(folderRaster, exist_ok=True)
-    pathRaster = os.path.join(folderRaster, 'INUNDATION_RASTER_'+str(basin.id())+'.tif')
+    pathRaster = os.path.join(folderRaster, 'INUNDATION_RASTER_BASIN_ID_'+str(basin.id())+'.tif')
     depthRaster = driver.Create(pathRaster, columns, lines, 1, gdal.GDT_Float32)
 
     depthRaster.SetGeoTransform(newGt)
@@ -155,9 +155,9 @@ def calcInundationArea(arrayInsideBasin, waterElevation, waterHeight, waterArea,
 
     depthBand.SetNoDataValue(noDataValue)
 
-    feedback.setProgressText('Basin '+str(basin.id())+' processing raster completed')
+    feedback.setProgressText('Basin id '+str(basin.id())+' processing raster completed')
 
-    feedback.setProgressText('Basin '+str(basin.id())+' processing vector starting...')
+    feedback.setProgressText('Basin id '+str(basin.id())+' processing vector starting...')
     inundatedPixels = np.where(arrayInsideBasin < waterElevation, 1, 0)
     croppedInundatedArray = inundatedPixels[rowMin:rowMax+1, colMin:colMax+1]
 
@@ -191,7 +191,7 @@ def calcInundationArea(arrayInsideBasin, waterElevation, waterHeight, waterArea,
 
     driver = ogr.GetDriverByName("ESRI Shapefile")
     os.makedirs(folderVector, exist_ok=True)
-    pathVector = os.path.join(folderVector, 'INUNDATION_VECTOR_'+str(basin.id())+'.shp')
+    pathVector = os.path.join(folderVector, 'INUNDATION_VECTOR_BASIN_ID_'+str(basin.id())+'.shp')
 
     mergedDataSource = driver.CreateDataSource(pathVector)
     mergedLayer = mergedDataSource.CreateLayer("merged", srs=layer.GetSpatialRef(), geom_type=geomType)
@@ -220,7 +220,7 @@ def calcInundationArea(arrayInsideBasin, waterElevation, waterHeight, waterArea,
 
     barProgress = int((idx + 1) * step)
     feedback.setProgress(barProgress)
-    feedback.setProgressText('Basin '+str(basin.id())+' processing vector completed')
+    feedback.setProgressText('Basin id '+str(basin.id())+' processing vector completed')
 
     layer = None
     mergedLayer = None
@@ -231,11 +231,11 @@ def calcInundationArea(arrayInsideBasin, waterElevation, waterHeight, waterArea,
     rasterOriginal = None
 
     if openRasters is True:
-        rasterInundation = QgsRasterLayer(pathRaster,'INUNDATION_RASTER_'+str(basin.id()))
+        rasterInundation = QgsRasterLayer(pathRaster,'INUNDATION_RASTER_BASIN_ID_'+str(basin.id()))
         QgsProject.instance().addMapLayer(rasterInundation)
 
     if openVectors is True:
-        vectorInundation = QgsVectorLayer(pathVector, 'INUNDATION_VECTOR_'+str(basin.id()))
+        vectorInundation = QgsVectorLayer(pathVector, 'INUNDATION_VECTOR_BASIN_ID_'+str(basin.id()))
         QgsProject.instance().addMapLayer(vectorInundation)
 
 def calcEAVForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,pathRaster,pathVector,noDataValue,negativeDepth,openRasters,openVectors,feedback):
@@ -264,7 +264,7 @@ def calcEAVForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,pat
 
         if parameter == HEIGHT_PARAMETER:
             if parameterValue > max(elevations) - min(elevations):
-                feedback.pushWarning('The parameter value is greater than the maximum height of basin '+str(basin.id())+' so it will be set as the maximum for that basin.')
+                feedback.pushWarning('The parameter value is greater than the maximum height of basin id '+str(basin.id())+' so it will be set as the maximum for that basin.')
                 parameterValue = max(elevations) - min(elevations)
 
             heights = elevations - min(elevations)
@@ -281,11 +281,11 @@ def calcEAVForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,pat
 
         if parameter == ELEVATION_PARAMETER:
             if parameterValue > max(elevations):
-                feedback.pushWarning('The parameter value is greater than the maximum elevation of basin '+str(basin.id())+' so it will be set as the maximum for that basin')
+                feedback.pushWarning('The parameter value is greater than the maximum elevation of basin id '+str(basin.id())+' so it will be set as the maximum for that basin')
                 parameterValue = max(elevations)
 
             if parameterValue < min(elevations):
-                feedback.pushWarning('The parameter value is less than the minimum height of basin '+str(basin.id())+' so it will be set as the minimum for that basin.')
+                feedback.pushWarning('The parameter value is less than the minimum height of basin id '+str(basin.id())+' so it will be set as the minimum for that basin.')
                 parameterValue = min(elevations)
 
             elevationAreaInterpolation = np.interp(parameterValue, elevations, cumulativeAreas)
@@ -300,11 +300,11 @@ def calcEAVForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,pat
 
         if parameter == AREA_PARAMETER:
             if parameterValue > max(cumulativeAreas):
-                feedback.pushWarning('The parameter value is greater than the maximum area of basin '+str(basin.id())+' so it will be set as the maximum for that basin')
+                feedback.pushWarning('The parameter value is greater than the maximum area of basin id '+str(basin.id())+' so it will be set as the maximum for that basin')
                 parameterValue = max(cumulativeAreas)
 
             if parameterValue < min(cumulativeAreas):
-                feedback.pushWarning('The parameter value is less than the minimum area of basin '+str(basin.id())+' so it will be set as the minimum for that basin.')
+                feedback.pushWarning('The parameter value is less than the minimum area of basin id '+str(basin.id())+' so it will be set as the minimum for that basin.')
                 parameterValue = min(cumulativeAreas)
 
             areaVolInterpolation = np.interp(parameterValue, cumulativeAreas, cumulativeVolumes)
@@ -319,11 +319,11 @@ def calcEAVForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,pat
 
         if parameter == VOLUME_PARAMETER:
             if parameterValue > max(cumulativeVolumes):
-                feedback.pushWarning('The parameter value is greater than the maximum volume of basin '+str(basin.id())+' so it will be set as the maximum for that basin.')
+                feedback.pushWarning('The parameter value is greater than the maximum volume of basin id '+str(basin.id())+' so it will be set as the maximum for that basin.')
                 parameterValue = max(cumulativeVolumes)
 
             if parameterValue < min(cumulativeVolumes):
-                feedback.pushWarning('The parameter value is less than the minimum volume of basin '+str(basin.id())+' so it will be set as the minimum for that basin.')
+                feedback.pushWarning('The parameter value is less than the minimum volume of basin id '+str(basin.id())+' so it will be set as the minimum for that basin.')
                 parameterValue = min(cumulativeVolumes)
 
             volAreaInterpolation = np.interp(parameterValue, cumulativeVolumes, cumulativeAreas)

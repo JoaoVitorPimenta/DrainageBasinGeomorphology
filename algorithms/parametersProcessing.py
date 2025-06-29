@@ -351,7 +351,7 @@ def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
     intersection = parallelLine.intersection(QgsGeometry.fromWkt(gdfShape.boundary.iloc[0].wkt))
 
     if intersection.isEmpty():
-        feedback.pushWarning('A parallel line between higher order channels does not intersect the perimeter of the basin'+str(basin.id())+', the drainage network has errors!')
+        feedback.pushWarning('A parallel line between higher order channels does not intersect the perimeter of the basin of id'+str(basin.id())+', the drainage network has errors!')
         gdfShape['Basin Length (Lg) (km)'] = None
         return
 
@@ -570,9 +570,9 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief):
     return
 
 def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
-    gdfLinear.columns = [f'{col} basin ' + str(basin.id()) for col in gdfLinear.columns]
-    gdfShape.columns = [f'{col} basin ' + str(basin.id()) for col in gdfShape.columns]
-    gdfRelief.columns = [f'{col} basin ' + str(basin.id()) for col in gdfRelief.columns]
+    gdfLinear.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfLinear.columns]
+    gdfShape.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfShape.columns]
+    gdfRelief.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfRelief.columns]
 
     gdfLinearFloat = gdfLinear.astype(float)
     gdfReliefFloat = gdfRelief.astype(float)
@@ -580,10 +580,10 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
     gdfLinearFloat.loc[-1] = gdfLinear.columns
     gdfLinearFloat.index = gdfLinearFloat.index + 1
     gdfLinearFloat.sort_index(inplace=True)
-    gdfLinearFloat.loc[gdfLinearFloat.index[-1], 'Stream Order basin ' + str(basin.id())] = 'General'
+    gdfLinearFloat.loc[gdfLinearFloat.index[-1], 'Stream Order basin id ' + str(basin.id())] = 'General'
     gdfLinearFloat.columns = range(gdfLinearFloat.shape[1])
 
-    gdfShape.drop(columns='geometry basin ' + str(basin.id()),inplace=True)
+    gdfShape.drop(columns='geometry basin id ' + str(basin.id()),inplace=True)
     gdfShapeFloat = gdfShape.astype(float)
     gdfShapeFloat.loc[-1] = gdfShapeFloat.columns
     gdfShapeFloat.index = gdfShapeFloat.index + 1
@@ -599,19 +599,19 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
     return gdfConcatenated
 
 def formatGdfLinear(gdfLinear,basin):
-    gdfLinear.columns = [f'{col} basin ' + str(basin.id()) for col in gdfLinear.columns]
+    gdfLinear.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfLinear.columns]
     gdfLinearFloat = gdfLinear.astype(float)
     gdfLinearFloat.loc[-1] = gdfLinear.columns
     gdfLinearFloat.index = gdfLinearFloat.index + 1
     gdfLinearFloat.sort_index(inplace=True)
-    gdfLinearFloat.loc[gdfLinearFloat.index[-1], 'Stream Order basin ' + str(basin.id())] = 'General'
+    gdfLinearFloat.loc[gdfLinearFloat.index[-1], 'Stream Order basin id ' + str(basin.id())] = 'General'
     gdfLinearFloat.columns = range(gdfLinearFloat.shape[1])
     return gdfLinearFloat
 
 def formatGdfShape(gdfShape,basin):
-    gdfShape.columns = [f'{col} basin ' + str(basin.id()) for col in gdfShape.columns]
+    gdfShape.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfShape.columns]
 
-    gdfShape.drop(columns='geometry basin ' + str(basin.id()),inplace=True)
+    gdfShape.drop(columns='geometry basin id ' + str(basin.id()),inplace=True)
     gdfShapeFloat = gdfShape.astype(float)
     gdfShapeFloat.loc[-1] = gdfShapeFloat.columns
     gdfShapeFloat.index = gdfShapeFloat.index + 1
@@ -620,7 +620,7 @@ def formatGdfShape(gdfShape,basin):
     return gdfShapeFloat
 
 def formatGdfRelief(gdfRelief,basin):
-    gdfRelief.columns = [f'{col} basin ' + str(basin.id()) for col in gdfRelief.columns]
+    gdfRelief.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfRelief.columns]
     gdfReliefFloat = gdfRelief.astype(float)
 
     gdfReliefFloat.loc[-1] = gdfReliefFloat.columns
@@ -637,7 +637,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
     gdfConcatenateds = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
         if feedback.isCanceled():
             return
@@ -696,7 +696,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
 
     if feedback.isCanceled():
         return
@@ -713,7 +713,7 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
     gdfsLinear = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
         if feedback.isCanceled():
             return
@@ -756,7 +756,7 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
 
     if feedback.isCanceled():
         return
@@ -773,7 +773,7 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
     gdfsShape = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
         if feedback.isCanceled():
             return
@@ -801,7 +801,7 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
 
     if feedback.isCanceled():
         return
@@ -818,7 +818,7 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
     gdfsRelief = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
         if feedback.isCanceled():
             return
@@ -856,7 +856,7 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
 
     if feedback.isCanceled():
         return    

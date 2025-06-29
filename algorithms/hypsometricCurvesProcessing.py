@@ -125,8 +125,8 @@ def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteVa
 
         areasList = cumulativeAreas.tolist()
 
-        elevationsList.insert(0,'Absolute elevation (m) basin '+str(basin.id()))
-        areasList.insert(0,'Absolute area (m2) basin '+str(basin.id()))
+        elevationsList.insert(0,'Absolute elevation (m) basin id '+str(basin.id()))
+        areasList.insert(0,'Absolute area (m2) basin id '+str(basin.id()))
 
         return elevationsList, areasList
 
@@ -139,8 +139,8 @@ def calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteVa
     relativeAreas = (np.array(cumulativeAreas) - minArea)/(maxArea - minArea)
     relativeAreasList = relativeAreas.tolist()
 
-    relativeHeightsList.insert(0,'Relative height (h/H) basin '+str(basin.id()))
-    relativeAreasList.insert(0,'Relative area (a/A) basin '+str(basin.id()))
+    relativeHeightsList.insert(0,'Relative height (h/H) basin id '+str(basin.id()))
+    relativeAreasList.insert(0,'Relative area (a/A) basin id '+str(basin.id()))
 
     return relativeHeightsList, relativeAreasList
 
@@ -150,7 +150,7 @@ def calculateHI(elevations,areas,basin):
 
     hypsometricIntegral = np.trapz(elevationsWOTitle,areasWOTitle)
     listHI = [hypsometricIntegral]
-    listHI.insert(0, 'Hypsometric integral basin '+str(basin.id()))
+    listHI.insert(0, 'Hypsometric integral basin id '+str(basin.id()))
 
     return listHI
 
@@ -173,7 +173,7 @@ def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteVa
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        feedback.setProgressText('Basin '+str(basin.id())+' processing starting...')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
 
         heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,areaBelow,useOnlyDEMElev,feedback)
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
@@ -184,21 +184,21 @@ def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteVa
         listsWithData.append(cumulativeAreas)
         listsWithData.append(hypsometricIntegral)
 
-        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
 
         if feedback.isCanceled():
             return
 
-        feedback.setProgressText('Basin '+str(basin.id())+' graph starting...')
+        feedback.setProgressText('Basin id '+str(basin.id())+' graph starting...')
         fig.add_trace(go.Scatter(
                                 x=cumulativeAreas,
                                 y=heights,
                                 mode='lines',
-                                name='basin '+ str(basin.id())+' Integral = '+str(round(hypsometricIntegral[1],2))))
+                                name='basin id '+ str(basin.id())+' Integral = '+str(round(hypsometricIntegral[1],2))))
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin '+str(basin.id())+' processing graph completed')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing graph completed')
 
     if absoluteValues is True:
         fig.update_layout(

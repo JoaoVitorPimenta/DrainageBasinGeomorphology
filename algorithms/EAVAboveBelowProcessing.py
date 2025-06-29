@@ -289,20 +289,20 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
         if (elevations is None and cumulativeAreas is None and cumulativeVolumes is None):
             return
 
-        elevations.insert(0,'Elevation basin '+str(basin.id()))
-        cumulativeAreas.insert(0,'Area basin '+str(basin.id()))
-        cumulativeVolumes.insert(0,'Volume basin '+str(basin.id()))
+        elevations.insert(0,'Elevation basin id '+str(basin.id()))
+        cumulativeAreas.insert(0,'Area basin id '+str(basin.id()))
+        cumulativeVolumes.insert(0,'Volume basin id '+str(basin.id()))
 
         listsWithData.append(elevations)
         listsWithData.append(cumulativeAreas)
         listsWithData.append(cumulativeVolumes)
 
-        feedback.setProgressText('Basin '+str(basin.id())+' processing completed')
+        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
 
         if feedback.isCanceled():
             return
 
-        feedback.setProgressText('Basin '+str(basin.id())+' graph starting...')
+        feedback.setProgressText('Basin id '+str(basin.id())+' graph starting...')
         fig = go.Figure()
         fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -310,14 +310,14 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
                                 x=cumulativeVolumes,
                                 y=elevations,
                                 mode='lines',
-                                name='Volume - Elevation basin '+str(basin.id())
+                                name='Volume - Elevation basin id '+str(basin.id())
                                 ),
                                 secondary_y=False
                                 )
         fig.add_trace(go.Scatter(x=cumulativeAreas,
                                 y=elevations,
                                 mode='lines',
-                                name='Area - Elevation basin '+str(basin.id())
+                                name='Area - Elevation basin id '+str(basin.id())
                                 ),
                                 secondary_y=True
                                 )
@@ -340,18 +340,18 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
                         )
                             )
 
-        outputHTML = os.path.join(pathHtml, 'GRAPH_BASIN_'+str(basin.id())+'.html')
+        outputHTML = os.path.join(pathHtml, 'GRAPH_BASIN_ID_'+str(basin.id())+'.html')
         fig.write_html(outputHTML)
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin '+str(basin.id())+' graph completed')
+        feedback.setProgressText('Basin id '+str(basin.id())+' graph completed')
 
         fig.show()
 
     if feedback.isCanceled():
         return
-    feedback.setProgressText('Basin '+str(basin.id())+' graph completed')
+    feedback.setProgressText('Basin id '+str(basin.id())+' graph completed')
     with open(pathCsv, 'w', newline='') as archive:
         writer = csv.writer(archive)
         writer.writerows(itertools.zip_longest(*listsWithData))
