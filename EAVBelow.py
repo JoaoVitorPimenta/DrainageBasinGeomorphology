@@ -100,7 +100,8 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
                 self.DISTANCE_BETWEEN_CONTOUR_LINES,
                 self.tr('Distance between contour lines'),
                 type=QgsProcessingParameterNumber.Double,
-                minValue=10
+                minValue=0,
+                defaultValue=10
             )
         )
 
@@ -117,7 +118,8 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
                 self.BASE_LEVEL,
                 self.tr('Base level'),
                 type=QgsProcessingParameterNumber.Double,
-                minValue=0
+                minValue=0,
+                defaultValue=1000
             )
         )
 

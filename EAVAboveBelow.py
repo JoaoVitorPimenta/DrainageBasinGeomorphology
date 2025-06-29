@@ -103,7 +103,8 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
                 self.DISTANCE_BETWEEN_CONTOUR_LINES,
                 self.tr('Distance between contour lines'),
                 type=QgsProcessingParameterNumber.Double,
-                minValue=10
+                minValue=0,
+                defaultValue=10
             )
         )
 
@@ -120,7 +121,8 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
                 self.BASE_LEVEL_MINIMUM,
                 self.tr('Minimum level'),
                 type=QgsProcessingParameterNumber.Double,
-                minValue=0
+                minValue=0,
+                defaultValue=0
             )
         )
 
@@ -137,7 +139,8 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
                 self.BASE_LEVEL_MAXIMUM,
                 self.tr('Maximum level'),
                 type=QgsProcessingParameterNumber.Double,
-                minValue=1000
+                minValue=0,
+                defaultValue=1000
             )
         )
 
