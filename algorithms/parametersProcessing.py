@@ -337,7 +337,7 @@ def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
     firstPoint = filterMaxOrder.iloc[-1]['last']
     lastPoint = filterMaxOrder.iloc[0]['first']
 
-    dx = lastPoint[0] - firstPoint[1]
+    dx = lastPoint[0] - firstPoint[0]
     dy = lastPoint[1] - firstPoint[1]
 
     minX, minY, maxX, maxY = gdfShape.total_bounds
@@ -721,6 +721,7 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
         obtainFirstAndLastPoint(gdfStream)
         createOrderColumn(gdfStream)
         fillOrder(gdfStream)
+        mergeStreams(gdfStream)
         calculateStreamLength(gdfStream)
         if feedback.isCanceled():
             return
@@ -780,6 +781,7 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
         obtainFirstAndLastPoint(gdfStream)
         createOrderColumn(gdfStream)
         fillOrder(gdfStream)
+        mergeStreams(gdfStream)
         calculateStreamLength(gdfStream)
         if feedback.isCanceled():
             return
@@ -824,6 +826,7 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
         obtainFirstAndLastPoint(gdfStream)
         createOrderColumn(gdfStream)
         fillOrder(gdfStream)
+        mergeStreams(gdfStream)
         calculateStreamLength(gdfStream)
         if feedback.isCanceled():
             return
@@ -836,12 +839,6 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
         calculateAreaPerimeter(gdfShape)
         calculateBasinLength(gdfStream,gdfShape,basin,feedback)
         calculateDrainageDensity(gdfShape,gdfLinear)
-        calculateCirculatoryRatio(gdfShape)
-        calculateElongationRatio(gdfShape)
-        calculateFormFactor(gdfShape)
-        calculateLemniscateRatio(gdfShape)
-        calculateShapeIndex(gdfShape)
-        calculateCompactnessCoefficient(gdfShape)
         if feedback.isCanceled():
             return
         gdfRelief = createGdfRelief()
