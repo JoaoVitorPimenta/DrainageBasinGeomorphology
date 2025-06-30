@@ -34,8 +34,8 @@ Vector layer containing the drainage network of the drainage basins.
 **Output:**  
 **All morphometric parameters** - All morphometric parameters calculated, for each basin, in .csv.
 
-## Calculate elevation area volume
-This tool calculates the elevation to area volume ratio for all features provided in the drainage basin layer as input.
+## Calculate elevation area volume above
+This tool calculates the elevation area volume curves (above) for all features provided in the drainage basin layer as input.
 
 **Inputs:**  
 **Drainage basins** - Vector layer containing drainage basin features.
@@ -43,6 +43,44 @@ This tool calculates the elevation to area volume ratio for all features provide
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
 **Distance between contour lines** - The spacing between contour lines, between the first and last contour lines.
+
+**Base level** - The reference elevation to calculate the area and volume above.
+
+**Output:**  
+**Elevation area volume data** - Elevation Area Volume data, for each basin, in .csv.
+
+**Graphs** - Graphs with elevation-area and elevation-volume curves, for each basin, stored in .HTML format in a folder.
+
+## Calculate elevation area volume below
+This tool calculates the elevation area volume curves (below) for all features provided in the drainage basin layer as input.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Distance between contour lines** - The spacing between contour lines, between the first and last contour lines.
+
+**Base level** - The reference elevation to calculate the area and volume below.
+
+**Output:**  
+**Elevation area volume data** - Elevation Area Volume data, for each basin, in .csv.
+
+**Graphs** - Graphs with elevation-area and elevation-volume curves, for each basin, stored in .HTML format in a folder.
+
+## Calculate elevation area volume above and below
+This tool calculates the elevation area volume curves (above and below) for all features provided in the drainage basin layer as input.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Distance between contour lines** - The spacing between contour lines, between the first and last contour lines.
+
+**Minimum level** - The minimum elevation of the elevation area volume curve.
+
+**Maximum level** - The maximum elevation of the elevation area volume curve.
 
 **Output:**  
 **Elevation area volume data** - Elevation Area Volume data, for each basin, in .csv.
@@ -207,7 +245,7 @@ This tool calculates the solid volume of the DEM by elevation.
 
 ## Elevation - area - volume above and below
 
-This tool has the same logic as the calculation of the volume above and below, but it adds the two or subtracts one from the other.
+This tool has the same logic as the calculation of the volume above and below. The volume and area is the difference between the values ​​above and the values ​​below.
 
 ## Hypsometric curve
 
