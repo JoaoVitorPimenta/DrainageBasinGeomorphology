@@ -138,6 +138,9 @@ def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceCont
     if useMaxDEMElev is True:
         maximumLevel = None
 
+    if distanceContour == 0:
+        raise QgsProcessingException('The distance between contour lines cannot be 0.')
+
     indexConstantAreaFill = np.argmax(cumulativeAreasFill)
     constantAreaFill = cumulativeAreasFill[indexConstantAreaFill]
 

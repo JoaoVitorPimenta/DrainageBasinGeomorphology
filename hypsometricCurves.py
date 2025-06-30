@@ -97,8 +97,9 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.DISTANCE_BETWEEN_CONTOUR_LINES,
                 self.tr('Distance between contour lines'),
-                defaultValue=None,
-                minValue=0
+                defaultValue=10,
+                minValue=0,
+                type=QgsProcessingParameterNumber.Double,
             )
         )
 
@@ -106,7 +107,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterBoolean(
                 self.USE_ONLY_DEM_VALUES,
                 self.tr('Use only the elevation values ​​from the raster'),
-                defaultValue=False,
+                defaultValue=False
             )
         )
 
@@ -114,7 +115,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterBoolean(
                 self.ABSOLUTE_VALUES,
                 self.tr('Use absolute values instead of relative values'),
-                defaultValue=False,
+                defaultValue=False
             )
         )
 
@@ -122,7 +123,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterBoolean(
                 self.AREA_BELOW,
                 self.tr('Count area below elevation instead of above'),
-                defaultValue=False,
+                defaultValue=False
             )
         )
 

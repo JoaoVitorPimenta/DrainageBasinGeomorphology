@@ -109,7 +109,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterBoolean(
                 self.USE_ONLY_DEM_VALUES,
                 self.tr('Use only the elevation values ​​from the raster'),
-                defaultValue=False,
+                defaultValue=False
             )
         )
 

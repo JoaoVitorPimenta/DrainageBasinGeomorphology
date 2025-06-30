@@ -114,6 +114,9 @@ def EAVAboveProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
     if useMinDEMElev is True:
         baseLevel = None
 
+    if distanceContour == 0:
+        raise QgsProcessingException('The distance between contour lines cannot be 0.')
+
     if baseLevel is not None:
         elevationsWithBaseLevel = sorted(elevations + [baseLevel],reverse=True)
         if baseLevel not in elevations:
