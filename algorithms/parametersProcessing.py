@@ -51,8 +51,8 @@ def getStreamsInsideBasin(streamLayer, drainageBasin,feedback):
     basinGeom = drainageBasin.geometry()
 
     streamWithin = [
-        stream for stream in streamLayer.getFeatures()
-        if stream.geometry().within(basinGeom)
+        stream.geometry().intersection(basinGeom) for stream in streamLayer.getFeatures()
+        if stream.geometry().intersects(basinGeom)
     ]
 
     streamsWithin.extend(streamWithin)
@@ -65,17 +65,16 @@ def createGdfStream(streams):
     geometries2d = []
 
     for feat in streams:
-        geom = feat.geometry()
 
-        if geom.constGet().is3D():
-            geom.get().dropZValue()
-        if geom.constGet().isMeasure():
-            geom.get().dropMValue()
+        if feat.constGet().is3D():
+            feat.get().dropZValue()
+        if feat.constGet().isMeasure():
+            feat.get().dropMValue()
 
-        if not geom.isMultipart():
-            geometries2d.append(geom)
+        if not feat.isMultipart():
+            geometries2d.append(feat)
         else:
-            multiGeom = geom.asGeometryCollection()
+            multiGeom = feat.asGeometryCollection()
             if multiGeom:
                 geometries2d.append(multiGeom[0])
 
