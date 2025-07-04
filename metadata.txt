@@ -6,7 +6,7 @@
 name=Drainage Basin Geomorphology
 qgisMinimumVersion=3.40
 description=This plugin provides tools for geomorphological analysis in drainage basins.
-version=0.7
+version=0.8
 author=João Vitor Pimenta
 email=jvpjoaopimenta@gmail.com
 
@@ -21,6 +21,9 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        0.8
+        -now the streams no longer need to be entirely in the basin, the plugin will use the part of the streams that intersect the basin
+
         0.7
         -bug fixes
         -more information in README
