@@ -37,7 +37,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterRasterLayer,
-                       QgsProcessingParameterFileDestination)
+                       QgsProcessingParameterFileDestination,
+                       QgsProcessingParameterNumber)
 from .algorithms.parametersProcessing import runAllMorphometricParameters,verifyLibs
 
 class allMorphometricParameters(QgsProcessingAlgorithm):
@@ -61,6 +62,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
     MORPHOMETRICS_PARAMETERS = 'MORPHOMETRICS_PARAMETERS'
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
+    PRECISION_FOR_CONNECT_CHANNELS = 'PRECISION_FOR_JOIN_CHANNELS'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
 
     def initAlgorithm(self, config):
@@ -84,6 +86,16 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
                 [QgsProcessing.TypeVectorLine]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.PRECISION_FOR_CONNECT_CHANNELS,
+                self.tr('Distance limit for connecting channels'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.000001
             )
         )
 
@@ -120,10 +132,12 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
+        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.PRECISION_FOR_CONNECT_CHANNELS, context)
+
         path = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS, context)
 
         verifyLibs()
-        runAllMorphometricParameters(basinSource,channelNetwork,demLayer,path,feedback)
+        runAllMorphometricParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -177,6 +191,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
+        <strong>Distance limit for connecting channels: </strong>This is the maximum distance to join channels that are not fully connected. Since the algorithm only uses drainages within the basin, connection errors may occur in the channels at the intersection, so it is recommended to use 0.000001.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>All morphometric parameters: </strong>File with all morphometric parameters calculated individually for each basin.
         

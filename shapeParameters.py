@@ -36,7 +36,8 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFileDestination)
+                       QgsProcessingParameterFileDestination,
+                       QgsProcessingParameterNumber)
 from .algorithms.parametersProcessing import calculateShapeParameters,verifyLibs
 
 class shapeParametersCalc(QgsProcessingAlgorithm):
@@ -61,6 +62,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
+    PRECISION_FOR_CONNECT_CHANNELS = 'PRECISION_FOR_CONNECT_CHANNELS'
 
     def initAlgorithm(self, config):
         '''
@@ -83,6 +85,16 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
                 [QgsProcessing.TypeVectorLine]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.PRECISION_FOR_CONNECT_CHANNELS,
+                self.tr('Distance limit for connecting channels'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.000001
             )
         )
 
@@ -109,10 +121,12 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
+        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.PRECISION_FOR_CONNECT_CHANNELS, context)
+
         path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
 
         verifyLibs()
-        calculateShapeParameters(basinSource,channelNetwork,path,feedback)
+        calculateShapeParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -166,6 +180,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
+        <strong>Distance limit for connecting channels: </strong>This is the maximum distance to join channels that are not fully connected. Since the algorithm only uses drainages within the basin, connection errors may occur in the channels at the intersection, so it is recommended to use 0.000001.
         <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
         
         The use of a projected CRS is recommended.

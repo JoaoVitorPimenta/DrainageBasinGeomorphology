@@ -37,25 +37,21 @@ from osgeo import gdal, ogr
 
 def verifyLibs():
         try:
-            import numpy
-        except ImportError:
-            raise QgsProcessingException('Numpy library not found, please install it and try again.')
-        
-        try:
             import geopandas
         except ImportError:
             raise QgsProcessingException('Geopandas library not found, please install it and try again.')
-def getStreamsInsideBasin(streamLayer, drainageBasin,feedback):
+def getStreamsInsideBasin(streamLayer, drainageBasin, feedback, precisionSnapCoordinates):
     streamsWithin = []
 
     basinGeom = drainageBasin.geometry()
 
-    streamWithin = [
-        stream.geometry().intersection(basinGeom) for stream in streamLayer.getFeatures()
-        if stream.geometry().intersects(basinGeom)
-    ]
+    for stream in streamLayer.getFeatures():
+        if stream.geometry().intersects(basinGeom):
+            intersection = stream.geometry().intersection(basinGeom)
 
-    streamsWithin.extend(streamWithin)
+            snappedGeom = intersection.snappedToGrid(precisionSnapCoordinates, precisionSnapCoordinates)
+            if snappedGeom:
+                streamsWithin.append(snappedGeom)
 
     if not streamsWithin:
         feedback.pushWarning('There are no channels entirely within the basin of id '+str(drainageBasin.id())+' and the calculation of some parameters for this basin may be compromised')
@@ -76,7 +72,7 @@ def createGdfStream(streams):
         else:
             multiGeom = feat.asGeometryCollection()
             if multiGeom:
-                geometries2d.append(multiGeom[0])
+                geometries2d.extend(multiGeom)
 
     gdfStream = gpd.GeoDataFrame(
         geometry=geometries2d
@@ -628,7 +624,7 @@ def formatGdfRelief(gdfRelief,basin):
     gdfReliefFloat.columns = range(gdfReliefFloat.shape[1])
     return gdfReliefFloat
 
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback):
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -637,7 +633,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
+        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback, precisionSnapCoordinates)
         if feedback.isCanceled():
             return
         gdfStream = createGdfStream(streamsInside)
@@ -704,7 +700,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
 
     return
 
-def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
+def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback,precisionSnapCoordinates):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -713,7 +709,7 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
+        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback, precisionSnapCoordinates)
         if feedback.isCanceled():
             return
         gdfStream = createGdfStream(streamsInside)
@@ -764,7 +760,7 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback):
 
     return
 
-def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
+def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback, precisionSnapCoordinates):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -773,7 +769,7 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
+        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback, precisionSnapCoordinates)
         if feedback.isCanceled():
             return
         gdfStream = createGdfStream(streamsInside)
@@ -809,7 +805,7 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback):
 
     return
 
-def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback):
+def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback, precisionSnapCoordinates):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -818,7 +814,7 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback)
+        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback, precisionSnapCoordinates)
         if feedback.isCanceled():
             return
         gdfStream = createGdfStream(streamsInside)
@@ -864,12 +860,12 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
 
     return
 
-def runAllMorphometricParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback):
+def runAllMorphometricParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates):
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
 
-    calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback)
+    calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates)
 
-def runReliefParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback):
+def runReliefParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates):
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
 
-    calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback)
+    calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback,precisionSnapCoordinates)
