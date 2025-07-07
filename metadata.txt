@@ -23,6 +23,7 @@ hasProcessingProvider=yes
 changelog=
         0.8
         -now the streams no longer need to be entirely in the basin, the plugin will use the part of the streams that intersect the basin
+        -the input "maximum distance to connect channels" is added in case of basins/channels with problematic geometries
 
         0.7
         -bug fixes
