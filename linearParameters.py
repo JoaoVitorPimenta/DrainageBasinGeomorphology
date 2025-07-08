@@ -62,7 +62,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    PRECISION_FOR_CONNECT_CHANNELS = 'PRECISION_FOR_CONNECT_CHANNELS'
+    SNAP_TOLERANCE = 'SNAP_TOLERANCE'
 
     def initAlgorithm(self, config):
         '''
@@ -90,8 +90,8 @@ class linearParametersCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
-                self.PRECISION_FOR_CONNECT_CHANNELS,
-                self.tr('Distance limit for connecting channels'),
+                self.SNAP_TOLERANCE,
+                self.tr('Snap tolerance'),
                 type=QgsProcessingParameterNumber.Double,
                 minValue=0,
                 defaultValue=0.000001
@@ -121,7 +121,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
 
         channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.PRECISION_FOR_CONNECT_CHANNELS, context)
+        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.SNAP_TOLERANCE, context)
 
         path = self.parameterAsFileOutput(parameters, self.LINEAR_PARAMETERS, context)
 
@@ -180,7 +180,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>Distance limit for connecting channels: </strong>This is the maximum distance to join channels that are not fully connected. Since the algorithm only uses drainages within the basin, connection errors may occur in the channels at the intersection, so it is recommended to use 0.000001.
+        <strong>Snap tolerance: </strong>Defines the maximum distance that each vertex will be moved ("snapped") to the nearest point on a regular grid. Used to fix connection problems when selecting channels that intersect the basin.
         <strong>Linear parameters: </strong>File with all linear parameters calculated individually for each basin.
         
         The use of a projected CRS is recommended.

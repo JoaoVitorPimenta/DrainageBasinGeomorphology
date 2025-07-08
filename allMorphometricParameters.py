@@ -62,7 +62,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
     MORPHOMETRICS_PARAMETERS = 'MORPHOMETRICS_PARAMETERS'
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
-    PRECISION_FOR_CONNECT_CHANNELS = 'PRECISION_FOR_JOIN_CHANNELS'
+    SNAP_TOLERANCE = 'SNAP_TOLERANCE'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
 
     def initAlgorithm(self, config):
@@ -91,8 +91,8 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
-                self.PRECISION_FOR_CONNECT_CHANNELS,
-                self.tr('Distance limit for connecting channels'),
+                self.SNAP_TOLERANCE,
+                self.tr('Snap tolerance'),
                 type=QgsProcessingParameterNumber.Double,
                 minValue=0,
                 defaultValue=0.000001
@@ -132,7 +132,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.PRECISION_FOR_CONNECT_CHANNELS, context)
+        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.SNAP_TOLERANCE, context)
 
         path = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS, context)
 
@@ -191,7 +191,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>Distance limit for connecting channels: </strong>This is the maximum distance to join channels that are not fully connected. Since the algorithm only uses drainages within the basin, connection errors may occur in the channels at the intersection, so it is recommended to use 0.000001.
+        <strong>Snap tolerance: </strong>Defines the maximum distance that each vertex will be moved ("snapped") to the nearest point on a regular grid. Used to fix connection problems when selecting channels that intersect the basin.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>All morphometric parameters: </strong>File with all morphometric parameters calculated individually for each basin.
         
