@@ -28,7 +28,7 @@ This tool calculates all morphometric parameters of the watershed as shown in th
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
-**Snap tolerance** - Defines the maximum distance (in map units) that each vertex will be moved ("snapped") to the nearest point on a regular grid.
+**Snap tolerance** - Defines the maximum distance (in map units) that each channel vertex will be moved ("snapped") to the nearest point on a regular grid.
 
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
@@ -112,7 +112,7 @@ This tool calculates linear parameters of the watershed as shown in the table be
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
-**Snap tolerance** - Defines the maximum distance (in map units) that each vertex will be moved ("snapped") to the nearest point on a regular grid.
+**Snap tolerance** - Defines the maximum distance (in map units) that each channel vertex will be moved ("snapped") to the nearest point on a regular grid.
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
@@ -127,7 +127,7 @@ This tool calculates relief parameters of the watershed as shown in the table be
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
-**Snap tolerance** - Defines the maximum distance (in map units) that each vertex will be moved ("snapped") to the nearest point on a regular grid.
+**Snap tolerance** - Defines the maximum distance (in map units) that each channel vertex will be moved ("snapped") to the nearest point on a regular grid.
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
@@ -142,7 +142,7 @@ This tool calculates shape parameters of the watershed as shown in the table bel
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
-**Snap tolerance** - Defines the maximum distance (in map units) that each vertex will be moved ("snapped") to the nearest point on a regular grid.
+**Snap tolerance** - Defines the maximum distance (in map units) that each channel vertex will be moved ("snapped") to the nearest point on a regular grid.
 
 **Output:**  
 **Shape parameters** - Shape parameters calculated, for each basin, in .csv.

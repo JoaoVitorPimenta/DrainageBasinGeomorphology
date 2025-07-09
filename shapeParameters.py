@@ -62,7 +62,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    SNAP_TOLERANCE = 'SNAP_TOLERANCE'
+    SNAP_CHANNEL_TOLERANCE = 'SNAP_CHANNEL_TOLERANCE'
 
     def initAlgorithm(self, config):
         '''
@@ -90,7 +90,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
-                self.SNAP_TOLERANCE,
+                self.SNAP_CHANNEL_TOLERANCE,
                 self.tr('Snap tolerance'),
                 type=QgsProcessingParameterNumber.Double,
                 minValue=0,
@@ -121,7 +121,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.SNAP_TOLERANCE, context)
+        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.SNAP_CHANNEL_TOLERANCE, context)
 
         path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
 
@@ -180,7 +180,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>Snap tolerance: </strong>Defines the maximum distance that each vertex will be moved ("snapped") to the nearest point on a regular grid. Used to fix connection problems when selecting channels that intersect the basin.
+        <strong>Snap channel tolerance: </strong>Defines the maximum distance that each channel vertex will be moved ("snapped") to the nearest point on a regular grid. Used to fix connection problems when selecting channels that intersect the basin.
         <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
         
         The use of a projected CRS is recommended.
