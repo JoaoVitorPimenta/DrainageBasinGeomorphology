@@ -183,7 +183,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
         <strong>Snap channel tolerance: </strong>Defines the maximum distance that each channel vertex will be moved ("snapped") to the nearest point on a regular grid. Used to fix connection problems when selecting channels that intersect the basin.
         <strong>Linear parameters: </strong>File with all linear parameters calculated individually for each basin.
         
-        The use of a projected CRS is recommended.
+        The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
                        
         If you need more information about how the plugin works, such as the calculations it performs, among other things, access: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
         If you have found any bugs, errors or have any requests to make, among other things, please acess: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues

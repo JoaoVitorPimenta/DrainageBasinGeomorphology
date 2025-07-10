@@ -195,7 +195,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>All morphometric parameters: </strong>File with all morphometric parameters calculated individually for each basin.
         
-        The use of a projected CRS is recommended.
+        The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
                        
         If you need more information about how the plugin works, such as the calculations it performs, among other things, access: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
         If you have found any bugs, errors or have any requests to make, among other things, please acess: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues
