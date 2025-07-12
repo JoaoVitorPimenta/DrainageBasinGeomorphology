@@ -62,7 +62,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
     MORPHOMETRICS_PARAMETERS = 'MORPHOMETRICS_PARAMETERS'
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
-    SNAP_CHANNEL_TOLERANCE = 'SNAP_CHANNEL_TOLERANCE'
+    CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
 
     def initAlgorithm(self, config):
@@ -91,11 +91,12 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
-                self.SNAP_CHANNEL_TOLERANCE,
-                self.tr('Snap channel tolerance'),
+                self.CHANNEL_COORDINATE_PRECISION,
+                self.tr('Channel coordinate precision'),
                 type=QgsProcessingParameterNumber.Double,
                 minValue=0,
-                defaultValue=0.000001
+                defaultValue=0,
+                optional=True
             )
         )
 
@@ -132,7 +133,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.SNAP_CHANNEL_TOLERANCE, context)
+        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
         path = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS, context)
 
@@ -191,7 +192,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>Snap channel tolerance: </strong>Defines the maximum distance that each channel vertex will be moved ("snapped") to the nearest point on a regular grid. Used to fix connection problems when selecting channels that intersect the basin.
+        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>All morphometric parameters: </strong>File with all morphometric parameters calculated individually for each basin.
         

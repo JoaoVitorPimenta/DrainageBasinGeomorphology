@@ -62,7 +62,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    SNAP_CHANNEL_TOLERANCE = 'SNAP_CHANNEL_TOLERANCE'
+    CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
 
     def initAlgorithm(self, config):
         '''
@@ -90,11 +90,12 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
-                self.SNAP_CHANNEL_TOLERANCE,
-                self.tr('Snap tolerance'),
+                self.CHANNEL_COORDINATE_PRECISION,
+                self.tr('Channel coordinate precision'),
                 type=QgsProcessingParameterNumber.Double,
                 minValue=0,
-                defaultValue=0.000001
+                defaultValue=0,
+                optional=True
             )
         )
 
@@ -121,7 +122,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.SNAP_CHANNEL_TOLERANCE, context)
+        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
         path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
 
@@ -180,7 +181,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>Snap channel tolerance: </strong>Defines the maximum distance that each channel vertex will be moved ("snapped") to the nearest point on a regular grid. Used to fix connection problems when selecting channels that intersect the basin.
+        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding
         <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
         
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
