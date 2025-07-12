@@ -107,7 +107,10 @@ def findOrder(gdf, streamMap, index):
 
     for tributaryIndex in tributariesIndexes:
         if gdf.at[tributaryIndex, 'order'] is None:
-            findOrder(gdf, streamMap, tributaryIndex)
+            try:
+                findOrder(gdf, streamMap, tributaryIndex)
+            except RecursionError:
+                raise QgsProcessingException('The channels are forming a loop, making it impossible to classify the channels (check that the channel coordinate precision is not causing the channels to merge and form a loop).')
 
         tributary_order = gdf.at[tributaryIndex, 'order']
 
@@ -175,8 +178,8 @@ def mergeStreams(gdf):
         while True:
             currentEnd = gdf.loc[currentIdx, 'last']
             candidates = gdf[
-                (gdf['first'] == currentEnd) & 
-                (gdf['order'] == currentOrder) & 
+                (gdf['first'] == currentEnd) &
+                (gdf['order'] == currentOrder) &
                 (~gdf['processed'])
             ]
 
