@@ -6,7 +6,7 @@
 name=Drainage Basin Geomorphology
 qgisMinimumVersion=3.40
 description=This plugin provides tools for geomorphological analysis in drainage basins.
-version=0.8
+version=0.9
 author=João Vitor Pimenta
 email=jvpjoaopimenta@gmail.com
 
@@ -21,6 +21,10 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        0.9
+        -add exception if the channels forms a loop
+        -change the name and the information about "Snap channel tolerance" (now its named "channel coordinate precision") and now its a optional input
+
         0.8
         -now the streams no longer need to be entirely in the basin, the plugin will use the part of the streams that intersect the basin
         -the input "Snap channel tolerance" is added in case of basins/channels with problematic geometries
