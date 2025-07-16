@@ -31,7 +31,7 @@ __copyright__ = '(C) 2025 by João Vitor Pimenta'
 __revision__ = '$Format:%H$'
 
 from math import pi
-from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException, QgsGeometry
+from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException, QgsGeometry, QgsWkbTypes
 import geopandas as gpd
 from osgeo import gdal, ogr
 
@@ -50,8 +50,7 @@ def getStreamsInsideBasin(streamLayer, drainageBasin, feedback, precisionSnapCoo
             intersection = stream.geometry().intersection(basinGeom)
             snappedGeom = intersection.snappedToGrid(precisionSnapCoordinates, precisionSnapCoordinates)
 
-            if snappedGeom:
-                streamsWithin.append(snappedGeom)
+            streamsWithin.append(snappedGeom)
 
     if not streamsWithin:
         feedback.pushWarning('There are no channels entirely within the basin of id '+str(drainageBasin.id())+' and the calculation of some parameters for this basin may be compromised')
@@ -68,11 +67,16 @@ def createGdfStream(streams):
             feat.get().dropMValue()
 
         if not feat.isMultipart():
-            geometries2d.append(feat)
+            geomType = feat.wkbType()
+            if QgsWkbTypes.geometryType(geomType) != QgsWkbTypes.PointGeometry:
+                geometries2d.append(feat)
+
         else:
             multiGeom = feat.asGeometryCollection()
-            if multiGeom:
-                geometries2d.extend(multiGeom)
+            for part in multiGeom:
+                geomType = part.wkbType()
+                if QgsWkbTypes.geometryType(geomType) != QgsWkbTypes.PointGeometry:
+                    geometries2d.append(part)
 
     gdfStream = gpd.GeoDataFrame(
         geometry=geometries2d
