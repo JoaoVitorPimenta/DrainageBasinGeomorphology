@@ -49,7 +49,6 @@ def getStreamsInsideBasin(streamLayer, drainageBasin, feedback, precisionSnapCoo
         if stream.geometry().intersects(basinGeom):
             intersection = stream.geometry().intersection(basinGeom)
             snappedGeom = intersection.snappedToGrid(precisionSnapCoordinates, precisionSnapCoordinates)
-
             streamsWithin.append(snappedGeom)
 
     if not streamsWithin:

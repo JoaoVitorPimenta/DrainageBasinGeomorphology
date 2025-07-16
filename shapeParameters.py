@@ -94,7 +94,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
                 self.tr('Channel coordinate precision'),
                 type=QgsProcessingParameterNumber.Double,
                 minValue=0,
-                defaultValue=0,
+                defaultValue=0.000001,
                 optional=True
             )
         )
