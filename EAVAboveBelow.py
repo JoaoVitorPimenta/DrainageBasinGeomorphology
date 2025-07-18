@@ -39,7 +39,6 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterNumber,
-                       QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterBoolean)
 from .algorithms.EAVAboveBelowProcessing import runEAVAboveBelow, verifyLibs
 
@@ -71,7 +70,7 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
     BASE_LEVEL_MAXIMUM = 'BASE_LEVEL_MAXIMUM'
     USE_MAX_VALUE_DEM = 'USE_MAX_VALUE_DEM'
     SUBTRACTS_VOLUME_BELOW = 'SUBTRACTS_VOLUME_BELOW'
-    GRAPHS = 'GRAPHS'
+    GRAPH = 'GRAPH'
 
 
     def initAlgorithm(self, config):
@@ -172,10 +171,12 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterFolderDestination(
-                self.GRAPHS,
-                self.tr('Graphs'))
+            QgsProcessingParameterFileDestination(
+                self.GRAPH,
+                self.tr('Graph'),
+                fileFilter=('HTML files (*.html)')
             )
+        )
 
     def processAlgorithm(self, parameters, context, feedback):
         '''
@@ -205,7 +206,7 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
 
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
-        pathGraph = self.parameterAsString(parameters, self.GRAPHS, context)
+        pathGraph = self.parameterAsString(parameters, self.GRAPH, context)
 
         verifyLibs()
         runEAVAboveBelow(basinSource,demLayer,pathData,pathGraph,distanceCurves,minLevel,maxLevel,subtractsBelow,useOnlyRasterElev,useMinRasterElev,useMaxRasterElev,feedback)
@@ -217,7 +218,7 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
         return {self.ELEVATION_AREA_VOLUME_DATA: pathData,
-                self.GRAPHS: pathGraph}
+                self.GRAPH: pathGraph}
 
     def name(self):
         '''

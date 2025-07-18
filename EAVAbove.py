@@ -39,7 +39,6 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterNumber,
-                       QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterBoolean)
 from .algorithms.EAVAboveProcessing import runEAVAbove, verifyLibs
 
@@ -68,7 +67,7 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
     USE_ONLY_DEM_VALUES = 'USE_ONLY_DEM_VALUES'
     BASE_LEVEL = 'BASE_LEVEL'
     USE_MIN_VALUE_DEM = 'USE_MIN_VALUE_DEM'
-    GRAPHS = 'GRAPHS'
+    GRAPH = 'GRAPH'
 
 
     def initAlgorithm(self, config):
@@ -143,10 +142,12 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterFolderDestination(
-                self.GRAPHS,
-                self.tr('Graphs'))
+            QgsProcessingParameterFileDestination(
+                self.GRAPH,
+                self.tr('Graph'),
+                fileFilter=('HTML files (*.html)')
             )
+        )
 
     def processAlgorithm(self, parameters, context, feedback):
         '''
@@ -170,7 +171,7 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
 
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
-        pathGraph = self.parameterAsString(parameters, self.GRAPHS, context)
+        pathGraph = self.parameterAsFileOutput(parameters, self.GRAPH, context)
 
         verifyLibs()
         runEAVAbove(basinSource,demLayer,pathData,pathGraph,distanceCurves,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback)
@@ -182,7 +183,7 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
         return {self.ELEVATION_AREA_VOLUME_DATA: pathData,
-                self.GRAPHS: pathGraph}
+                self.GRAPH: pathGraph}
 
     def name(self):
         '''

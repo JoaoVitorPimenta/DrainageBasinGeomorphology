@@ -169,84 +169,87 @@ def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
-    os.makedirs(pathHtml, exist_ok=True)
-
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
-
+    fig = go.Figure()
     listsWithData = []
 
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         if feedback.isCanceled():
             return
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        elevations, cumulativeAreas, cumulativeVolumes = EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,baseLevel,useOnlyDEMElev,useMaxDEMElev,feedback)
 
-        if (elevations is None and cumulativeAreas is None and cumulativeVolumes is None):
-            return
+        feedback.setProgressText(f'Basin id {basin.id()} processing starting...')
+        elevations, cumulativeAreas, cumulativeVolumes = EAVBelowProcessing(
+            demArray, noData, gt, proj, cols, rows, basin,
+            distanceContour, baseLevel, useOnlyDEMElev, useMaxDEMElev, feedback
+        )
 
-        elevations.insert(0,'Elevation basin id'+str(basin.id()))
-        cumulativeAreas.insert(0,'Area basin id '+str(basin.id()))
-        cumulativeVolumes.insert(0,'Volume basin id '+str(basin.id()))
+        if elevations is None and cumulativeAreas is None and cumulativeVolumes is None:
+            continue
+
+        elevations.insert(0, f'Elevation basin id {basin.id()}')
+        cumulativeAreas.insert(0, f'Area basin id {basin.id()}')
+        cumulativeVolumes.insert(0, f'Volume basin id {basin.id()}')
 
         listsWithData.append(elevations)
         listsWithData.append(cumulativeAreas)
         listsWithData.append(cumulativeVolumes)
 
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
+        feedback.setProgressText(f'Basin id {basin.id()} processing completed')
 
         if feedback.isCanceled():
             return
 
-        feedback.setProgressText('Basin id '+str(basin.id())+' graph starting...')
-        fig = go.Figure()
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        feedback.setProgressText(f'Basin id {basin.id()} graph starting...')
 
         fig.add_trace(go.Scatter(
-                                x=cumulativeVolumes,
-                                y=elevations,
-                                mode='lines',
-                                name='Volume - Elevation basin id '+str(basin.id())
-                                ),
-                                secondary_y=False
-                                )
-        fig.add_trace(go.Scatter(x=cumulativeAreas,
-                                y=elevations,
-                                mode='lines',
-                                name='Area - Elevation basin id '+str(basin.id())
-                                ),
-                                secondary_y=True
-                                )
+            x=cumulativeVolumes,
+            y=elevations,
+            mode='lines',
+            name=f'Volume - Elevation basin id {basin.id()}',
+            yaxis='y',  # padrão
+            xaxis='x'   # padrão
+        ))
 
-        fig.data[1].update(xaxis='x2')
-
-        fig.update_layout(
-            title='Elevation - Area - Volume graph',
-            xaxis=dict(title='Volume (m3)'),
-            yaxis=dict(title='Elevation (m)'),
-            xaxis2=dict(title='Area (m2)',
-                        overlaying='x',
-                        side='top',
-                        autorange='reversed'),
-            yaxis2=dict(
-                        title='Elevation (m)',
-                        overlaying='y',
-                        side='right',
-                        position=1
-                        )
-                            )
-
-        outputHTML = os.path.join(pathHtml, 'GRAPH_BASIN_ID_'+str(basin.id())+'.html')
-        fig.write_html(outputHTML)
+        fig.add_trace(go.Scatter(
+            x=cumulativeAreas,
+            y=elevations,
+            mode='lines',
+            name=f'Area - Elevation basin id {basin.id()}',
+            yaxis='y2',   # eixo y secundário
+            xaxis='x2'    # eixo x secundário
+        ))
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin id '+str(basin.id())+' graph completed')
+        feedback.setProgressText(f'Basin id {basin.id()} graph completed')
 
-        fig.show()
+    # Configura layout com eixos secundários (x2 e y2)
+    fig.update_layout(
+        title='Elevation - Area - Volume graph',
+        xaxis=dict(title='Volume (m³)'),
+        yaxis=dict(title='Elevation (m)'),
+        xaxis2=dict(
+            title='Area (m²)',
+            overlaying='x',
+            side='top',
+            autorange='reversed'
+        ),
+        yaxis2=dict(
+            title='Elevation (m)',
+            overlaying='y',
+            side='right',
+            position=1
+        ),
+    )
+
+    fig.write_html(pathHtml)
+    fig.show()
 
     if feedback.isCanceled():
-            return
-    feedback.setProgressText('Basin id '+str(basin.id())+' graph completed')
+        return
+
+    feedback.setProgressText(f'Graph completed for all basins')
+
     with open(pathCsv, 'w', newline='') as archive:
         writer = csv.writer(archive)
         writer.writerows(itertools.zip_longest(*listsWithData))
