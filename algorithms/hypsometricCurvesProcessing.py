@@ -179,6 +179,8 @@ def runHypsometricCurves(drainageBasinLayer,demLayer,pathCsv,pathHtml,absoluteVa
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
 
         heights, cumulativeAreas = calculateHypsometricCurve(demArray,noData,gt,proj,cols,rows,basin,absoluteValues,distanceContour,areaBelow,useOnlyDEMElev,feedback)
+        if heights is None and cumulativeAreas is None:
+            continue
         hypsometricIntegral =calculateHI(heights,cumulativeAreas,basin)
 
         if feedback.isCanceled():
