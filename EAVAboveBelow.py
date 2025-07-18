@@ -268,7 +268,7 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
         <strong>Elevation area volume data: </strong>File with elevation - area - volume (above/below) data calculated individually for each basin.
         <strong>Graphs: </strong>Folder containing the elevation-area-volume (above/below) graph for each basin individually.        
 
-        The use of a projected CRS is recommended.
+        The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
 
         If you need more information about how the plugin works, such as the calculations it performs, among other things, access: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
         If you have found any bugs, errors or have any requests to make, among other things, please acess: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues
