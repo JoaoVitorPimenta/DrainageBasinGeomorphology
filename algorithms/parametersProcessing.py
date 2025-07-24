@@ -59,7 +59,8 @@ def createGdfStream(streams):
     geometries2d = []
 
     for feat in streams:
-
+        if feat.constGet() is None:
+            continue
         if feat.constGet().is3D():
             feat.get().dropZValue()
         if feat.constGet().isMeasure():
