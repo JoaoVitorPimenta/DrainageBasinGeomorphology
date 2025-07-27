@@ -42,6 +42,9 @@ from .EAVBelow import EAVBelowCalc
 from .EAVAbove import EAVAboveCalc
 from .EAVAboveBelow import EAVAboveBelowCalc
 from .inundationArea import InundationCalc
+from .fillDEM import filledCalc
+from .cutDEM import cuttedCalc
+from .fillCutDEM import filledCuttedCalc
 
 class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
 
@@ -71,6 +74,9 @@ class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
         self.addAlgorithm(EAVAboveCalc())
         self.addAlgorithm(EAVAboveBelowCalc())
         self.addAlgorithm(InundationCalc())
+        self.addAlgorithm(filledCalc())
+        self.addAlgorithm(cuttedCalc())
+        self.addAlgorithm(filledCuttedCalc())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
 
