@@ -102,7 +102,7 @@ def EAVprocessing(demArray,noData,gt,proj,cols,rows,basin,feedback):
 def calcInundationArea(arrayInsideBasin, waterElevation, waterHeight, waterArea, waterVolume, folderRaster, folderVector, noDataValue, proj, gt, demLayer, negativeDepth, openRasters, openVectors, basin, idx, step, feedback):
     feedback.setProgressText('Basin id '+str(basin.id())+' processing raster starting...')
 
-    elevationsInundatedPixels = np.where(arrayInsideBasin < waterElevation, arrayInsideBasin, np.nan)
+    elevationsInundatedPixels = np.where(arrayInsideBasin <= waterElevation, arrayInsideBasin, np.nan)
 
     if np.isnan(elevationsInundatedPixels).all():
         feedback.pushWarning('There are no DEM pixels within basin id '+str(basin.id())+' below water elevation, so it is not possible to generate the output layers for this basin.')
