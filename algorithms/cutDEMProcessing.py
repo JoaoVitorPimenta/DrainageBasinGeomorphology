@@ -186,7 +186,7 @@ def calcCuttedDEM(arrayInsideBasin, elevation, height, area, volume, folderRaste
 
     driver = ogr.GetDriverByName("ESRI Shapefile")
     os.makedirs(folderVector, exist_ok=True)
-    pathVector = os.path.join(folderVector, 'FILLED_VECTOR_BASIN_ID_'+str(basin.id())+'.shp')
+    pathVector = os.path.join(folderVector, 'CUTTED_VECTOR_BASIN_ID_'+str(basin.id())+'.shp')
 
     mergedDataSource = driver.CreateDataSource(pathVector)
     mergedLayer = mergedDataSource.CreateLayer("merged", srs=layer.GetSpatialRef(), geom_type=geomType)
@@ -263,8 +263,8 @@ def calcCuttedForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,
 
             heights = elevations - min(elevations)
 
-            heightAreaInterpolation = np.interp(parameterValue, heights[::-1], cumulativeAreas[::-1])
-            heightVolInterpolation = np.interp(parameterValue, heights[::-1], cumulativeVolumes[::-1])
+            heightAreaInterpolation = np.interp(parameterValue, heights, cumulativeAreas)
+            heightVolInterpolation = np.interp(parameterValue, heights, cumulativeVolumes)
 
             respectiveElevation = elevations[0] - parameterValue
             respectiveHeight = parameterValue
@@ -282,8 +282,8 @@ def calcCuttedForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,
                 feedback.pushWarning('The parameter value is less than the minimum height of basin id '+str(basin.id())+' so it will be set as the minimum for that basin.')
                 parameterValue = min(elevations)
 
-            elevationAreaInterpolation = np.interp(parameterValue, elevations[::-1], cumulativeAreas[::-1])
-            elevationVolInterpolation = np.interp(parameterValue, elevations[::-1], cumulativeVolumes[::-1])
+            elevationAreaInterpolation = np.interp(parameterValue, elevations, cumulativeAreas)
+            elevationVolInterpolation = np.interp(parameterValue, elevations, cumulativeVolumes)
 
             respectiveElevation = parameterValue
             respectiveHeight = respectiveElevation - elevations[-1]
@@ -301,8 +301,8 @@ def calcCuttedForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,
                 feedback.pushWarning('The parameter value is less than the minimum area of basin id '+str(basin.id())+' so it will be set as the minimum for that basin.')
                 parameterValue = min(cumulativeAreas)
 
-            areaVolInterpolation = np.interp(parameterValue, cumulativeAreas[::-1], cumulativeVolumes[::-1])
-            areaElevationInterpolation = np.interp(parameterValue, cumulativeAreas[::-1], elevations[::-1])
+            areaVolInterpolation = np.interp(parameterValue, cumulativeAreas, cumulativeVolumes)
+            areaElevationInterpolation = np.interp(parameterValue, cumulativeAreas, elevations)
 
             respectiveElevation = areaElevationInterpolation
             respectiveHeight = respectiveElevation - elevations[-1]
@@ -320,8 +320,8 @@ def calcCuttedForParameter(drainageBasinLayer,demLayer,parameter,parameterValue,
                 feedback.pushWarning('The parameter value is less than the minimum volume of basin id '+str(basin.id())+' so it will be set as the minimum for that basin.')
                 parameterValue = min(cumulativeVolumes)
 
-            volAreaInterpolation = np.interp(parameterValue, cumulativeVolumes[::-1], cumulativeAreas[::-1])
-            volElevationInterpolation = np.interp(parameterValue, cumulativeVolumes[::-1], elevations[::-1])
+            volAreaInterpolation = np.interp(parameterValue, cumulativeVolumes, cumulativeAreas)
+            volElevationInterpolation = np.interp(parameterValue, cumulativeVolumes, elevations)
 
             respectiveElevation = volElevationInterpolation
             respectiveHeight = respectiveElevation - elevations[-1]
