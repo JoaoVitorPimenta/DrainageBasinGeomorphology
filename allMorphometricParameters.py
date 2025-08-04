@@ -64,6 +64,7 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
     DEM = 'DEM'
     CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
+    DECIMAL_PLACES = 'DECIMAL_PLACES'
 
     def initAlgorithm(self, config):
         '''
@@ -108,6 +109,28 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.CHANNEL_COORDINATE_PRECISION,
+                self.tr('Channel coordinate precision'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.000001,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.DECIMAL_PLACES,
+                self.tr('Decimal places of the result'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=0,
+                defaultValue=2,
+                optional=False
+            )
+        )
+
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
@@ -135,10 +158,12 @@ class allMorphometricParameters(QgsProcessingAlgorithm):
 
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
+        decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
+
         path = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS, context)
 
         verifyLibs()
-        runAllMorphometricParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates)
+        runAllMorphometricParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

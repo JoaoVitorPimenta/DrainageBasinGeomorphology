@@ -64,6 +64,7 @@ class reliefParametersCalc(QgsProcessingAlgorithm):
     DEM = 'DEM'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
     CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
+    DECIMAL_PLACES = 'DECIMAL_PLACES'
 
     def initAlgorithm(self, config):
         '''
@@ -107,7 +108,18 @@ class reliefParametersCalc(QgsProcessingAlgorithm):
                 [QgsProcessing.TypeRaster]
             )
         )
-        
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.DECIMAL_PLACES,
+                self.tr('Decimal places of the result'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=0,
+                defaultValue=2,
+                optional=False
+            )
+        )
+
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
@@ -135,10 +147,12 @@ class reliefParametersCalc(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
+        decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
+
         path = self.parameterAsFileOutput(parameters, self.RELIEF_PARAMETERS, context)
 
         verifyLibs()
-        runReliefParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates)
+        runReliefParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

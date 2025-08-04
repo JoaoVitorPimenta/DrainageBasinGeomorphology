@@ -33,6 +33,7 @@ __revision__ = '$Format:%H$'
 from math import pi
 from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException, QgsGeometry, QgsWkbTypes
 import geopandas as gpd
+import pandas as pd
 from osgeo import gdal, ogr
 
 def verifyLibs():
@@ -308,7 +309,7 @@ def calculateSinuosityIndex(gdfStream,gdfLinear):
 
     totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream Length Total (km)'].values[0]
     sinuosityIndex = totalLength/straightLineLength
-    gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Main channel sinuosity index'] = sinuosityIndex
+    gdfLinear.loc[gdfLinear.index[-1], 'Main channel sinuosity index'] = sinuosityIndex
     return
 
 def createGdfShape(basin):
@@ -325,7 +326,7 @@ def calculateFitnessRatio(gdfShape,gdfLinear):
     maxOrder = gdfLinear['Stream Order'].max()
     totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream Length Total (km)'].values[0]
     fitnessRatio = (totalLength/gdfShape['Perimeter (km)'])
-    gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Fitness Ratio (Rf)'] = fitnessRatio.iloc[0][0]
+    gdfLinear.loc[gdfLinear.index[-1], 'Fitness Ratio (Rf)'] = fitnessRatio.iloc[0][0]
     return
 
 def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
@@ -369,7 +370,7 @@ def calculateWanderingRatio(gdfShape,gdfLinear):
     maxOrder = gdfLinear['Stream Order'].max()
     totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream Length Total (km)'].values[0]
     wanderingRatio = (totalLength/gdfShape['Basin Length (Lg) (km)'])
-    gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Wandering Ratio (Rw)'] = wanderingRatio.iloc[0]
+    gdfLinear.loc[gdfLinear.index[-1], 'Wandering Ratio (Rw)'] = wanderingRatio.iloc[0]
     return
 
 def calculateStreamFrequency(gdfShape,gdfLinear):
@@ -571,67 +572,109 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief):
     gdfRelief['Gradient Ratio (Gr)'] = (hightestPoint - lowestPoint)/ls
     return
 
+def intToRoman(num):
+    val = [1000, 900, 500, 400, 100, 90,  50,  40, 10, 9, 5, 4, 1]
+    syms = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I']
+    roman = ''
+    for i in range(len(val)):
+        count = num // val[i]
+        roman += syms[i] * count
+        num -= val[i] * count
+    return roman
+
 def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
-    gdfLinear.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfLinear.columns]
-    gdfShape.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfShape.columns]
-    gdfRelief.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfRelief.columns]
+    gdfLinearGeneral = gdfLinear[gdfLinear['Stream Order'].isna()].drop(columns='Stream Order').reset_index(drop=True)
 
-    gdfLinearFloat = gdfLinear.astype(float)
-    gdfReliefFloat = gdfRelief.astype(float)
+    gdfLinearOrders = gdfLinear[gdfLinear['Stream Order'].notna()].copy()
+    gdfLinearOrders['Stream Order'] = gdfLinearOrders['Stream Order'].astype(int)
 
-    gdfLinearFloat.loc[-1] = gdfLinear.columns
-    gdfLinearFloat.index = gdfLinearFloat.index + 1
-    gdfLinearFloat.sort_index(inplace=True)
-    gdfLinearFloat.loc[gdfLinearFloat.index[-1], 'Stream Order basin id ' + str(basin.id())] = 'General'
-    gdfLinearFloat.columns = range(gdfLinearFloat.shape[1])
+    columnsToPivote = [
+        col for col in gdfLinearOrders.columns
+        if col not in ['Stream Order', '__row__'] and gdfLinearOrders[col].notna().any()
+    ]
 
-    gdfShape.drop(columns='geometry basin id ' + str(basin.id()),inplace=True)
-    gdfShapeFloat = gdfShape.astype(float)
-    gdfShapeFloat.loc[-1] = gdfShapeFloat.columns
-    gdfShapeFloat.index = gdfShapeFloat.index + 1
-    gdfShapeFloat.sort_index(inplace=True)
-    gdfShapeFloat.columns = range(gdfShapeFloat.shape[1])
+    gdfLinearOrders = gdfLinearOrders[['Stream Order'] + columnsToPivote]
+    gdfLinearOrders['__row__'] = 0  # índice comum fictício
+    gdfLinearPivoted = gdfLinearOrders.pivot(index='__row__', columns='Stream Order')
 
-    gdfReliefFloat.loc[-1] = gdfReliefFloat.columns
-    gdfReliefFloat.index = gdfReliefFloat.index + 1
-    gdfReliefFloat.sort_index(inplace=True)
-    gdfReliefFloat.columns = range(gdfReliefFloat.shape[1])
+    gdfLinearPivoted.columns = [
+        f'{col[0]} {intToRoman(col[1])}' for col in gdfLinearPivoted.columns
+    ]
+    gdfLinearPivoted = gdfLinearPivoted.reset_index(drop=True)
+
+    pivotedColumnsBase = set(col.split(' ')[0] for col in gdfLinearPivoted.columns)
+    columnsWithoutPivote = [col for col in gdfLinearGeneral.columns if col not in pivotedColumnsBase]
+
+    gdfLinearGeneralFiltered = gdfLinearGeneral[columnsWithoutPivote].dropna(axis=1, how='all')
+
+    finalGdfLinear = pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
+
+    finalGdfLinearTransposed = finalGdfLinear.T
+    finalGdfLinearTransposed.columns = ['Basin id ' + str(basin.id())]
+
+    orderedRows = []
+    for col in gdfLinear.columns:
+        matching = [row for row in finalGdfLinearTransposed.index if row == col or row.startswith(f'{col} ')]
+        orderedRows.extend(matching)
+
+    finalGdfLinearTransposed = finalGdfLinearTransposed.loc[orderedRows]
     
-    gdfConcatenated = gpd.pd.concat([gdfLinearFloat,gdfShapeFloat,gdfReliefFloat])
-    return gdfConcatenated
+    gdfShape.drop(columns='geometry', inplace=True)
+    gdfShapeFloat = gdfShape.astype(float)
+    finalGdfShapeTransposed = gdfShapeFloat.T
+    finalGdfShapeTransposed.columns = ['Basin id ' + str(basin.id())]
+    
+    gdfReliefFloat = gdfRelief.astype(float)
+    finalGdfReliefTransposed = gdfReliefFloat.T
+    finalGdfReliefTransposed.columns = ['Basin id ' + str(basin.id())]
+    gdfFinalAll = pd.concat([finalGdfLinearTransposed, finalGdfShapeTransposed, finalGdfReliefTransposed], ignore_index=False, axis=0)
+    return gdfFinalAll
 
 def formatGdfLinear(gdfLinear,basin):
-    gdfLinear.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfLinear.columns]
-    gdfLinearFloat = gdfLinear.astype(float)
-    gdfLinearFloat.loc[-1] = gdfLinear.columns
-    gdfLinearFloat.index = gdfLinearFloat.index + 1
-    gdfLinearFloat.sort_index(inplace=True)
-    gdfLinearFloat.loc[gdfLinearFloat.index[-1], 'Stream Order basin id ' + str(basin.id())] = 'General'
-    gdfLinearFloat.columns = range(gdfLinearFloat.shape[1])
-    return gdfLinearFloat
+    gdfLinearGeneral = gdfLinear[gdfLinear['Stream Order'].isna()].drop(columns='Stream Order').reset_index(drop=True)
+
+    gdfLinearOrders = gdfLinear[gdfLinear['Stream Order'].notna()].copy()
+    gdfLinearOrders['Stream Order'] = gdfLinearOrders['Stream Order'].astype(int)
+
+    columnsToPivote = [
+        col for col in gdfLinearOrders.columns
+        if col not in ['Stream Order', '__row__'] and gdfLinearOrders[col].notna().any()
+    ]
+
+    gdfLinearOrders = gdfLinearOrders[['Stream Order'] + columnsToPivote]
+    gdfLinearOrders['__row__'] = 0  # índice comum fictício
+    gdfLinearPivoted = gdfLinearOrders.pivot(index='__row__', columns='Stream Order')
+
+    gdfLinearPivoted.columns = [
+        f'{col[0]} {intToRoman(col[1])}' for col in gdfLinearPivoted.columns
+    ]
+    gdfLinearPivoted = gdfLinearPivoted.reset_index(drop=True)
+
+    pivotedColumnsBase = set(col.split(' ')[0] for col in gdfLinearPivoted.columns)
+    columnsWithoutPivote = [col for col in gdfLinearGeneral.columns if col not in pivotedColumnsBase]
+
+    gdfLinearGeneralFiltered = gdfLinearGeneral[columnsWithoutPivote].dropna(axis=1, how='all')
+
+    finalGdfLinear = pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
+
+    finalGdfLinearTransposed = finalGdfLinear.T
+    finalGdfLinearTransposed.columns = ['Basin id ' + str(basin.id())]
+    return finalGdfLinearTransposed
 
 def formatGdfShape(gdfShape,basin):
-    gdfShape.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfShape.columns]
-
-    gdfShape.drop(columns='geometry basin id ' + str(basin.id()),inplace=True)
+    gdfShape.drop(columns='geometry', inplace=True)
     gdfShapeFloat = gdfShape.astype(float)
-    gdfShapeFloat.loc[-1] = gdfShapeFloat.columns
-    gdfShapeFloat.index = gdfShapeFloat.index + 1
-    gdfShapeFloat.sort_index(inplace=True)
-    gdfShapeFloat.columns = range(gdfShapeFloat.shape[1])
-    return gdfShapeFloat
+    finalGdfShapeTransposed = gdfShapeFloat.T
+    finalGdfShapeTransposed.columns = ['Basin id ' + str(basin.id())]
+    return finalGdfShapeTransposed
 
 def formatGdfRelief(gdfRelief,basin):
-    gdfRelief.columns = [f'{col} basin id ' + str(basin.id()) for col in gdfRelief.columns]
     gdfReliefFloat = gdfRelief.astype(float)
+    finalGdfReliefTransposed = gdfReliefFloat.T
+    finalGdfReliefTransposed.columns = ['Basin id ' + str(basin.id())]
+    return finalGdfReliefTransposed
 
-    gdfReliefFloat.loc[-1] = gdfReliefFloat.columns
-    gdfReliefFloat.index = gdfReliefFloat.index + 1
-    gdfReliefFloat.sort_index(inplace=True)
-    gdfReliefFloat.columns = range(gdfReliefFloat.shape[1])
-    return gdfReliefFloat
-
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates):
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -702,12 +745,12 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
 
     if feedback.isCanceled():
         return
-    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfConcatenateds, ignore_index=True))
-    gdfFinal.to_csv(path, index=False, header=False)
+    gdfFinal = gpd.pd.concat(gdfConcatenateds, ignore_index=False, axis=1)
+    gdfFinal.to_csv(path, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
     return
 
-def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback,precisionSnapCoordinates):
+def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -762,12 +805,12 @@ def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback,preci
 
     if feedback.isCanceled():
         return
-    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsLinear, ignore_index=True))
-    gdfFinal.to_csv(path, index=False, header=False)
+    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsLinear, ignore_index=False, axis=1))
+    gdfFinal.to_csv(path, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
     return
 
-def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback, precisionSnapCoordinates):
+def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback, precisionSnapCoordinates,decimalPlaces):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -807,12 +850,12 @@ def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback, prec
 
     if feedback.isCanceled():
         return
-    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsShape, ignore_index=True))
-    gdfFinal.to_csv(path, index=False, header=False)
+    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsShape, ignore_index=False, axis=1))
+    gdfFinal.to_csv(path, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
     return
 
-def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback, precisionSnapCoordinates):
+def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -862,17 +905,17 @@ def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLay
 
     if feedback.isCanceled():
         return    
-    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsRelief, ignore_index=True))
-    gdfFinal.to_csv(path, index=False, header=False)
+    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsRelief, ignore_index=False, axis=1))
+    gdfFinal.to_csv(path, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
     return
 
-def runAllMorphometricParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates):
+def runAllMorphometricParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
 
-    calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates)
+    calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces)
 
-def runReliefParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates):
+def runReliefParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
     demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
 
-    calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback,precisionSnapCoordinates)
+    calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback,precisionSnapCoordinates,decimalPlaces)
