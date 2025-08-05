@@ -33,7 +33,6 @@ __revision__ = '$Format:%H$'
 from math import pi
 from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException, QgsGeometry, QgsWkbTypes
 import geopandas as gpd
-import pandas as pd
 from osgeo import gdal, ogr
 
 def verifyLibs():
@@ -607,7 +606,7 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
 
     gdfLinearGeneralFiltered = gdfLinearGeneral[columnsWithoutPivote].dropna(axis=1, how='all')
 
-    finalGdfLinear = pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
+    finalGdfLinear = gpd.pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
 
     finalGdfLinearTransposed = finalGdfLinear.T
     finalGdfLinearTransposed.columns = ['Basin id ' + str(basin.id())]
@@ -627,7 +626,7 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
     gdfReliefFloat = gdfRelief.astype(float)
     finalGdfReliefTransposed = gdfReliefFloat.T
     finalGdfReliefTransposed.columns = ['Basin id ' + str(basin.id())]
-    gdfFinalAll = pd.concat([finalGdfLinearTransposed, finalGdfShapeTransposed, finalGdfReliefTransposed], ignore_index=False, axis=0)
+    gdfFinalAll = gpd.pd.concat([finalGdfLinearTransposed, finalGdfShapeTransposed, finalGdfReliefTransposed], ignore_index=False, axis=0)
     return gdfFinalAll
 
 def formatGdfLinear(gdfLinear,basin):
