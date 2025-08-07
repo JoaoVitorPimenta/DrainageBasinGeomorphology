@@ -261,31 +261,31 @@ def calculateMeanStreamLength(gdfStream,gdfLinear):
 def calculateStreamLengthRatio (gdfLinear):
     lengthGroupedByOrder = gdfLinear.set_index('Stream Order')['Stream Length Mean (km)']
     streamLengthRatio = (lengthGroupedByOrder / lengthGroupedByOrder.shift(+1))
-    gdfLinear['Stream Length Ratio'] = gdfLinear['Stream Order'].map(streamLengthRatio)
+    gdfLinear['Stream length ratio'] = gdfLinear['Stream Order'].map(streamLengthRatio)
     return
 
 def calculateStreamLengthRatioMean (gdfLinear):
-    streamLengthRatioMean = gdfLinear['Stream Length Ratio'].mean()
-    gdfLinear.loc[gdfLinear.index[-1], 'Mean Stream Length Ratio'] = streamLengthRatioMean
+    streamLengthRatioMean = gdfLinear['Stream length ratio'].mean()
+    gdfLinear.loc[gdfLinear.index[-1], 'Mean stream length ratio'] = streamLengthRatioMean
     return
 
 def calculateBifurcationRatio (gdfLinear):
     streamNumber = gdfLinear.set_index('Stream Order')['Stream Number']
     bifurcationRatio = streamNumber / streamNumber.shift(-1)
-    gdfLinear['Bifurcation Ratio'] = gdfLinear['Stream Order'].map(bifurcationRatio)
+    gdfLinear['Bifurcation ratio'] = gdfLinear['Stream Order'].map(bifurcationRatio)
     return
 
 def calculateBifurcationRatioMean (gdfLinear):
-    bifurcationRatioMean = gdfLinear['Bifurcation Ratio'].mean()
-    gdfLinear.loc[gdfLinear.index[-1], 'Mean Bifurcation Ratio'] = bifurcationRatioMean
+    bifurcationRatioMean = gdfLinear['Bifurcation ratio'].mean()
+    gdfLinear.loc[gdfLinear.index[-1], 'Mean bifurcation ratio'] = bifurcationRatioMean
     return
 
 def calculateRhoCoefficient (gdfLinear):
-    Rlm = gdfLinear['Stream Length Ratio'].mean()
-    Rbm = gdfLinear['Bifurcation Ratio'].mean()
+    Rlm = gdfLinear['Stream length ratio'].mean()
+    Rbm = gdfLinear['Bifurcation ratio'].mean()
 
     RhoCoefficient = Rlm/Rbm
-    gdfLinear.loc[gdfLinear.index[-1], 'RHO Coefficient'] = RhoCoefficient
+    gdfLinear.loc[gdfLinear.index[-1], 'RHO coefficient'] = RhoCoefficient
     return
 
 def calculateSinuosityIndex(gdfStream,gdfLinear):
@@ -325,7 +325,7 @@ def calculateFitnessRatio(gdfShape,gdfLinear):
     maxOrder = gdfLinear['Stream Order'].max()
     totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream Length Total (km)'].values[0]
     fitnessRatio = (totalLength/gdfShape['Perimeter (km)'])
-    gdfLinear.loc[gdfLinear.index[-1], 'Fitness Ratio (Rf)'] = fitnessRatio.iloc[0][0]
+    gdfLinear.loc[gdfLinear.index[-1], 'Fitness ratio (Rf)'] = fitnessRatio.iloc[0][0]
     return
 
 def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
@@ -369,19 +369,19 @@ def calculateWanderingRatio(gdfShape,gdfLinear):
     maxOrder = gdfLinear['Stream Order'].max()
     totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream Length Total (km)'].values[0]
     wanderingRatio = (totalLength/gdfShape['Basin Length (Lg) (km)'])
-    gdfLinear.loc[gdfLinear.index[-1], 'Wandering Ratio (Rw)'] = wanderingRatio.iloc[0]
+    gdfLinear.loc[gdfLinear.index[-1], 'Wandering ratio (Rw)'] = wanderingRatio.iloc[0]
     return
 
 def calculateStreamFrequency(gdfShape,gdfLinear):
     numStreams = gdfLinear['Stream Number'].sum()
     streamFrequency = gdfShape['Area (km2)']/numStreams
-    gdfLinear.loc[gdfLinear.index[-1], 'Stream Frequency (Fs) (1/km2)'] = streamFrequency.iloc[0][0]
+    gdfLinear.loc[gdfLinear.index[-1], 'Stream frequency (Fs) (1/km2)'] = streamFrequency.iloc[0][0]
     return
 
 def calculateDrainageDensity(gdfShape,gdfLinear):
     sumLengths = gdfLinear['Stream Length Total (km)'].sum()
     drainageDensity = sumLengths/gdfShape['Area (km2)']
-    gdfLinear.loc[gdfLinear.index[-1], 'Drainage Density (Dd) (km/km2)'] = drainageDensity.iloc[0][0]
+    gdfLinear.loc[gdfLinear.index[-1], 'Drainage density (Dd) (km/km2)'] = drainageDensity.iloc[0][0]
     return
 
 def calculateDrainageTexture(gdfShape,gdfLinear):
@@ -392,26 +392,26 @@ def calculateDrainageTexture(gdfShape,gdfLinear):
     return
 
 def calculateLengthOverlandFlow(gdfLinear):
-    lengthOverlandFlow = 1/(2*gdfLinear['Drainage Density (Dd) (km/km2)'])
-    gdfLinear['Length of overland flow (Lg) (km)'] = lengthOverlandFlow
+    lengthOverlandFlow = 1/(2*gdfLinear['Drainage density (Dd) (km/km2)'])
+    gdfLinear['Length of overland flow (Lo) (km)'] = lengthOverlandFlow
     return
 
 def calculateDrainageIntensity(gdfLinear):
-    streamFrequency = gdfLinear['Stream Frequency (Fs) (1/km2)']
-    drainageDensity = gdfLinear['Drainage Density (Dd) (km/km2)']
+    streamFrequency = gdfLinear['Stream frequency (Fs) (1/km2)']
+    drainageDensity = gdfLinear['Drainage density (Dd) (km/km2)']
     drainageIntensity = streamFrequency/drainageDensity
     gdfLinear['Drainage intensity (Di) (1/km)'] = drainageIntensity
     return
 
 def calculateInfiltrationNumber(gdfLinear):
-    streamFrequency = gdfLinear['Stream Frequency (Fs) (1/km2)']
-    drainageDensity = gdfLinear['Drainage Density (Dd) (km/km2)']
+    streamFrequency = gdfLinear['Stream frequency (Fs) (1/km2)']
+    drainageDensity = gdfLinear['Drainage density (Dd) (km/km2)']
     drainageIntensity = streamFrequency*drainageDensity
     gdfLinear['Infiltration number (If) (km/km4)'] = drainageIntensity
     return
 
 def calculateConstantChannel(gdfLinear):
-    constantOfChannel = 1/gdfLinear['Drainage Density (Dd) (km/km2)']
+    constantOfChannel = 1/gdfLinear['Drainage density (Dd) (km/km2)']
     gdfLinear['Constant of channel maintenance (Ccm) (km2/km)'] = constantOfChannel
     return
 
@@ -530,7 +530,7 @@ def calculateRelativeRelief (gdfRelief,gdfShape):
 def calculateRuggednessNumber (gdfRelief,gdfLinear):
     relief = gdfRelief['Relief (Bh) (m)']
     reliefInKm = relief/1000
-    drainageDensity = gdfLinear['Drainage Density (Dd) (km/km2)'].iloc[-1]
+    drainageDensity = gdfLinear['Drainage density (Dd) (km/km2)'].iloc[-1]
     gdfRelief['Ruggedness number (Rn)'] = reliefInKm * drainageDensity
     return
 
@@ -654,7 +654,7 @@ def formatGdfLinear(gdfLinear,basin):
 
     gdfLinearGeneralFiltered = gdfLinearGeneral[columnsWithoutPivote].dropna(axis=1, how='all')
 
-    finalGdfLinear = pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
+    finalGdfLinear = gpd.pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
 
     finalGdfLinearTransposed = finalGdfLinear.T
     finalGdfLinearTransposed.columns = ['Basin id ' + str(basin.id())]
