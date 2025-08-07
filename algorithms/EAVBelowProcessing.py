@@ -164,7 +164,7 @@ def EAVBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceContour,b
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevations, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,useOnlyDEMElev,useMaxDEMElev,feedback):
+def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,baseLevel,useOnlyDEMElev,useMaxDEMElev,feedback,decimalPlaces,useAllDecimalPlaces):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -186,6 +186,11 @@ def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
         if elevations is None and cumulativeAreas is None and cumulativeVolumes is None:
             continue
 
+        if useAllDecimalPlaces is False:
+            elevations = [round(num, decimalPlaces) for num in elevations]
+            cumulativeAreas = [round(num, decimalPlaces) for num in cumulativeAreas]
+            cumulativeVolumes = [round(num, decimalPlaces) for num in cumulativeVolumes]
+
         elevations.insert(0, f'Elevation basin id {basin.id()}')
         cumulativeAreas.insert(0, f'Area basin id {basin.id()}')
         cumulativeVolumes.insert(0, f'Volume basin id {basin.id()}')
@@ -206,8 +211,8 @@ def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
             y=elevations,
             mode='lines',
             name=f'Volume - Elevation basin id {basin.id()}',
-            yaxis='y',  # padrão
-            xaxis='x'   # padrão
+            yaxis='y',
+            xaxis='x'
         ))
 
         fig.add_trace(go.Scatter(
@@ -215,15 +220,14 @@ def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
             y=elevations,
             mode='lines',
             name=f'Area - Elevation basin id {basin.id()}',
-            yaxis='y2',   # eixo y secundário
-            xaxis='x2'    # eixo x secundário
+            yaxis='y2',
+            xaxis='x2'
         ))
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
         feedback.setProgressText(f'Basin id {basin.id()} graph completed')
 
-    # Configura layout com eixos secundários (x2 e y2)
     fig.update_layout(
         title='Elevation - Area - Volume graph',
         xaxis=dict(title='Volume (m³)'),
@@ -252,5 +256,10 @@ def runEAVBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,bas
 
     with open(pathCsv, 'w', newline='') as archive:
         writer = csv.writer(archive)
-        writer.writerows(itertools.zip_longest(*listsWithData))
+        writer.writerows(
+            itertools.zip_longest(*[
+                [col[0]] + [f"{v:.{decimalPlaces}f}" for v in col[1:]]
+                for col in listsWithData
+            ])
+        )
 

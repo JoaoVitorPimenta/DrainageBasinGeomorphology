@@ -70,6 +70,8 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
     BASE_LEVEL_MAXIMUM = 'BASE_LEVEL_MAXIMUM'
     USE_MAX_VALUE_DEM = 'USE_MAX_VALUE_DEM'
     SUBTRACTS_VOLUME_BELOW = 'SUBTRACTS_VOLUME_BELOW'
+    DECIMAL_PLACES = 'DECIMAL_PLACES'
+    USE_ALL_DECIMAL_PLACES = 'USE_ALL_DECIMAL_PLACES'
     GRAPH = 'GRAPH'
 
 
@@ -159,6 +161,25 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.DECIMAL_PLACES,
+                self.tr('Decimal places of the result'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=0,
+                defaultValue=2,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_ALL_DECIMAL_PLACES,
+                self.tr('Use all decimal places'),
+                defaultValue=False,
+            )
+        )
+
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
@@ -204,12 +225,16 @@ class EAVAboveBelowCalc(QgsProcessingAlgorithm):
 
         subtractsBelow = self.parameterAsBoolean(parameters, self.SUBTRACTS_VOLUME_BELOW, context)
 
+        decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
+
+        useAllDecimalPlaces = self.parameterAsBoolean(parameters, self.USE_ALL_DECIMAL_PLACES, context)
+
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
         pathGraph = self.parameterAsString(parameters, self.GRAPH, context)
 
         verifyLibs()
-        runEAVAboveBelow(basinSource,demLayer,pathData,pathGraph,distanceCurves,minLevel,maxLevel,subtractsBelow,useOnlyRasterElev,useMinRasterElev,useMaxRasterElev,feedback)
+        runEAVAboveBelow(basinSource,demLayer,pathData,pathGraph,distanceCurves,minLevel,maxLevel,subtractsBelow,useOnlyRasterElev,useMinRasterElev,useMaxRasterElev,feedback,decimalPlaces,useAllDecimalPlaces)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

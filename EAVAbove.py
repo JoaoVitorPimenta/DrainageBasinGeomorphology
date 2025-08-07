@@ -67,6 +67,8 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
     USE_ONLY_DEM_VALUES = 'USE_ONLY_DEM_VALUES'
     BASE_LEVEL = 'BASE_LEVEL'
     USE_MIN_VALUE_DEM = 'USE_MIN_VALUE_DEM'
+    DECIMAL_PLACES = 'DECIMAL_PLACES'
+    USE_ALL_DECIMAL_PLACES = 'USE_ALL_DECIMAL_PLACES'
     GRAPH = 'GRAPH'
 
 
@@ -130,6 +132,25 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.DECIMAL_PLACES,
+                self.tr('Decimal places of the result'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=0,
+                defaultValue=2,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_ALL_DECIMAL_PLACES,
+                self.tr('Use all decimal places'),
+                defaultValue=False,
+            )
+        )
+
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
@@ -169,12 +190,16 @@ class EAVAboveCalc(QgsProcessingAlgorithm):
 
         useMinRasterElev = self.parameterAsBoolean(parameters, self.USE_MIN_VALUE_DEM, context)
 
+        decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
+
+        useAllDecimalPlaces = self.parameterAsBoolean(parameters, self.USE_ALL_DECIMAL_PLACES, context)
+
         pathData = self.parameterAsFileOutput(parameters, self.ELEVATION_AREA_VOLUME_DATA, context)
 
         pathGraph = self.parameterAsFileOutput(parameters, self.GRAPH, context)
 
         verifyLibs()
-        runEAVAbove(basinSource,demLayer,pathData,pathGraph,distanceCurves,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback)
+        runEAVAbove(basinSource,demLayer,pathData,pathGraph,distanceCurves,baseLevel,useOnlyRasterElev,useMinRasterElev,feedback,decimalPlaces,useAllDecimalPlaces)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

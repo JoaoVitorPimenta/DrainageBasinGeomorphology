@@ -272,7 +272,7 @@ def EAVAboveBelowProcessing(demArray,noData,gt,proj,cols,rows,basin,distanceCont
     cumulativeVolumesList = cumulativeVolumes.tolist()
     return elevationsFill, cumulativeAreasList, cumulativeVolumesList
 
-def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,minimumLevel,maximumLevel,subtractsBelow,useOnlyDEMElev,useMinDEMElev,useMaxDEMElev,feedback):
+def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContour,minimumLevel,maximumLevel,subtractsBelow,useOnlyDEMElev,useMinDEMElev,useMaxDEMElev,feedback,decimalPlaces,useAllDecimalPlaces):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -296,6 +296,11 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
         if elevations is None and cumulativeAreas is None and cumulativeVolumes is None:
             continue
 
+        if useAllDecimalPlaces is False:
+            elevations = [round(num, decimalPlaces) for num in elevations]
+            cumulativeAreas = [round(num, decimalPlaces) for num in cumulativeAreas]
+            cumulativeVolumes = [round(num, decimalPlaces) for num in cumulativeVolumes]
+
         elevations.insert(0, f'Elevation basin id {basin.id()}')
         cumulativeAreas.insert(0, f'Area basin id {basin.id()}')
         cumulativeVolumes.insert(0, f'Volume basin id {basin.id()}')
@@ -316,7 +321,7 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
             y=elevations,
             mode='lines',
             name=f'Volume - Elevation basin id {basin.id()}',
-            yaxis='y',  # padrão
+            yaxis='y',
             xaxis='x'   # padrão
         ))
 
@@ -362,5 +367,10 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
 
     with open(pathCsv, 'w', newline='') as archive:
         writer = csv.writer(archive)
-        writer.writerows(itertools.zip_longest(*listsWithData))
+        writer.writerows(
+            itertools.zip_longest(*[
+                [col[0]] + [f"{v:.{decimalPlaces}f}" for v in col[1:]]
+                for col in listsWithData
+            ])
+        )
 
