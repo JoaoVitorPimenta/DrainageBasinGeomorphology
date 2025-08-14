@@ -227,12 +227,15 @@ class filledCalc(QgsProcessingAlgorithm):
         '''
         return self.tr(self.name())
 
+    def groupId(self):
+        return "basin_modifications"
+
     def group(self):
         '''
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         '''
-        return self.tr(self.groupId())
+        return self.tr("Basin modifications")
 
     def icon(self):
         """
@@ -249,16 +252,16 @@ class filledCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates the inundated area as a raster, for each basin, with the bands containing the depth (bathymetry) and as a vector, for each basin, with the attribute table containing the height, elevation, area and volume values.               
+        This tool calculates the Filled area as a raster, for each basin, and as a vector, for each basin, with the attribute table containing the height, elevation, area and volume values.               
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
-        <strong>Parameter: </strong>It is the parameter of the EAV (empty) curve to be used to calculate the inundated area.
+        <strong>Parameter: </strong>It is the parameter of the EAV (below) curve to be used to calculate the inundated area.
         <strong>Parameter value: </strong>It is the numerical value of the parameter.
         <strong>Nodata value for output band: </strong>The value of nodata values ​​for the output layers.
-        <strong>Inundation raster: </strong>Path to the folder containing the inundated area rasters, the band represents the depth (bathymetry).
-        <strong>Inundation vector: </strong>Path to the folder containing the inundated area vectors, in the vector attribute table there is the height, elevation, area and volume value.     
+        <strong>Filled DEM: </strong>Path to the folder containing the filled area rasters.
+        <strong>Modified area: </strong>Path to the folder containing the filled area vectors, in the vector attribute table there is the height, elevation, area and volume value.     
 
         The use of a projected CRS is recommended.
                        

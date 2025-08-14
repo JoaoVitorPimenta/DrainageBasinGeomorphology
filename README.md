@@ -30,11 +30,53 @@ This tool calculates all morphometric parameters of the watershed as shown in th
 
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
-
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
 **Output:**  
 **All morphometric parameters** - All morphometric parameters calculated, for each basin, in .csv.
+
+## Calculate linear parameters
+This tool calculates linear parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Output:**  
+**All morphometric parameters** - Linear parameters calculated, for each basin in .csv.
+
+## Calculate relief parameters
+This tool calculates relief parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Output:**  
+**Shape parameters** - Relief parameters calculated, for each basin, in .csv.
+
+## Calculate shape parameters
+This tool calculates shape parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+
+**Output:**  
+**Shape parameters** - Shape parameters calculated, for each basin, in .csv.
 
 ## Calculate elevation area volume above
 This tool calculates the elevation area volume curves (above) for all features provided in the drainage basin layer as input.
@@ -104,49 +146,6 @@ This tool calculates and plots the hypsometric curves, with absolute or relative
 
 **Graph** - The graph with the hypsometric curves, for each basin, in .html.
 
-## Calculate linear parameters
-This tool calculates linear parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
-
-**Inputs:**  
-**Drainage basins** - Vector layer containing drainage basin features.
-
-**Channel network** - Vector layer containing the drainage network of the drainage basins.
-
-**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
-
-**DEM** - Digital Elevation Model in the area of the drainage basins.
-
-**Output:**  
-**All morphometric parameters** - Linear parameters calculated, for each basin in .csv.
-
-## Calculate relief parameters
-This tool calculates relief parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
-
-**Inputs:**  
-**Drainage basins** - Vector layer containing drainage basin features.
-
-**Channel network** - Vector layer containing the drainage network of the drainage basins.
-
-**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
-
-**DEM** - Digital Elevation Model in the area of the drainage basins.
-
-**Output:**  
-**Shape parameters** - Shape parameters calculated, for each basin, in .csv.
-
-## Calculate shape parameters
-This tool calculates shape parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
-
-**Inputs:**  
-**Drainage basins** - Vector layer containing drainage basin features.
-
-**Channel network** - Vector layer containing the drainage network of the drainage basins.
-
-**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
-
-**Output:**  
-**Shape parameters** - Shape parameters calculated, for each basin, in .csv.
-
 ## Calculate inundated area
 This tool calculates the inundated area from the EAV curve, it uses the elevation associated with a user-given curve parameter, and then plots the area below that elevation.
 
@@ -165,6 +164,63 @@ This tool calculates the inundated area from the EAV curve, it uses the elevatio
 **Inundation raster** - The raster of the inundated area, the raster band represents the depth related to the inundated area, that is, the bathymetry.
 
 **Inundation vector** - The vector with the inundated area, in the vector attribute table has the EAV curve variables related to the parameter provided by the user.
+
+## Cut DEM
+This tool calculates the cutted area as a raster, for each basin, and as a vector, for each basin, with the attribute table containing the height, elevation, area and volume values.               
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Parameter** - The elevation - area - volume (above) graph variable to be used to calculate the elevation of the cutted area.
+
+**Parameter value** - The numerical value of the elevation - area - volume (above) graph variable to be used to calculate the elevation of the cutted area.
+
+**Nodata value for output band** - The NoDataValue value of the output raster layer band.
+
+**Output:**  
+**Cutted DEM** - The raster of the cutted area.
+
+**Modified area** - The vector with the cutted area, in the vector attribute table has the EAV curve variables related to the parameter provided by the user.
+
+## Filled DEM
+This tool calculates the filled area as a raster, for each basin, and as a vector, for each basin, with the attribute table containing the height, elevation, area and volume values.               
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Parameter** - The elevation - area - volume (below) graph variable to be used to calculate the elevation of the filled area.
+
+**Parameter value** - The numerical value of the elevation - area - volume (below) graph variable to be used to calculate the elevation of the filled area.
+
+**Nodata value for output band** - The NoDataValue value of the output raster layer band.
+
+**Output:**  
+**Cutted DEM** - The raster of the filled area.
+
+**Modified area** - The vector with the filled area, in the vector attribute table has the EAV curve variables related to the parameter provided by the user.
+
+## Fill and cut DEM
+This tool calculates the filled/cutted area as a raster, for each basin, and as a vector, for each basin, with the attribute table containing the height, elevation, area and volume values.               
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Parameter** - The elevation - area - volume (above and below) graph variable to be used to calculate the elevation of the filled area.
+
+**Parameter value** - The numerical value of the elevation - area - volume (above and below) graph variable to be used to calculate the elevation of the filled/cutted area.
+
+**Nodata value for output band** - The NoDataValue value of the output raster layer band.
+
+**Output:**  
+**Cutted DEM** - The raster of the filled/cutted area.
+
+**Modified area** - The vector with the filled/cutted area, in the vector attribute table has the EAV curve variables related to the parameter provided by the user.
 
 ## Recommendations 
 All inputs must be in a projected coordinate system for consistent results.
@@ -283,6 +339,18 @@ The inundated area, in both raster and vector layers, is the area of ​​pixel
 The inundated raster layer band is the elevation value of the pixels minus the lowest elevation value within the basin.
 
 The attribute table of the vector layer contains information about all the parameters associated with what was provided by the user. (Example: if the volume of X is provided, the attribute table will have the height, elevation and interpolated area for X)
+
+## Cut DEM
+
+This tool cuts the DEM based on the elevation - area - volume curve (above), for example, the tool will select the equivalent elevation of that parameter and "cut" what is on top.
+
+## Fill DEM
+
+This tool fills the DEM based on the elevation - area - volume curve (below), for example, the tool will select the equivalent elevation of that parameter and "fill" what is below.
+
+## Fill and cut DEM
+
+This tool fills and cuts the DEM based on the elevation - area - volume curve (above and below), for example, the tool will select the equivalent elevation of that parameter and "fill" what is below and "cut" what is above.
 
 ## References
 - Horton, R. E. (1932). Drainage-basin characteristics. Transactions of the American Geophysical Union, 13, 350–361.
