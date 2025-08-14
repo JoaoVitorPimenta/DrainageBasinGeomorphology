@@ -237,12 +237,15 @@ class InundationCalc(QgsProcessingAlgorithm):
         '''
         return self.tr(self.name())
 
+    def groupId(self):
+        return "basin_modifications"
+
     def group(self):
         '''
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         '''
-        return self.tr(self.groupId())
+        return self.tr("Basin modifications")
 
     def icon(self):
         """

@@ -168,12 +168,15 @@ class linearParametersCalc(QgsProcessingAlgorithm):
         '''
         return self.tr(self.name())
 
+    def groupId(self):
+        return "basin_morph_params"
+
     def group(self):
         '''
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         '''
-        return self.tr(self.groupId())
+        return self.tr("Basin morphometric parameters")
 
     def icon(self):
         """

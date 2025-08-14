@@ -45,6 +45,8 @@ from .inundationArea import InundationCalc
 from .fillDEM import filledCalc
 from .cutDEM import cuttedCalc
 from .fillCutDEM import filledCuttedCalc
+from .priorityPCA import morphometricAnalysisPCA
+from .priorityMorph import morphometricAnalysisMorphometric
 
 class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
 
@@ -77,6 +79,8 @@ class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
         self.addAlgorithm(filledCalc())
         self.addAlgorithm(cuttedCalc())
         self.addAlgorithm(filledCuttedCalc())
+        self.addAlgorithm(morphometricAnalysisPCA())
+        self.addAlgorithm(morphometricAnalysisMorphometric())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
 

@@ -31,8 +31,9 @@ __copyright__ = '(C) 2025 by João Vitor Pimenta'
 __revision__ = '$Format:%H$'
 
 from math import pi
-from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException, QgsGeometry, QgsWkbTypes
+from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException, QgsGeometry, QgsWkbTypes, QgsFeature
 import geopandas as gpd
+import numpy as np
 from osgeo import gdal, ogr
 
 def verifyLibs():
@@ -625,48 +626,7 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
     gdfFinalAll = gpd.pd.concat([finalGdfLinear, finalGdfShapeFloat, finalGdfReliefFloat], ignore_index=False, axis=1)
     return gdfFinalAll
 
-def formatGdfLinear(gdfLinear,basin):
-    gdfLinearGeneral = gdfLinear[gdfLinear['Stream Order'].isna()].drop(columns='Stream Order').reset_index(drop=True)
-
-    gdfLinearOrders = gdfLinear[gdfLinear['Stream Order'].notna()].copy()
-    gdfLinearOrders['Stream Order'] = gdfLinearOrders['Stream Order'].astype(int)
-
-    columnsToPivote = [
-        col for col in gdfLinearOrders.columns
-        if col not in ['Stream Order', '__row__'] and gdfLinearOrders[col].notna().any()
-    ]
-
-    gdfLinearOrders = gdfLinearOrders[['Stream Order'] + columnsToPivote]
-    gdfLinearOrders['__row__'] = 0  # índice comum fictício
-    gdfLinearPivoted = gdfLinearOrders.pivot(index='__row__', columns='Stream Order')
-
-    gdfLinearPivoted.columns = [
-        f'{col[0]} {intToRoman(col[1])}' for col in gdfLinearPivoted.columns
-    ]
-    gdfLinearPivoted = gdfLinearPivoted.reset_index(drop=True)
-
-    pivotedColumnsBase = set(col.split(' ')[0] for col in gdfLinearPivoted.columns)
-    columnsWithoutPivote = [col for col in gdfLinearGeneral.columns if col not in pivotedColumnsBase]
-
-    gdfLinearGeneralFiltered = gdfLinearGeneral[columnsWithoutPivote].dropna(axis=1, how='all')
-
-    finalGdfLinear = gpd.pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
-
-    finalGdfLinear.index = ['Basin id ' + str(basin.id())]
-    return finalGdfLinear
-
-def formatGdfShape(gdfShape,basin):
-    gdfShape.drop(columns='geometry', inplace=True)
-    gdfShapeFloat = gdfShape.astype(float)
-    gdfShapeFloat.index = ['Basin id ' + str(basin.id())]
-    return gdfShapeFloat
-
-def formatGdfRelief(gdfRelief,basin):
-    gdfReliefFloat = gdfRelief.astype(float)
-    gdfReliefFloat.index = ['Basin id ' + str(basin.id())]
-    return gdfReliefFloat
-
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -738,176 +698,164 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
     if feedback.isCanceled():
         return
     gdfFinal = gpd.pd.concat(gdfConcatenateds, ignore_index=False, axis=0)
-    gdfFinal.to_csv(path, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
-    return
+    return gdfFinal
 
-def calculateLinearParameters(drainageBasinLayer,streamLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
-    feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount()
-    step = 100.0 / total if total else 0
+def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
+    X = loadings.copy()
+    nRows, nCols = X.shape
+    
+    if normalize:
+        # Normalização Kaiser: normaliza por coluna
+        norms = np.sqrt(np.sum(X**2, axis=1, keepdims=True))
+        X = X / norms
+    
+    R = np.eye(nCols)
+    
+    for i in range(max_iter):
+        Lambda = np.dot(X, R)
+        # gradiente varimax clássico
+        tmp = Lambda**3 - (1 / nRows) * Lambda * np.sum(Lambda**2, axis=0, keepdims=True)
+        u, s, vh = np.linalg.svd(np.dot(X.T, tmp))
+        R_new = np.dot(u, vh)
+        diff = np.sum(np.abs(R_new - R))
+        R = R_new
+        if diff < tol:
+            break
+    
+    rotated = np.dot(X, R)
+    
+    if normalize:
+        rotated = rotated * norms
+    
+    return rotated
 
-    gdfsLinear = []
+def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked):
 
-    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback, precisionSnapCoordinates)
-        if feedback.isCanceled():
-            return
-        gdfStream = createGdfStream(streamsInside)
-        obtainFirstAndLastPoint(gdfStream)
-        createOrderColumn(gdfStream)
-        fillOrder(gdfStream)
-        mergeStreams(gdfStream)
-        calculateStreamLength(gdfStream)
-        if feedback.isCanceled():
-            return
-        gdfLinear = createGdfLinear(gdfStream)
-        calculateStreamNumber(gdfStream,gdfLinear)
-        calculateTotalStreamLength(gdfStream,gdfLinear)
-        calculateMeanStreamLength(gdfStream,gdfLinear)
-        calculateStreamLengthRatio(gdfLinear)
-        calculateStreamLengthRatioMean(gdfLinear)
-        calculateBifurcationRatio(gdfLinear)
-        calculateBifurcationRatioMean(gdfLinear)
-        calculateRhoCoefficient(gdfLinear)
-        calculateSinuosityIndex(gdfStream,gdfLinear)
-        if feedback.isCanceled():
-            return
-        gdfShape = createGdfShape(basin)
-        calculateAreaPerimeter(gdfShape)
-        calculateFitnessRatio(gdfShape,gdfLinear)
-        calculateBasinLength(gdfStream,gdfShape,basin,feedback)
-        calculateWanderingRatio(gdfShape,gdfLinear)
-        calculateDrainageDensity(gdfShape,gdfLinear)
-        calculateStreamFrequency(gdfShape,gdfLinear)
-        calculateDrainageTexture(gdfShape,gdfLinear)
-        calculateLengthOverlandFlow(gdfLinear)
-        calculateConstantChannel(gdfLinear)
-        calculateDrainageIntensity(gdfLinear)
-        calculateInfiltrationNumber(gdfLinear)
-        if feedback.isCanceled():
-            return
-        gdfFormated = formatGdfLinear(gdfLinear,basin)
-        gdfsLinear.append(gdfFormated)
+    demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
-        barProgress = int((idx + 1) * step)
-        feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
+    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces)
 
-    if feedback.isCanceled():
-        return
-    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsLinear, ignore_index=False, axis=0))
-    gdfFinal.to_csv(path, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
+    allSelectedParameters = selectedParametersDirectly + selectedParametersInversely
+    gdfWithSelectedParameters = gdfMorpParam.loc[:, allSelectedParameters].dropna()
+    X = gdfWithSelectedParameters.values
 
-    return
+    covMatrix = np.corrcoef(X, rowvar=False)
+    paramNames = gdfWithSelectedParameters.columns
+    dfCorr = gpd.pd.DataFrame(covMatrix, columns=paramNames, index=paramNames)
 
-def calculateShapeParameters(drainageBasinLayer,streamLayer,path, feedback, precisionSnapCoordinates,decimalPlaces):
-    feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount()
-    step = 100.0 / total if total else 0
+    eigVals, eigVecs = np.linalg.eigh(dfCorr)
+    idx = eigVals.argsort()[::-1]
+    eigVals = eigVals[idx]
+    eigVecs = eigVecs[:, idx]
 
-    gdfsShape = []
+    k = np.sum(eigVals > 1.0)
+    loadings = eigVecs[:, :k] * np.sqrt(eigVals[:k])
 
-    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback, precisionSnapCoordinates)
-        if feedback.isCanceled():
-            return
-        gdfStream = createGdfStream(streamsInside)
-        obtainFirstAndLastPoint(gdfStream)
-        createOrderColumn(gdfStream)
-        fillOrder(gdfStream)
-        mergeStreams(gdfStream)
-        calculateStreamLength(gdfStream)
-        if feedback.isCanceled():
-            return
-        gdfShape = createGdfShape(basin)
-        calculateAreaPerimeter(gdfShape)
-        calculateBasinLength(gdfStream,gdfShape,basin,feedback)
-        calculateCirculatoryRatio(gdfShape)
-        calculateElongationRatio(gdfShape)
-        calculateFormFactor(gdfShape)
-        calculateLemniscateRatio(gdfShape)
-        calculateShapeIndex(gdfShape)
-        calculateCompactnessCoefficient(gdfShape)
-        if feedback.isCanceled():
-            return
-        gdfFormated = formatGdfShape(gdfShape,basin)
-        gdfsShape.append(gdfFormated)
+    rotatedLoadings = varimaxRotator(loadings)
+    selectedIndices = []
+    for comp in range(rotatedLoadings.shape[1]):
+        idx = np.argmax(np.abs(rotatedLoadings[:, comp]))
+        selectedIndices.append(idx)
 
-        barProgress = int((idx + 1) * step)
-        feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
+    selectedIndices = list(dict.fromkeys(selectedIndices))
 
-    if feedback.isCanceled():
-        return
-    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsShape, ignore_index=False, axis=0))
-    gdfFinal.to_csv(path, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
+    selectedParams = paramNames[selectedIndices]
 
-    return
+    nVars = dfCorr.shape[0]
 
-def calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
-    feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount()
-    step = 100.0 / total if total else 0
+    initSs = eigVals
+    initPct = eigVals / nVars * 100
+    initCum = np.cumsum(initPct)
 
-    gdfsRelief = []
+    extrSs = np.sum(loadings ** 2, axis=0)
+    extrPct = extrSs / nVars * 100
+    extrCum = np.cumsum(extrPct)
 
-    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        streamsInside = getStreamsInsideBasin(streamLayer, basin, feedback, precisionSnapCoordinates)
-        if feedback.isCanceled():
-            return
-        gdfStream = createGdfStream(streamsInside)
-        obtainFirstAndLastPoint(gdfStream)
-        createOrderColumn(gdfStream)
-        fillOrder(gdfStream)
-        mergeStreams(gdfStream)
-        calculateStreamLength(gdfStream)
-        if feedback.isCanceled():
-            return
-        gdfLinear = createGdfLinear(gdfStream)
-        calculateStreamNumber(gdfStream,gdfLinear)
-        calculateTotalStreamLength(gdfStream,gdfLinear)
-        if feedback.isCanceled():
-            return
-        gdfShape = createGdfShape(basin)
-        calculateAreaPerimeter(gdfShape)
-        calculateBasinLength(gdfStream,gdfShape,basin,feedback)
-        calculateDrainageDensity(gdfShape,gdfLinear)
-        if feedback.isCanceled():
-            return
-        gdfRelief = createGdfRelief()
-        calculateMinMaxMeanElevation(demArray,noData,gt,proj,rows,cols,basin,gdfRelief,feedback)
-        calculateRelief(gdfRelief)
-        calculateReliefRatio(gdfRelief,gdfShape)
-        calculateRelativeRelief(gdfRelief,gdfShape)
-        calculateRuggednessNumber(gdfRelief,gdfLinear)
-        calculateDissectionIndex(gdfRelief)
-        calculateGradientRatio(gdfStream,gdfLinear,demLayer,gdfRelief)
-        if feedback.isCanceled():
-            return
-        gdfFormated = formatGdfRelief(gdfRelief,basin)
-        gdfsRelief.append(gdfFormated)
+    rotSs = np.sum(rotatedLoadings ** 2, axis=0)
+    rotPct = rotSs / nVars * 100
+    rotCum = np.cumsum(rotPct)
 
-        barProgress = int((idx + 1) * step)
-        feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
+    nVarsLen = len(initSs)
+    kLen = len(extrSs)
 
-    if feedback.isCanceled():
-        return    
-    gdfFinal = gpd.GeoDataFrame(gpd.pd.concat(gdfsRelief, ignore_index=False, axis=0))
-    gdfFinal.to_csv(path, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
+    extrSs_full = np.full(nVarsLen, np.nan)
+    extrPct_full = np.full(nVarsLen, np.nan)
+    extrCum_full = np.full(nVarsLen, np.nan)
 
-    return
+    rotSs_full = np.full(nVarsLen, np.nan)
+    rotPct_full = np.full(nVarsLen, np.nan)
+    rotCum_full = np.full(nVarsLen, np.nan)
 
-def runAllMorphometricParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
-    demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
+    # Copiar os valores para o início dos arrays completos
+    extrSs_full[:kLen] = extrSs
+    extrPct_full[:kLen] = extrPct
+    extrCum_full[:kLen] = extrCum
 
-    calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces)
+    rotSs_full[:kLen] = rotSs
+    rotPct_full[:kLen] = rotPct
+    rotCum_full[:kLen] = rotCum
 
-def runReliefParameters(drainageBasinLayer,streamLayer,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces):
-    demArray,noData,gt,proj,rows,cols = loadDEM(demLayer)
+    corrSelected = dfCorr.loc[selectedParams, selectedParams]
+    colSums = corrSelected.sum(axis=0)
+    totalSum = corrSelected.values.sum()
 
-    calculateReliefParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,path, feedback,precisionSnapCoordinates,decimalPlaces)
+    weights = colSums / totalSum
+
+    rankingDirect = gdfWithSelectedParameters.loc[:, list(set(selectedParams) & set(selectedParametersDirectly))] \
+        .rank(method='min', ascending=True)
+
+    rankingInverse = gdfWithSelectedParameters.loc[:, list(set(selectedParams) & set(selectedParametersInversely))] \
+        .rank(method='min', ascending=False)
+
+    rankingPerParam = gpd.pd.concat([rankingDirect, rankingInverse], axis=1)
+
+    if useSimpleCpFormula is True:
+        vulnerabilityIndex = rankingPerParam.sum(axis=1) / rankingPerParam.shape[1]
+    else:
+        weightedRanking = rankingPerParam * weights
+        vulnerabilityIndex = weightedRanking.sum(axis=1)
+
+    ranking = vulnerabilityIndex.rank(method='min', ascending=False)
+
+    dfCorr.to_csv(pathCorrMatrix, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
+
+    dfVariance = gpd.pd.DataFrame({
+        "Total_Initial": initSs,
+        "%_Variance_Initial": initPct,
+        "Cumulative%_Initial": initCum,
+        "Total_Extracted": extrSs_full,
+        "%_Variance_Extracted": extrPct_full,
+        "%_Cumulative_Extracted": extrCum_full,
+        "Total_Rotated": rotSs_full,
+        "%_Variance_Rotated": rotPct_full,
+        "%_Cumulative_Rotated": rotCum_full
+    })
+
+    dfVariance.to_csv(pathVarExplained, index_label="Componente", float_format='%.' + str(decimalPlaces)+ 'f')
+
+
+    dfLoadingsCombined = gpd.pd.DataFrame(index=paramNames)
+
+    for i in range(k):
+        dfLoadingsCombined[f"{i+1} Unrot"] = loadings[:, i]
+
+    for i in range(k):
+        dfLoadingsCombined[f"{i+1} Rot"] = rotatedLoadings[:, i]
+
+    dfLoadingsCombined.to_csv(pathRotUnrot, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
+
+
+    rankingPerParam["Cp"] = vulnerabilityIndex
+    rankingPerParam["Final priority"] = ranking
+    rankingPerParam.to_csv(pathRankCp, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
+
+    for i, feat in enumerate(drainageBasinLayer.getFeatures()):
+        f = QgsFeature()
+        f.setGeometry(feat.geometry())
+
+        attrs = feat.attributes()
+        attrs.append(float(ranking.iloc[i]))
+        f.setAttributes(attrs)
+
+        basinsRanked.addFeature(f)

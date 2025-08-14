@@ -199,12 +199,15 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
         '''
         return self.tr(self.name())
 
+    def groupId(self):
+        return "basin_hypsometric"
+
     def group(self):
         '''
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         '''
-        return self.tr(self.groupId())
+        return self.tr("Basin hypsometry")
 
     def icon(self):
         """
