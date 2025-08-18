@@ -418,6 +418,14 @@ This tool fills the DEM based on the elevation - area - volume curve (below), fo
 
 This tool fills and cuts the DEM based on the elevation - area - volume curve (above and below), for example, the tool will select the equivalent elevation of that parameter and "fill" what is below and "cut" what is above.
 
+## Calculate basin priority (Morphometric)
+
+This tool is used to calculate basin priority based on user-selected parameters. Examples of scientific studies that use this method include (Pastor et al., 2024) and (Rosado Victoria et al., 2025). Basin ranking is performed using the compound parameter, which is the average of the parameter rankings for each parameter.
+
+## Calculate basin priority (PCA)
+
+This tool is used to calculate basin priority based on user-selected parameters prioritized using the Principal Component Analysis statistical method. Examples of scientific studies using this method include (Ojha et al., 2023) and (Govarthanambikai & Sridhar, 2024). After a PCA analysis to select the morphometric parameters that best explain the physical phenomenon, a weight is assigned to each parameter (based on the correlation with the eigenvectors). The compound parameter is then averaged by calculating the rankings of the selected parameters with assigned weights.
+
 ## References
 - Horton, R. E. (1932). Drainage-basin characteristics. Transactions of the American Geophysical Union, 13, 350–361.
 
@@ -447,3 +455,10 @@ This tool fills and cuts the DEM based on the elevation - area - volume curve (a
 
 - Sreedevi, P. D., Subrahmanyam, K., & Ahmed, S. (2005). The Significance of Morphometric Analysis for Obtaining Groundwater Potential Zones in a Structurally Controlled Terrain. Environmental Geology, 47, 412–420.
 
+- Pastor, I., Tanislav, D., Nedelea, A., Dunea, D., Serban, G., Haghighi, A. T., Sabau, D., & Bretcan, P. (2024). Morphometric Analysis and Prioritization of Sub-Watersheds Located in Heterogeneous Geographical Units—Case Study: The Buzău River Basin. Sustainability, 16(17), 7567. https://doi.org/10.3390/su16177567
+
+- Rosado Victoria, B., Vaca, V., Menoscal Menoscal, M., Garces, D., Larreta, E., & Mulas, M. (2025). Morphometric watershed prioritization for sustainable agriculture and water management on Santa Cruz Island, Galápagos. Environmental and Sustainability Indicators, 27, 100843. https://doi.org/10.1016/j.indic.2025.100843
+
+- Ojha, S., Puri, L., Bist, S. P., Bastola, A. P., & Acharya, B. (2023). Watershed prioritization of Kailali district through morphometric parameters and land-use/land-cover datasets using GIS. Heliyon, 9(6), e16489. https://doi.org/10.1016/j.heliyon.2023.e16489
+
+- Govarthanambikai, K., & Sridhar, S. (2024). Prioritization of watershed using morphometric parameters through geospatial and PCA technique for Noyyal River Basin, Tamil Nadu, India. Journal of Water and Climate Change, 15(3), 1218–1231. https://doi.org/10.2166/wcc.2024.546
