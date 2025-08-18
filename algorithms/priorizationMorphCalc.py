@@ -626,7 +626,7 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
     gdfFinalAll = gpd.pd.concat([finalGdfLinear, finalGdfShapeFloat, finalGdfReliefFloat], ignore_index=False, axis=1)
     return gdfFinalAll
 
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces):
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -730,13 +730,32 @@ def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
     
     return rotated
 
-def calcMorphPriority(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,pathRankCp,basinsRanked):
+def calcMorphPriority(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,pathRankCp,basinsRanked,pathParameters):
 
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
-    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces)
+    if selectedParametersDirectly and selectedParametersInversely is None:
+        raise QgsProcessingException('No parameters were selected.')
+    
+    equals = set(selectedParametersDirectly) & set(selectedParametersInversely)
+
+    if equals:
+        nameEquals = ", ".join(map(str, equals))
+        raise QgsProcessingException(
+            'The same parameter cannot be selected for both the directly proportional and inversely proportional parameter lists, the following parameters were selected in both lists: ' + str(nameEquals)
+        )
+
+    if 'None' in selectedParametersDirectly:
+        selectedParametersDirectly.remove('None')
+    if 'None' in selectedParametersInversely:
+        selectedParametersInversely.remove('None')
 
     allSelectedParameters = selectedParametersDirectly + selectedParametersInversely
+
+    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates)
+    gdfMorpParam = gdfMorpParam[allSelectedParameters]
+    gdfMorpParam.to_csv(pathParameters, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
+
     gdfWithSelectedParameters = gdfMorpParam.loc[:, allSelectedParameters].dropna()
 
     rankingDirect = gdfWithSelectedParameters.loc[:, selectedParametersDirectly] \

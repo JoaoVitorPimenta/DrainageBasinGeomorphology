@@ -20,6 +20,8 @@ Then select the ZIP containing this plugin -> install plugin or place this plugi
 # Tools
 This plugin offers tools for studying the geomorphology of drainage basins, are they:
 
+# Basin morphometric parameters
+
 ## Calculate all morphometric parameters
 This tool calculates all morphometric parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
 
@@ -78,6 +80,8 @@ This tool calculates shape parameters of the watershed as shown in the table bel
 **Output:**  
 **Shape parameters** - Shape parameters calculated, for each basin, in .csv.
 
+# Basin EAV curves
+
 ## Calculate elevation area volume above
 This tool calculates the elevation area volume curves (above) for all features provided in the drainage basin layer as input.
 
@@ -131,6 +135,8 @@ This tool calculates the elevation area volume curves (above and below) for all 
 
 **Graphs** - Graphs with elevation-area and elevation-volume curves, for each basin, stored in .HTML format in a folder.
 
+# Basin hypsometry
+
 ## Calculate hypsometric curves
 This tool calculates and plots the hypsometric curves, with absolute or relative values ​​(from 0 to 1). The hypsometric curves represents the area above a certain elevation.
 
@@ -145,6 +151,8 @@ This tool calculates and plots the hypsometric curves, with absolute or relative
 **Hypsometric curves** - The data used to create the hypsometric curves, for each basin, in .csv.
 
 **Graph** - The graph with the hypsometric curves, for each basin, in .html.
+
+# Basin modifications
 
 ## Calculate inundated area
 This tool calculates the inundated area from the EAV curve, it uses the elevation associated with a user-given curve parameter, and then plots the area below that elevation.
@@ -184,7 +192,7 @@ This tool calculates the cutted area as a raster, for each basin, and as a vecto
 
 **Modified area** - The vector with the cutted area, in the vector attribute table has the EAV curve variables related to the parameter provided by the user.
 
-## Filled DEM
+## Fill DEM
 This tool calculates the filled area as a raster, for each basin, and as a vector, for each basin, with the attribute table containing the height, elevation, area and volume values.               
 
 **Inputs:**  
@@ -221,6 +229,64 @@ This tool calculates the filled/cutted area as a raster, for each basin, and as 
 **Cutted DEM** - The raster of the filled/cutted area.
 
 **Modified area** - The vector with the filled/cutted area, in the vector attribute table has the EAV curve variables related to the parameter provided by the user.
+
+# Basin priority
+
+## Calculate basin priority (morphometric)
+This tool calculates all morphometric parameters selected of each basin feature individually and then calculates a priority order for the basins, based on the parameters selected by the user and the morphometric method.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Parameters for morphometric analysis (directly proportional)** - Morphometric parameters directly proportional to the priority the user wants to analyze.
+
+**Parameters for morphometric analysis (indirectly proportional)** - Morphometric parameters indirectly proportional to the priority the user wants to analyze.
+
+**Decimal places of the result** - Number of decimal places in results.
+
+**Output:**  
+**Morphometric parameters** - Morphometric parameters calculated, for each basin, in .csv.
+
+**Ranking table with compound parameter values** - Table with ranked and compound values with the final ranking.
+
+**Ranked basins PCA** - Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
+
+## Calculate basin priority (PCA)
+This tool calculates all morphometric parameters selected of each basin feature individually and then calculates a priority order for the basins, based on the parameters selected by the user and the PCA method.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Parameters for morphometric analysis (directly proportional)** - Morphometric parameters directly proportional to the priority the user wants to analyze.
+
+**Parameters for morphometric analysis (indirectly proportional)** - Morphometric parameters indirectly proportional to the priority the user wants to analyze.
+
+**Decimal places of the result** - Number of decimal places in results.
+
+**Output:**  
+**Morphometric parameters** - Morphometric parameters calculated, for each basin, in .csv.
+
+**Correlation table** - File containing the table with the intercorrelation matrix of the parameters selected by the user.
+
+**Total variance explained table** - Amount of variance explained by each component of the PCA analysis (eigenvectors and eigenvalues), selected based on Kaiser's rule (eigenvectors with eigenvalues > 1).
+
+**Unrotated and rotated matrix** - Matrix with the correlation of the parameters in relation to the selected components, unrotated and rotated by the varimax method.
+
+**Ranking table with compound parameter values** - Table with ranked and compound values with the final ranking.
+
+**Ranked basins PCA** - Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
 
 ## Recommendations 
 All inputs must be in a projected coordinate system for consistent results.

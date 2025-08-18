@@ -626,7 +626,7 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
     gdfFinalAll = gpd.pd.concat([finalGdfLinear, finalGdfShapeFloat, finalGdfReliefFloat], ignore_index=False, axis=1)
     return gdfFinalAll
 
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces):
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,pathParameters):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -730,13 +730,29 @@ def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
     
     return rotated
 
-def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked):
+def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters):
 
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
-    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces)
+    if selectedParametersDirectly and selectedParametersInversely is None:
+        raise QgsProcessingException('No parameters were selected.')
+    
+    equals = set(selectedParametersDirectly) & set(selectedParametersInversely)
+
+    if equals:
+        nameEquals = ", ".join(map(str, equals))
+        raise QgsProcessingException(
+            'The same parameter cannot be selected for both the directly proportional and inversely proportional parameter lists, the following parameters were selected in both lists: ' + str(nameEquals)
+        )
 
     allSelectedParameters = selectedParametersDirectly + selectedParametersInversely
+    if 'None' in allSelectedParameters:
+        allSelectedParameters.remove('None')
+
+    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,pathParameters)
+    gdfMorpParam = gdfMorpParam[allSelectedParameters]
+    gdfMorpParam.to_csv(pathParameters, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
+
     gdfWithSelectedParameters = gdfMorpParam.loc[:, allSelectedParameters].dropna()
     X = gdfWithSelectedParameters.values
 
@@ -845,9 +861,20 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
 
     dfLoadingsCombined.to_csv(pathRotUnrot, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
-
-    rankingPerParam["Cp"] = vulnerabilityIndex
+    if useSimpleCpFormula is True:
+        rankingPerParam["Compound parameter"] = vulnerabilityIndex
+    else:
+        rankingPerParam["Compound parameter weighted"] = vulnerabilityIndex
     rankingPerParam["Final priority"] = ranking
+    if useSimpleCpFormula is False:
+        weightedRankingCols = weightedRanking.add_suffix(" weighted")
+        rankingPerParam = gpd.pd.concat(
+            [rankingPerParam.iloc[:, :len(selectedParams)],
+            weightedRankingCols,
+            rankingPerParam[["Compound parameter weighted"]]],
+            axis=1
+        )
+
     rankingPerParam.to_csv(pathRankCp, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
     for i, feat in enumerate(drainageBasinLayer.getFeatures()):
