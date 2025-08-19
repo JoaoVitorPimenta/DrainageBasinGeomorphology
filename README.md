@@ -424,7 +424,7 @@ This tool is used to calculate basin priority based on user-selected parameters.
 
 ## Calculate basin priority (PCA)
 
-This tool is used to calculate basin priority based on user-selected parameters prioritized using the Principal Component Analysis statistical method. Examples of scientific studies using this method include (Ojha et al., 2023) and (Govarthanambikai & Sridhar, 2024). After a PCA analysis to select the morphometric parameters that best explain the physical phenomenon, a weight is assigned to each parameter (based on the correlation with the eigenvectors). The compound parameter is then averaged by calculating the rankings of the selected parameters with assigned weights.
+This tool is used to calculate basin priority based on user-selected parameters prioritized using the Principal Component Analysis statistical method. Examples of scientific studies using this method include (Ojha et al., 2023) and (Govarthanambikai & Sridhar, 2024). After a PCA analysis to select the morphometric parameters that best explain the physical phenomenon, a weight is assigned to each parameter (based on the correlation with the eigenvectors). The compound parameter is then averaged by calculating the rankings of the selected parameters with assigned weights. The rotation used after PCA analysis to have a better distribution of results is varimax.
 
 ## References
 - Horton, R. E. (1932). Drainage-basin characteristics. Transactions of the American Geophysical Union, 13, 350–361.
