@@ -848,7 +848,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
         "%_Cumulative_Rotated": rotCum_full
     })
 
-    dfVariance.to_csv(pathVarExplained, index_label="Componente", float_format='%.' + str(decimalPlaces)+ 'f')
+    dfVariance.to_csv(pathVarExplained, index_label="Component", float_format='%.' + str(decimalPlaces)+ 'f')
 
 
     dfLoadingsCombined = gpd.pd.DataFrame(index=paramNames)
