@@ -711,15 +711,15 @@ def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
         X = X / norms
     
     R = np.eye(nCols)
-    
+    nIter = 0
     for i in range(max_iter):
         Lambda = np.dot(X, R)
-        # gradiente varimax clássico
         tmp = Lambda**3 - (1 / nRows) * Lambda * np.sum(Lambda**2, axis=0, keepdims=True)
         u, s, vh = np.linalg.svd(np.dot(X.T, tmp))
         R_new = np.dot(u, vh)
         diff = np.sum(np.abs(R_new - R))
         R = R_new
+        nIter = i + 1
         if diff < tol:
             break
     
@@ -727,8 +727,8 @@ def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
     
     if normalize:
         rotated = rotated * norms
-    
-    return rotated
+
+    return rotated, nIter
 
 def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters):
 
@@ -768,7 +768,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
     k = np.sum(eigVals > 1.0)
     loadings = eigVecs[:, :k] * np.sqrt(eigVals[:k])
 
-    rotatedLoadings = varimaxRotator(loadings)
+    rotatedLoadings, nIter = varimaxRotator(loadings)
     selectedIndices = []
     for comp in range(rotatedLoadings.shape[1]):
         idx = np.argmax(np.abs(rotatedLoadings[:, comp]))
@@ -858,6 +858,8 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
 
     for i in range(k):
         dfLoadingsCombined[f"{i+1} Rot"] = rotatedLoadings[:, i]
+
+    dfLoadingsCombined[f"Rotation converged in {nIter} iterations."] = "" 
 
     dfLoadingsCombined.to_csv(pathRotUnrot, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
