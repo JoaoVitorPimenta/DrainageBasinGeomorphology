@@ -323,7 +323,7 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         <strong>Decimal places of the result: </strong>Number of decimal places in results.
         <strong>Morphometric parameters: </strong>File with all morphometric parameters calculated individually for each basin.
         <strong>Ranking table with compound parameter values: </strong>Table with ranked and compound values with the final ranking.
-        <strong>Ranked basins PCA: </strong>Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
+        <strong>Ranked basins morphometric: </strong>Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
 
                        
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
