@@ -833,6 +833,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
         vulnerabilityIndex = weightedRanking.sum(axis=1)
 
     ranking = vulnerabilityIndex.rank(method='min', ascending=False)
+    priority = gpd.pd.qcut(ranking, 3, labels=["High priority", "Medium priority", "Low priority"])
 
     dfCorr.to_csv(pathCorrMatrix, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
@@ -885,6 +886,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
 
         attrs = feat.attributes()
         attrs.append(float(ranking.iloc[i]))
+        attrs.append(str(priority.iloc[i]))
         f.setAttributes(attrs)
 
         basinsRanked.addFeature(f)

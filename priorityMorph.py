@@ -245,7 +245,8 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         pathRankCp = self.parameterAsFileOutput(parameters, self.RANKING_TABLE_WITH_CP_VALUES, context)
 
         fields = basinSource.fields()
-        fields.append(QgsField("priority", QVariant.Double))
+        fields.append(QgsField("ranking", QVariant.Double))
+        fields.append(QgsField("priority", QVariant.String))
 
         basinsRanked, destId = self.parameterAsSink(
             parameters,

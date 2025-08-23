@@ -769,6 +769,7 @@ def calcMorphPriority(drainageBasinLayer,streamLayer,demLayer,feedback,precision
     vulnerabilityIndex = rankingPerParam.sum(axis=1) / rankingPerParam.shape[1]
 
     ranking = vulnerabilityIndex.rank(method='min', ascending=False)
+    priority = gpd.pd.qcut(ranking, 3, labels=["High priority", "Medium priority", "Low priority"])
 
     rankingPerParam["Cp"] = vulnerabilityIndex
     rankingPerParam["Final priority"] = ranking
@@ -780,6 +781,7 @@ def calcMorphPriority(drainageBasinLayer,streamLayer,demLayer,feedback,precision
 
         attrs = feat.attributes()
         attrs.append(float(ranking.iloc[i]))
+        attrs.append(str(priority.iloc[i]))
         f.setAttributes(attrs)
 
         basinsRanked.addFeature(f)
