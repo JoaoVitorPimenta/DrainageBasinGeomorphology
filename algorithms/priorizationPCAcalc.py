@@ -60,7 +60,7 @@ def getStreamsInsideLayer(streamLayer, drainageBasinLayer, feedback, precisionSn
 def selectStreamsInsideBasin(streamGdf, drainageBasinGdf):
     linesInBasins = gpd.overlay(streamGdf, drainageBasinGdf, how="intersection")
     if linesInBasins.empty:
-        return
+        return linesInBasins
 
     coords = linesInBasins.geometry.apply(
         lambda geom: (

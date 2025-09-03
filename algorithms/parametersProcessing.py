@@ -70,7 +70,7 @@ def getStreamsInsideLayer(streamLayer, drainageBasinLayer, feedback, precisionSn
 def selectStreamsInsideBasin(streamGdf, drainageBasinGdf):
     linesInBasins = gpd.overlay(streamGdf, drainageBasinGdf, how="intersection", keep_geom_type=False)
     if linesInBasins.empty:
-        return
+        return linesInBasins
 
     coords = linesInBasins.geometry.apply(
         lambda geom: (
@@ -258,6 +258,7 @@ def mergeStreams(gdf):
     return
 
 def calculateStreamLength(gdfStream, minimumChannelLength):
+
     gdfStream['length'] = gdfStream.geometry.length
     gdfStream.query('length > ' + str(minimumChannelLength), inplace=True)
     return
