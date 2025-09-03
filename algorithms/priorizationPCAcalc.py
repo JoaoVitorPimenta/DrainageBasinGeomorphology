@@ -247,8 +247,9 @@ def mergeStreams(gdf):
         gdf.reset_index(drop=True, inplace=True)
     return
 
-def calculateStreamLength(gdfStream):
+def calculateStreamLength(gdfStream,minimumChannelLength):
     gdfStream['length'] = gdfStream.geometry.length
+    gdfStream.query('length > ' + str(minimumChannelLength), inplace=True)
     return
 
 def createGdfLinear(gdfStream):
@@ -351,7 +352,7 @@ def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
     if gdfStream.empty:
         gdfShape['Basin length (Lg) (km)'] = None
         return
-    print(gdfStream.columns)
+
     maxOrder = gdfStream['order'].max()
     filterMaxOrder = gdfStream[gdfStream['order'] == maxOrder]
 
@@ -684,7 +685,7 @@ def formatGdfRelief(gdfRelief,basin):
     gdfReliefFloat.index = ['Basin id ' + str(basin.id())]
     return gdfReliefFloat
 
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates):
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -704,7 +705,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
         gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape)
         if feedback.isCanceled():
             return
-        calculateStreamLength(gdfStreamsInside)
+        calculateStreamLength(gdfStreamsInside,minimumChannelLength)
         gdfLinear = createGdfLinear(gdfStreamsInside)
         calculateStreamNumber(gdfStreamsInside,gdfLinear)
         calculateTotalStreamLength(gdfStreamsInside,gdfLinear)
@@ -791,7 +792,7 @@ def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
 
     return rotated, nIter
 
-def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters):
+def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength):
 
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
@@ -810,12 +811,21 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
     if 'None' in allSelectedParameters:
         allSelectedParameters.remove('None')
 
-    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates)
+    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength)
     gdfMorpParam = gdfMorpParam[allSelectedParameters]
     gdfMorpParam.to_csv(pathParameters, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
-    gdfWithSelectedParameters = gdfMorpParam.loc[:, allSelectedParameters].dropna()
+    for col in allSelectedParameters:
+        basinsWithNan = gdfMorpParam[gdfMorpParam[col].isna()].index.tolist()
+        
+        for basin in basinsWithNan:
+            feedback.pushWarning(str(basin) + ' does not have the morphometric parameter ' + str(col) + ' so the parameter will be ignored in the analysis.')
+
+    gdfWithSelectedParameters = gdfMorpParam.loc[:, allSelectedParameters].dropna(axis=1)    
     X = gdfWithSelectedParameters.values
+
+    selectedParametersDirectly = [col for col in selectedParametersDirectly if col in gdfWithSelectedParameters.columns]
+    selectedParametersInversely = [col for col in selectedParametersInversely if col in gdfWithSelectedParameters.columns]
 
     covMatrix = np.corrcoef(X, rowvar=False)
     paramNames = gdfWithSelectedParameters.columns
@@ -944,7 +954,6 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
     for i, feat in enumerate(drainageBasinLayer.getFeatures()):
         f = QgsFeature()
         f.setGeometry(feat.geometry())
-
         attrs = feat.attributes()
         attrs.append(float(ranking.iloc[i]))
         attrs.append(str(priority.iloc[i]))

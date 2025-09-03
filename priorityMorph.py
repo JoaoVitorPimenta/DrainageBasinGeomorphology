@@ -73,6 +73,7 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
     SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL = 'SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL'
     BASINS_RANKED = 'BASINS_RANKED'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
+    MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
 
     def initAlgorithm(self, config):
         '''
@@ -99,32 +100,10 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterNumber(
-                self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision'),
-                type=QgsProcessingParameterNumber.Double,
-                minValue=0,
-                defaultValue=0.000001,
-                optional=True
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterRasterLayer(
                 self.DEM,
                 self.tr('DEM'),
                 [QgsProcessing.TypeRaster]
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision'),
-                type=QgsProcessingParameterNumber.Double,
-                minValue=0,
-                defaultValue=0.000001,
-                optional=True
             )
         )
 
@@ -183,6 +162,28 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
+                self.CHANNEL_COORDINATE_PRECISION,
+                self.tr('Channel coordinate precision'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.000001,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.MINIMUM_CHANNEL_LENGTH,
+                self.tr('Minimum channel length'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.000001,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
                 self.DECIMAL_PLACES,
                 self.tr('Decimal places of the result'),
                 type=QgsProcessingParameterNumber.Integer,
@@ -233,6 +234,8 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
 
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
+        minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
+
         selectedParametersDirectly = self.parameterAsEnums(parameters, self.SELECTED_PARAMETERS_DIRECTLY_PROPORTIONAL, context)
         selectedStringsDirectly = [self.parametersToChoose[i] for i in selectedParametersDirectly]
 
@@ -258,7 +261,7 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calcMorphPriority(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathRankCp,basinsRanked,pathParameters)
+        calcMorphPriority(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathRankCp,basinsRanked,pathParameters,minimumChannelLength)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -317,10 +320,11 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>Parameters for morphometric analysis (directly proportional): </strong>Morphometric parameters directly proportional to the priority the user wants to analyze.
         <strong>Parameters for morphometric analysis (indirectly proportional): </strong>Morphometric parameters indirectly proportional to the priority the user wants to analyze.
+        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
+        <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
         <strong>Decimal places of the result: </strong>Number of decimal places in results.
         <strong>Morphometric parameters: </strong>File with all morphometric parameters calculated individually for each basin.
         <strong>Ranking table with compound parameter values: </strong>Table with ranked and compound values with the final ranking.

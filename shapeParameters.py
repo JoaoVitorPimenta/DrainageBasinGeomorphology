@@ -64,6 +64,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
     CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
+    MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
 
     def initAlgorithm(self, config):
         '''
@@ -93,6 +94,17 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
                 self.tr('Channel coordinate precision'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.000001,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.MINIMUM_CHANNEL_LENGTH,
+                self.tr('Minimum channel length'),
                 type=QgsProcessingParameterNumber.Double,
                 minValue=0,
                 defaultValue=0.000001,
@@ -136,12 +148,14 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
+        minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
+
         decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
 
         path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
 
         verifyLibs()
-        calculateShapeParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates,decimalPlaces)
+        calculateShapeParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -198,7 +212,9 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
+        <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
         <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding
+        <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
         <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
         
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
