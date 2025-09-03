@@ -911,7 +911,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
     dfVariance = gpd.pd.DataFrame({
         "Total_Initial": initSs,
         "%_Variance_Initial": initPct,
-        "Cumulative%_Initial": initCum,
+        "%_Cumulative_Initial": initCum,
         "Total_Extracted": extrSs_full,
         "%_Variance_Extracted": extrPct_full,
         "%_Cumulative_Extracted": extrCum_full,
@@ -939,13 +939,15 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
         rankingPerParam["Compound parameter"] = vulnerabilityIndex
     else:
         rankingPerParam["Compound parameter weighted"] = vulnerabilityIndex
-    rankingPerParam["Final priority"] = ranking
+    rankingPerParam["Ranking"] = ranking
+    rankingPerParam["Priority"] = priority
     if useSimpleCpFormula is False:
         weightedRankingCols = weightedRanking.add_suffix(" weighted")
         rankingPerParam = gpd.pd.concat(
-            [rankingPerParam.iloc[:, :len(selectedParams)],
-            weightedRankingCols,
-            rankingPerParam[["Compound parameter weighted"]]],
+            [weightedRankingCols, 
+             rankingPerParam["Compound parameter weighted"],
+             rankingPerParam["Ranking"],
+             rankingPerParam["Priority"]],
             axis=1
         )
 
