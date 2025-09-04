@@ -30,9 +30,11 @@ This tool calculates all morphometric parameters of the watershed as shown in th
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
-**DEM** - Digital Elevation Model in the area of the drainage basins.
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
 **Output:**  
 **All morphometric parameters** - All morphometric parameters calculated, for each basin, in .csv.
@@ -45,9 +47,11 @@ This tool calculates linear parameters of the watershed as shown in the table be
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
-**DEM** - Digital Elevation Model in the area of the drainage basins.
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
 **Output:**  
 **All morphometric parameters** - Linear parameters calculated, for each basin in .csv.
@@ -60,9 +64,11 @@ This tool calculates relief parameters of the watershed as shown in the table be
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
-**DEM** - Digital Elevation Model in the area of the drainage basins.
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
 **Output:**  
 **Shape parameters** - Relief parameters calculated, for each basin, in .csv.
@@ -76,6 +82,8 @@ This tool calculates shape parameters of the watershed as shown in the table bel
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
 **Output:**  
 **Shape parameters** - Shape parameters calculated, for each basin, in .csv.
@@ -240,9 +248,11 @@ This tool calculates all morphometric parameters selected of each basin feature 
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
-**DEM** - Digital Elevation Model in the area of the drainage basins.
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
 **Parameters for morphometric analysis (directly proportional)** - Morphometric parameters directly proportional to the priority the user wants to analyze.
 
@@ -265,9 +275,11 @@ This tool calculates all morphometric parameters selected of each basin feature 
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
-**DEM** - Digital Elevation Model in the area of the drainage basins.
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
 **Parameters for morphometric analysis (directly proportional)** - Morphometric parameters directly proportional to the priority the user wants to analyze.
 
