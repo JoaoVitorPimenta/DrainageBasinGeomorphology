@@ -8,7 +8,7 @@ qgisMinimumVersion=3.40
 qgisMaximumVersion=4.99
 supportsQt6=True
 description=This plugin provides tools for geomorphological analysis in drainage basins.
-version=1.2.0
+version=1.2.1
 author=João Vitor Pimenta
 email=jvpjoaopimenta@gmail.com
 
@@ -23,6 +23,10 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        1.2.1
+        -now the plugin works correctly with interbasins
+        -add more information in .csv of priority tools
+
         1.2.0
         -add High, Medium and Low priority classification in basins rankeds
         -now its compatible with QGIS 4
