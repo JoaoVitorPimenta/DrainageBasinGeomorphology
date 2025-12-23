@@ -890,10 +890,10 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
     weights = colSums / totalSum
 
     rankingDirect = gdfWithSelectedParameters.loc[:, list(set(selectedParams) & set(selectedParametersDirectly))] \
-        .rank(method='min', ascending=True)
+        .rank(method='min', ascending=False)
 
     rankingInverse = gdfWithSelectedParameters.loc[:, list(set(selectedParams) & set(selectedParametersInversely))] \
-        .rank(method='min', ascending=False)
+        .rank(method='min', ascending=True)
 
     rankingPerParam = gpd.pd.concat([rankingDirect, rankingInverse], axis=1)
 
@@ -903,7 +903,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
         weightedRanking = rankingPerParam * weights
         vulnerabilityIndex = weightedRanking.sum(axis=1)
 
-    ranking = vulnerabilityIndex.rank(method='min', ascending=False)
+    ranking = vulnerabilityIndex.rank(method='min', ascending=True)
     priority = gpd.pd.qcut(ranking, 3, labels=["High priority", "Medium priority", "Low priority"])
 
     dfCorr.to_csv(pathCorrMatrix, index=True, float_format='%.' + str(decimalPlaces)+ 'f')

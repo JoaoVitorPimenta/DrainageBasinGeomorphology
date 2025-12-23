@@ -829,16 +829,16 @@ def calcMorphPriority(drainageBasinLayer,streamLayer,demLayer,feedback,precision
     selectedParametersInversely = [col for col in selectedParametersInversely if col in gdfWithSelectedParameters.columns]
 
     rankingDirect = gdfWithSelectedParameters.loc[:, selectedParametersDirectly] \
-        .rank(method='min', ascending=True)
+        .rank(method='min', ascending=False)
 
     rankingInverse = gdfWithSelectedParameters.loc[:, selectedParametersInversely] \
-        .rank(method='min', ascending=False)
+        .rank(method='min', ascending=True)
 
     rankingPerParam = gpd.pd.concat([rankingDirect, rankingInverse], axis=1)
 
     vulnerabilityIndex = rankingPerParam.sum(axis=1) / rankingPerParam.shape[1]
 
-    ranking = vulnerabilityIndex.rank(method='min', ascending=False)
+    ranking = vulnerabilityIndex.rank(method='min', ascending=True)
     priority = gpd.pd.qcut(ranking, 3, labels=["High priority", "Medium priority", "Low priority"])
 
     rankingPerParam["Cp"] = vulnerabilityIndex
