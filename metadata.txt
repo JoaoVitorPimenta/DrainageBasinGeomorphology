@@ -8,7 +8,7 @@ qgisMinimumVersion=3.40
 qgisMaximumVersion=4.99
 supportsQt6=True
 description=This plugin provides tools for geomorphological analysis in drainage basins.
-version=1.2.2
+version=1.3.0
 author=João Vitor Pimenta
 email=jvpjoaopimenta@gmail.com
 
@@ -23,6 +23,9 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        1.3.0
+        -correct stream frequency formula #thanksNormamGarcia
+
         1.2.2
         -change the order for ranking parameters and Compound Value, with my tests, this don't affect final result of ranking, but its more accurated with bibliography
 
