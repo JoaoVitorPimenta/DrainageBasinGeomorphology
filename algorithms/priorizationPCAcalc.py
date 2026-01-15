@@ -394,7 +394,7 @@ def calculateWanderingRatio(gdfShape,gdfLinear):
 
 def calculateStreamFrequency(gdfShape,gdfLinear):
     numStreams = gdfLinear['Stream number'].sum()
-    streamFrequency = gdfShape['Area (km2)']/numStreams
+    streamFrequency = numStreams/gdfShape['Area (km2)']
     gdfLinear.loc[gdfLinear.index[-1], 'Stream frequency (Fs) (1/km2)'] = streamFrequency.iloc[0][0]
     if gpd.pd.isna(numStreams) or numStreams == 0:
         gdfLinear.loc[gdfLinear.index[-1], 'Stream frequency (Fs) (1/km2)'] = gpd.pd.NA
