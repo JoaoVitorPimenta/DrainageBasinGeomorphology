@@ -8,7 +8,7 @@ qgisMinimumVersion=3.40
 qgisMaximumVersion=4.99
 supportsQt6=True
 description=This plugin provides tools for geomorphological analysis in drainage basins.
-version=1.3.0
+version=1.4.0
 author=João Vitor Pimenta
 email=jvpjoaopimenta@gmail.com
 
@@ -23,6 +23,10 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        1.4.0
+        -correct gradient ratio formula #thanksVedatAvcı
+        -correct relative relief formula
+
         1.3.0
         -correct stream frequency formula #thanksNormamGarcia
 
