@@ -594,18 +594,18 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief):
     identificatorFirst = dem.dataProvider().identify(firstPointQgs, QgsRaster.IdentifyFormatValue)
     identificatorLast = dem.dataProvider().identify(lastPointQgs, QgsRaster.IdentifyFormatValue)
 
-    lowestPoint = identificatorFirst.results()[1]
-    hightestPoint = identificatorLast.results()[1]
+    lowestPointKm = identificatorFirst.results()[1]/1000
+    hightestPointKm = identificatorLast.results()[1]/1000
 
-    if lowestPoint is None or hightestPoint is None:
+    if lowestPointKm is None or hightestPointKm is None:
         gdfRelief['Gradient ratio (Gr)'] = None
         return
 
     maxOrder = gdfLinear['Stream Order'].max()
     filteredMaxOrder = gdfLinear[gdfLinear['Stream Order'] == maxOrder]
-    
+
     ls = filteredMaxOrder['Stream length total (km)'].values
-    gdfRelief['Gradient ratio (Gr)'] = (hightestPoint - lowestPoint)/ls
+    gdfRelief['Gradient ratio (Gr)'] = (hightestPointKm - lowestPointKm)/ls
     return
 
 def intToRoman(num):
