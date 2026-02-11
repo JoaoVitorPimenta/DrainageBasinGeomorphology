@@ -335,7 +335,7 @@ If you have any questions, suggestions, errors or need information/training abou
 | Linear       | Wandering Ratio | _Rw_      | _Lch / Lg_         | Ratio between main channel length and basin length.                              |  Smart & Surkan(1967)              |
 | Linear       | Drainage Density | _Dd_     | _Lt / A_           | Ratio of total channel length to basin area.                               |   Horton (1945)             |
 | Linear       | Stream Frequency | _Fs_     | _N / A_            | Ratio of total number of segments to basin area.                           |  Horton (1945)              |
-| Linear       | Drainage Texture | _Dt_     | _N / P_            | Ratio of number of channels to basin perimeter.                            |  Smith (1950)         |
+| Linear       | Drainage Texture* | _Dt_     | _N1 / P_            | Ratio of number of channels in order 1 to basin perimeter.                            |  Smith (1950)         |
 | Linear       | Length of Overland Flow | _Lg_ | _1 / (2 × Dd)_     | Average length of surface (overland) flow.                                 |   Horton (1945)             |
 | Linear       | Constant of Channel Maintenance | _Ccm_ | _1 / Dd_         | Area required to sustain 1 km of channel.                                  |   Schumm (1956)             |
 | Linear       | Drainage Intensity | _Di_   | _Fs / Dd_          | Ratio of stream frequency to drainage density.                             |  Faniran (1968)              |
@@ -354,11 +354,14 @@ If you have any questions, suggestions, errors or need information/training abou
 | Relief       | Mean Elevation | _Emean_     | _(Emax + Emin) / 2_ | Average of highest and lowest elevations.                                 | DEM Data           |
 | Relief       | Relief (Bh)    | _Bh_        | _Emax – Emin_      | Total relief (elevation range).                                           | DEM Data           |
 | Relief       | Relief Ratio   | _Rh_        | _Bh / Lb_          | Ratio of relief to basin length.                                          | Schumm (1956)    |
-| Relief       | Relative Relief | _Rhp_      | _Emax / P_           | Ratio of relief to basin area.                                            |  Melton (1957)  |
+| Relief       | Relative Relief** | _Rhp_      | _Bh / P_           | Ratio of relief to basin perimeter.                                            |  Melton (1957)  |
 | Relief       | Ruggedness Number | _Rn_     | _Bh × Dd_          | Product of relief and drainage density.                                   | Strahler (1954)      |
 | Relief       | Dissection Index | _Di_      | _(Emax - Emin) / Emax_           | Ratio of relief to perimeter.                                             | Nir Dov (1957)      |
 | Relief       | Gradient Ratio | _Gr_       | _(Relief source - Relief mouth) / Lch_         | Ratio between the difference in altitude of the main channel and its length.                                   |  Sreedevi (2005)  |
 
+*This formula is sometimes used as N/P (all channels are used) but in Smith original work it is N1/P, partly because he uses first-order channels as an approximation for the contour lines.
+
+**All the actual articles I read use this formula as H/P, where H is the maximum elevation of the basin, but as verified in Melton's original work, he uses r/P, where r is the difference between the highest and lowest elevations.
 
 ## Elevation - area - volume below
 

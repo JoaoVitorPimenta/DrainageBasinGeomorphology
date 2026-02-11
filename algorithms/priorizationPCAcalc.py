@@ -547,10 +547,10 @@ def calculateReliefRatio(gdfRelief,gdfShape):
     return
 
 def calculateRelativeRelief (gdfRelief,gdfShape):
-    maxElev = gdfRelief['Maximum elevation (m)']
-    maxElevInKm = maxElev/1000
+    relief = gdfRelief['Relief (Bh) (m)']
+    reliefInKm = relief/1000
     perimeter = gdfShape['Perimeter (km)']
-    gdfRelief['Relative relief (Rhp)'] = maxElevInKm*100/perimeter
+    gdfRelief['Relative relief (Rhp)'] = reliefInKm/perimeter
     return
 
 def calculateRuggednessNumber (gdfRelief,gdfLinear):
@@ -583,10 +583,10 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief):
     identificatorFirst = dem.dataProvider().identify(firstPointQgs, QgsRaster.IdentifyFormatValue)
     identificatorLast = dem.dataProvider().identify(lastPointQgs, QgsRaster.IdentifyFormatValue)
 
-    lowestPoint = identificatorFirst.results()[1]
-    hightestPoint = identificatorLast.results()[1]
+    lowestPointKm = identificatorFirst.results()[1]/1000
+    hightestPointKm = identificatorLast.results()[1]/1000
 
-    if lowestPoint is None or hightestPoint is None:
+    if lowestPointKm is None or hightestPointKm is None:
         gdfRelief['Gradient ratio (Gr)'] = None
         return
 
@@ -594,7 +594,7 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief):
     filteredMaxOrder = gdfLinear[gdfLinear['Stream Order'] == maxOrder]
     
     ls = filteredMaxOrder['Stream length total (km)'].values
-    gdfRelief['Gradient ratio (Gr)'] = (hightestPoint - lowestPoint)/ls
+    gdfRelief['Gradient ratio (Gr)'] = (hightestPointKm - lowestPointKm)/ls
     return
 
 def intToRoman(num):

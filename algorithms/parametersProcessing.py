@@ -558,10 +558,10 @@ def calculateReliefRatio(gdfRelief,gdfShape):
     return
 
 def calculateRelativeRelief (gdfRelief,gdfShape):
-    maxElev = gdfRelief['Maximum elevation (m)']
-    maxElevInKm = maxElev/1000
+    relief = gdfRelief['Relief (Bh) (m)']
+    reliefInKm = relief/1000
     perimeter = gdfShape['Perimeter (km)']
-    gdfRelief['Relative relief (Rhp)'] = maxElevInKm*100/perimeter
+    gdfRelief['Relative relief (Rhp)'] = reliefInKm/perimeter
     return
 
 def calculateRuggednessNumber (gdfRelief,gdfLinear):
