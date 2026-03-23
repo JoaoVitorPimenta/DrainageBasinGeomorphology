@@ -4,11 +4,11 @@
 
 [general]
 name=Drainage Basin Geomorphology
-qgisMinimumVersion=3.40
+qgisMinimumVersion=4.00
 qgisMaximumVersion=4.99
 supportsQt6=True
 description=This plugin provides tools for geomorphological analysis in drainage basins.
-version=1.4.0
+version=2.0.0
 author=João Vitor Pimenta
 email=jvpjoaopimenta@gmail.com
 
@@ -23,6 +23,13 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        2.0.0
+        -correct information about formulas in README
+        -improve varimax rotation toleration for converge
+        -add WMCI (FS and FA) tools (Ghimire, 2025) see README
+        -end of support for QGIS 3 (sorry for QGIS 3 users, but its very difficult maintain two versions of plugin)
+        -add Jenks natural breaks (Jenks, 1967) for classification to all forms of basin priorization
+
         1.4.0
         -correct gradient ratio formula #thanksVedatAvcı
         -correct relative relief formula

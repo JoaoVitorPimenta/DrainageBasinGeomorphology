@@ -519,7 +519,13 @@ Several gaps were identified in previous research on prioritizing basins in rela
 
 Several gaps were identified in previous research on prioritizing basins in relation to basin morphometric parameters. These include: arbitrary relationship of parameters to erosion and lack of data normalization, among others. Therefore, a new index is proposed to represent basin fragility to erosion: the Watershed Morphometric Composite Index (WMCI) (Ghimire,2025). This tool replicates the entire process exemplified by the index's creator (Ghimire, 2025). In this case, the WSA process is applied to all parameters (WMCI-FS).
 
+## Classifications
+
+The classifications are based on Jenks' natural breaks (Jenks, 1967) and on five classifications: Very low, low, medium, high, and very high.
+
 ## References
+- JENKS, G. F. The data model concept in statistical mapping. International Yearbook of Cartography, v. 7, p. 186–190, 1967.
+
 - Ghimire, S. K., Lu, Y., & Wang, Y. (2025). An improved framework to prioritize sub-watersheds: Construction of Watershed Morphometric Composite Index (WMCI) for mountain soil conservation. Ecological Indicators, 177, 113817. https://doi.org/10.1016/j.ecolind.2025.113817
 
 - Horton, R. E. (1932). Drainage-basin characteristics. Transactions of the American Geophysical Union, 13, 350–361.
