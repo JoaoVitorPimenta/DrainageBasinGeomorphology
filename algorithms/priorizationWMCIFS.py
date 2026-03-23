@@ -586,7 +586,7 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief):
     lowestPointKm = identificatorFirst.results()[1]/1000
     hightestPointKm = identificatorLast.results()[1]/1000
 
-    if lowestPointKm is None or hightestPointKm is None:
+    if lowestPointKm is None or hightestPoint is None:
         gdfRelief['Gradient ratio (Gr)'] = None
         return
 
@@ -639,7 +639,7 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
         gdfShape[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfShape[col]]
     finalGdfShapeFloat = gdfShape.astype(float)
     finalGdfShapeFloat.index = ['Basin id ' + str(basin.id())]
-
+    
     for col in gdfRelief.columns:
         gdfRelief[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfRelief[col]]
     finalGdfReliefFloat = gdfRelief.astype(float)
@@ -771,35 +771,6 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
 
     return gdfFinal
 
-def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
-    X = loadings.copy()
-    nRows, nCols = X.shape
-
-    if normalize:
-        norms = np.sqrt(np.sum(X**2, axis=1, keepdims=True))
-        X = X / norms
-
-    R = np.eye(nCols)
-
-    nIter = 0
-    d = 0
-    for iteration in range(max_iter):
-        d_old = d
-        Lambda = np.dot(X, R)
-        u, s, vh = np.linalg.svd(np.dot(X.T, np.asarray(Lambda)**3 - (1/nRows) * np.dot(Lambda, np.diag(np.diag(np.dot(Lambda.T, Lambda))))))
-        R = np.dot(u, vh)
-        d = np.sum(s)
-        nIter += 1
-        if (d - d_old) / d_old < tol:
-            break
-
-    rotated = np.dot(X, R)
-
-    if normalize:
-        rotated = rotated * norms
-
-    return rotated, nIter
-
 def jenksBreaks(data, n_classes):
     data = np.sort(np.asarray(data, dtype=float))
     n = len(data)
@@ -838,20 +809,18 @@ def jenksBreaks(data, n_classes):
     breaks[0] = data[0]
 
     if len(np.unique(breaks)) != len(breaks):
-        print(breaks)
-        print(np.diff(breaks))
-        bad_value = breaks[np.where(np.diff(breaks) == 0)[0][0]]
-        data = data[data != bad_value]
-        new_breaks = jenksBreaks(data, n_classes)
+        equalValues = breaks[np.where(np.diff(breaks) == 0)[0][0]]
+        data = data[data != equalValues]
+        newBreaks = jenksBreaks(data, n_classes)
         breaks[0] = float('-inf')
         breaks[-1] = float('inf')
-        return new_breaks
+        return newBreaks
 
     breaks[0] = float('-inf')
     breaks[-1] = float('inf')
     return breaks
 
-def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength):
+def calcWMCIFS(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,pathCorrMatrix,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pathParametersStandardized):
 
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
@@ -880,91 +849,56 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
         for basin in basinsWithNan:
             feedback.pushWarning(str(basin) + ' does not have the morphometric parameter ' + str(col) + ' so the parameter will be ignored in the analysis.')
 
-    gdfWithSelectedParameters = gdfMorpParam.loc[:, allSelectedParameters].dropna(axis=1)    
-    X = gdfWithSelectedParameters.values
 
-    selectedParametersDirectly = [col for col in selectedParametersDirectly if col in gdfWithSelectedParameters.columns]
-    selectedParametersInversely = [col for col in selectedParametersInversely if col in gdfWithSelectedParameters.columns]
+    gdfWithSelectedParametersStandard = gdfMorpParam.loc[:, allSelectedParameters].dropna(axis=1)
+    selectedParametersDirectly = [col for col in selectedParametersDirectly if col in gdfWithSelectedParametersStandard.columns]
+    selectedParametersInversely = [col for col in selectedParametersInversely if col in gdfWithSelectedParametersStandard.columns]
+
+    for col in selectedParametersDirectly:
+        vmin = gdfWithSelectedParametersStandard[col].min()
+        vmax = gdfWithSelectedParametersStandard[col].max()
+
+        if vmax != vmin:
+            gdfWithSelectedParametersStandard[col] = (gdfWithSelectedParametersStandard[col] - vmin) / (vmax - vmin)
+        else:
+            feedback.pushWarning('The parameter ' + str(col) + ' variation is 0, making standardization impossible.')
+
+    for col in selectedParametersInversely:
+        vmin = gdfWithSelectedParametersStandard[col].min()
+        vmax = gdfWithSelectedParametersStandard[col].max()
+
+        if vmax != vmin:
+            gdfWithSelectedParametersStandard[col] = 1 - (gdfWithSelectedParametersStandard[col] - vmin) / (vmax - vmin)
+        else:
+            feedback.pushWarning('The parameter ' + str(col) + ' variation is 0, making standardization impossible.')
+
+    gdfWithSelectedParametersStandard.to_csv(pathParametersStandardized, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
+    columns = gdfWithSelectedParametersStandard.columns
+
+    gdfWithSelectedParametersStandard = gpd.pd.DataFrame(gdfWithSelectedParametersStandard, columns=columns)
+
+    X = gdfWithSelectedParametersStandard.values
 
     covMatrix = np.corrcoef(X, rowvar=False)
-    paramNames = gdfWithSelectedParameters.columns
+    paramNames = columns
+
     dfCorr = gpd.pd.DataFrame(covMatrix, columns=paramNames, index=paramNames)
 
-    eigVals, eigVecs = np.linalg.eigh(dfCorr)
-    idx = eigVals.argsort()[::-1]
-    eigVals = eigVals[idx]
-    eigVecs = eigVecs[:, idx]
-
-    k = np.sum(eigVals > 1.0)
-    loadings = eigVecs[:, :k] * np.sqrt(eigVals[:k])
-
-    if k == 0:
-        raise QgsProcessingException('No componentes with eigenvalues greater than 1 were found, the comparative analysis is impossible')
-
-    rotatedLoadings, nIter = varimaxRotator(loadings)
-    selectedIndices = []
-    for comp in range(rotatedLoadings.shape[1]):
-        idx = np.argmax(np.abs(rotatedLoadings[:, comp]))
-        selectedIndices.append(idx)
-
-    selectedIndices = list(dict.fromkeys(selectedIndices))
-
-    selectedParams = paramNames[selectedIndices]
-
-    nVars = dfCorr.shape[0]
-
-    initSs = eigVals
-    initPct = eigVals / nVars * 100
-    initCum = np.cumsum(initPct)
-
-    extrSs = np.sum(loadings ** 2, axis=0)
-    extrPct = extrSs / nVars * 100
-    extrCum = np.cumsum(extrPct)
-
-    rotSs = np.sum(rotatedLoadings ** 2, axis=0)
-    rotPct = rotSs / nVars * 100
-    rotCum = np.cumsum(rotPct)
-
-    nVarsLen = len(initSs)
-    kLen = len(extrSs)
-
-    extrSsFull = np.full(nVarsLen, np.nan)
-    extrPctFull = np.full(nVarsLen, np.nan)
-    extrCumFull = np.full(nVarsLen, np.nan)
-
-    rotSsFull = np.full(nVarsLen, np.nan)
-    rotPctFull = np.full(nVarsLen, np.nan)
-    rotCumFull = np.full(nVarsLen, np.nan)
-
-    extrSsFull[:kLen] = extrSs
-    extrPctFull[:kLen] = extrPct
-    extrCumFull[:kLen] = extrCum
-
-    rotSsFull[:kLen] = rotSs
-    rotPctFull[:kLen] = rotPct
-    rotCumFull[:kLen] = rotCum
-
-    corrSelected = dfCorr.loc[selectedParams, selectedParams]
-    colSums = corrSelected.sum(axis=0)
-    totalSum = corrSelected.values.sum()
+    colSums = dfCorr.sum(axis=0)
+    totalSum = dfCorr.values.sum()
 
     weights = colSums / totalSum
 
-    rankingDirect = gdfWithSelectedParameters.loc[:, list(set(selectedParams) & set(selectedParametersDirectly))] \
-        .rank(method='min', ascending=False)
+    wmciDirect = gdfWithSelectedParametersStandard.loc[:, selectedParametersDirectly]
+    wmciInverse = gdfWithSelectedParametersStandard.loc[:, selectedParametersInversely]
 
-    rankingInverse = gdfWithSelectedParameters.loc[:, list(set(selectedParams) & set(selectedParametersInversely))] \
-        .rank(method='min', ascending=True)
+    rankingPerParam = gpd.pd.concat([wmciDirect, wmciInverse], axis=1)
 
-    rankingPerParam = gpd.pd.concat([rankingDirect, rankingInverse], axis=1)
+    weightedRanking = rankingPerParam * weights
+    vulnerabilityIndex = weightedRanking.sum(axis=1)
 
-    if useSimpleCpFormula is True:
-        vulnerabilityIndex = rankingPerParam.sum(axis=1) / rankingPerParam.shape[1]
-    else:
-        weightedRanking = rankingPerParam * weights
-        vulnerabilityIndex = weightedRanking.sum(axis=1)
+    ranking = vulnerabilityIndex.rank(method='min', ascending=False)
 
-    ranking = vulnerabilityIndex.rank(method='min', ascending=True)
     nClasses = 5
 
     breaks = jenksBreaks(vulnerabilityIndex, nClasses)
@@ -972,59 +906,28 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
     priorityJenks = np.digitize(vulnerabilityIndex.values, breaks[1:-1], right=True) +1
 
     priorityLabels = {
-        5: "Very low",
-        4: "Low",
+        1: "Very low",
+        2: "Low",
         3: "Medium",
-        2: "High",
-        1: "Very high"
+        4: "High",
+        5: "Very high"
     }
 
     priorityText = np.vectorize(priorityLabels.get)(priorityJenks)
 
     dfCorr.to_csv(pathCorrMatrix, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
-    dfVariance = gpd.pd.DataFrame({
-        "Total_Initial": initSs,
-        "%_Variance_Initial": initPct,
-        "%_Cumulative_Initial": initCum,
-        "Total_Extracted": extrSsFull,
-        "%_Variance_Extracted": extrPctFull,
-        "%_Cumulative_Extracted": extrCumFull,
-        "Total_Rotated": rotSsFull,
-        "%_Variance_Rotated": rotPctFull,
-        "%_Cumulative_Rotated": rotCumFull
-    })
-
-    dfVariance.to_csv(pathVarExplained, index_label="Component", float_format='%.' + str(decimalPlaces)+ 'f')
-
-
-    dfLoadingsCombined = gpd.pd.DataFrame(index=paramNames)
-
-    for i in range(k):
-        dfLoadingsCombined[f"{i+1} Unrot"] = loadings[:, i]
-
-    for i in range(k):
-        dfLoadingsCombined[f"{i+1} Rot"] = rotatedLoadings[:, i]
-
-    dfLoadingsCombined[f"Rotation converged in {nIter} iterations."] = "" 
-
-    dfLoadingsCombined.to_csv(pathRotUnrot, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
-
-    if useSimpleCpFormula is True:
-        rankingPerParam["Compound parameter"] = vulnerabilityIndex
-    else:
-        rankingPerParam["Compound parameter weighted"] = vulnerabilityIndex
+    rankingPerParam["Watershed Morphometric Composite Index (WMCI)"] = vulnerabilityIndex
     rankingPerParam["Ranking"] = ranking
     rankingPerParam["Priority"] = priorityText
-    if useSimpleCpFormula is False:
-        weightedRankingCols = weightedRanking.add_suffix(" weighted")
-        rankingPerParam = gpd.pd.concat(
-            [weightedRankingCols, 
-             rankingPerParam["Compound parameter weighted"],
-             rankingPerParam["Ranking"],
-             rankingPerParam["Priority"]],
-            axis=1
-        )
+
+    rankingPerParam = gpd.pd.concat(
+        [weightedRanking, 
+            rankingPerParam["Watershed Morphometric Composite Index (WMCI)"],
+            rankingPerParam["Ranking"],
+            rankingPerParam["Priority"]],
+        axis=1
+    )
 
     rankingPerParam.to_csv(pathRankCp, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 

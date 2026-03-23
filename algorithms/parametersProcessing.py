@@ -646,9 +646,13 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
     finalGdfLinear.index = ['Basin id ' + str(basin.id())]
 
     gdfShape.drop(columns='geometry', inplace=True)
+    for col in gdfShape.columns:
+        gdfShape[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfShape[col]]
     finalGdfShapeFloat = gdfShape.astype(float)
     finalGdfShapeFloat.index = ['Basin id ' + str(basin.id())]
-    
+
+    for col in gdfRelief.columns:
+        gdfRelief[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfRelief[col]]
     finalGdfReliefFloat = gdfRelief.astype(float)
     finalGdfReliefFloat.index = ['Basin id ' + str(basin.id())]
     gdfFinalAll = gpd.pd.concat([finalGdfLinear, finalGdfShapeFloat, finalGdfReliefFloat], ignore_index=False, axis=1)
@@ -687,11 +691,15 @@ def formatGdfLinear(gdfLinear,basin):
 
 def formatGdfShape(gdfShape,basin):
     gdfShape.drop(columns='geometry', inplace=True)
+    for col in gdfShape.columns:
+        gdfShape[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfShape[col]]
     gdfShapeFloat = gdfShape.astype(float)
     gdfShapeFloat.index = ['Basin id ' + str(basin.id())]
     return gdfShapeFloat
 
 def formatGdfRelief(gdfRelief,basin):
+    for col in gdfRelief.columns:
+        gdfRelief[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfRelief[col]]
     gdfReliefFloat = gdfRelief.astype(float)
     gdfReliefFloat.index = ['Basin id ' + str(basin.id())]
     return gdfReliefFloat

@@ -101,6 +101,17 @@ class reliefParametersCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
+                self.CHANNEL_COORDINATE_PRECISION,
+                self.tr('Channel coordinate precision'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.000001,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
                 self.MINIMUM_CHANNEL_LENGTH,
                 self.tr('Minimum channel length'),
                 type=QgsProcessingParameterNumber.Double,

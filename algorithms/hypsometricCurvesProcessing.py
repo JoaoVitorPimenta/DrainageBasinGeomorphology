@@ -151,7 +151,7 @@ def calculateHI(elevations,areas,basin):
     elevationsWOTitle = elevations[1:]
     areasWOTitle = areas[1:]
 
-    hypsometricIntegral = np.trapz(elevationsWOTitle,areasWOTitle)
+    hypsometricIntegral = np.trapezoid(elevationsWOTitle,areasWOTitle)
     listHI = [hypsometricIntegral]
     listHI.insert(0, 'Hypsometric integral basin id '+str(basin.id()))
 

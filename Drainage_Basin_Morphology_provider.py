@@ -47,6 +47,8 @@ from .cutDEM import cuttedCalc
 from .fillCutDEM import filledCuttedCalc
 from .priorityPCA import morphometricAnalysisPCA
 from .priorityMorph import morphometricAnalysisMorphometric
+from .priorityWMCIFA import morphometricAnalysisWMCIFA
+from .priorityWMCIFS import morphometricAnalysisWMCIFS
 
 class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
 
@@ -81,6 +83,8 @@ class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
         self.addAlgorithm(filledCuttedCalc())
         self.addAlgorithm(morphometricAnalysisPCA())
         self.addAlgorithm(morphometricAnalysisMorphometric())
+        self.addAlgorithm(morphometricAnalysisWMCIFS())
+        self.addAlgorithm(morphometricAnalysisWMCIFA())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
 

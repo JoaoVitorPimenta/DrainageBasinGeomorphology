@@ -634,9 +634,13 @@ def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
     finalGdfLinear.index = ['Basin id ' + str(basin.id())]
 
     gdfShape.drop(columns='geometry', inplace=True)
+    for col in gdfShape.columns:
+        gdfShape[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfShape[col]]
     finalGdfShapeFloat = gdfShape.astype(float)
     finalGdfShapeFloat.index = ['Basin id ' + str(basin.id())]
-    
+
+    for col in gdfRelief.columns:
+        gdfRelief[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfRelief[col]]
     finalGdfReliefFloat = gdfRelief.astype(float)
     finalGdfReliefFloat.index = ['Basin id ' + str(basin.id())]
     gdfFinalAll = gpd.pd.concat([finalGdfLinear, finalGdfShapeFloat, finalGdfReliefFloat], ignore_index=False, axis=1)
@@ -675,11 +679,15 @@ def formatGdfLinear(gdfLinear,basin):
 
 def formatGdfShape(gdfShape,basin):
     gdfShape.drop(columns='geometry', inplace=True)
+    for col in gdfShape.columns:
+        gdfShape[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfShape[col]]
     gdfShapeFloat = gdfShape.astype(float)
     gdfShapeFloat.index = ['Basin id ' + str(basin.id())]
     return gdfShapeFloat
 
 def formatGdfRelief(gdfRelief,basin):
+    for col in gdfRelief.columns:
+        gdfRelief[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfRelief[col]]
     gdfReliefFloat = gdfRelief.astype(float)
     gdfReliefFloat.index = ['Basin id ' + str(basin.id())]
     return gdfReliefFloat
@@ -762,34 +770,56 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
 
     return gdfFinal
 
-def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
-    X = loadings.copy()
-    nRows, nCols = X.shape
-    
-    if normalize:
-        # Normalização Kaiser: normaliza por coluna
-        norms = np.sqrt(np.sum(X**2, axis=1, keepdims=True))
-        X = X / norms
-    
-    R = np.eye(nCols)
-    
-    for i in range(max_iter):
-        Lambda = np.dot(X, R)
-        # gradiente varimax clássico
-        tmp = Lambda**3 - (1 / nRows) * Lambda * np.sum(Lambda**2, axis=0, keepdims=True)
-        u, s, vh = np.linalg.svd(np.dot(X.T, tmp))
-        R_new = np.dot(u, vh)
-        diff = np.sum(np.abs(R_new - R))
-        R = R_new
-        if diff < tol:
-            break
-    
-    rotated = np.dot(X, R)
-    
-    if normalize:
-        rotated = rotated * norms
-    
-    return rotated
+def jenksBreaks(data, n_classes):
+    data = np.sort(np.asarray(data, dtype=float))
+    n = len(data)
+
+    mat1 = np.full((n + 1, n_classes + 1), np.inf)
+    mat2 = np.zeros((n + 1, n_classes + 1), dtype=int)
+    mat1[0, :] = 0.0
+
+    cumsum = np.zeros(n + 1)
+    cumsum_sq = np.zeros(n + 1)
+
+    for i in range(1, n + 1):
+        cumsum[i] = cumsum[i - 1] + data[i - 1]
+        cumsum_sq[i] = cumsum_sq[i - 1] + data[i - 1] ** 2
+
+    for j in range(1, n_classes + 1):
+        for i in range(1, n + 1):
+            for m in range(j - 1, i):
+                w = i - m
+                s1 = cumsum[i] - cumsum[m]
+                s2 = cumsum_sq[i] - cumsum_sq[m]
+                variance = s2 - (s1 * s1) / w
+
+                val = mat1[m, j - 1] + variance
+                if val < mat1[i, j]:
+                    mat1[i, j] = val
+                    mat2[i, j] = m
+
+    breaks = np.zeros(n_classes + 1)
+    breaks[-1] = data[-1]
+
+    idx = n
+    for j in range(n_classes, 0, -1):
+        idx = mat2[idx, j]
+        breaks[j - 1] = data[idx - 1]
+    breaks[0] = data[0]
+
+    if len(np.unique(breaks)) != len(breaks):
+        print(breaks)
+        print(np.diff(breaks))
+        bad_value = breaks[np.where(np.diff(breaks) == 0)[0][0]]
+        data = data[data != bad_value]
+        new_breaks = jenksBreaks(data, n_classes)
+        breaks[0] = float('-inf')
+        breaks[-1] = float('inf')
+        return new_breaks
+
+    breaks[0] = float('-inf')
+    breaks[-1] = float('inf')
+    return breaks
 
 def calcMorphPriority(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,pathRankCp,basinsRanked,pathParameters,minimumChannelLength):
 
@@ -839,7 +869,21 @@ def calcMorphPriority(drainageBasinLayer,streamLayer,demLayer,feedback,precision
     vulnerabilityIndex = rankingPerParam.sum(axis=1) / rankingPerParam.shape[1]
 
     ranking = vulnerabilityIndex.rank(method='min', ascending=True)
-    priority = gpd.pd.qcut(ranking, 3, labels=["High priority", "Medium priority", "Low priority"])
+    nClasses = 5
+
+    breaks = jenksBreaks(vulnerabilityIndex, nClasses)
+
+    priorityJenks = np.digitize(vulnerabilityIndex.values, breaks[1:-1], right=True) +1
+
+    priorityLabels = {
+        5: "Very low",
+        4: "Low",
+        3: "Medium",
+        2: "High",
+        1: "Very high"
+    }
+
+    priorityText = np.vectorize(priorityLabels.get)(priorityJenks)
 
     rankingPerParam["Cp"] = vulnerabilityIndex
     rankingPerParam["Final priority"] = ranking
@@ -850,7 +894,7 @@ def calcMorphPriority(drainageBasinLayer,streamLayer,demLayer,feedback,precision
         f.setGeometry(feat.geometry())
         attrs = feat.attributes()
         attrs.append(float(ranking.iloc[i]))
-        attrs.append(str(priority.iloc[i]))
+        attrs.append(str(priorityText[i]))
         f.setAttributes(attrs)
 
         basinsRanked.addFeature(f)

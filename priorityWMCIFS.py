@@ -43,9 +43,9 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterBoolean,
                        QgsProcessingParameterFeatureSink,
                        QgsField)
-from .algorithms.priorizationPCAcalc import calcPCA,verifyLibs
+from .algorithms.priorizationWMCIFS import calcWMCIFS,verifyLibs
 
-class morphometricAnalysisPCA(QgsProcessingAlgorithm):
+class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
     '''
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -64,6 +64,7 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
     # calling from the QGIS console.
 
     MORPHOMETRICS_PARAMETERS = 'MORPHOMETRICS_PARAMETERS'
+    MORPHOMETRICS_PARAMETERS_STANDARD = 'MORPHOMETRICS_PARAMETERS_STANDARDIZED'
     CORRELATION_MATRIX = 'CORRELATION_MATRIX'
     TOTAL_VARIANCE_EXPLAINED_TABLE = 'TOTAL_VARIANCE_EXPLAINED_TABLE'
     UNROTATED_AND_ROTATED_MATRIX = 'UNROTATED_AND_ROTATED_MATRIX'
@@ -74,7 +75,6 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
     SELECTED_PARAMETERS_DIRECTLY_PROPORTIONAL = 'SELECTED_PARAMETERS_DIRECTLY_PROPORTIONAL'
     SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL = 'SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL'
-    USE_SIMPLE_CP_FORMULA = 'USE_SIMPLE_CP_FORMULA'
     BASINS_RANKED = 'BASINS_RANKED'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
@@ -165,14 +165,6 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterBoolean(
-                self.USE_SIMPLE_CP_FORMULA,
-                self.tr('Calculate compound parameter without WSA'),
-                defaultValue=False,
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
                 self.tr('Channel coordinate precision'),
@@ -212,6 +204,14 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
             QgsProcessingParameterFileDestination(
                 self.MORPHOMETRICS_PARAMETERS,
                 self.tr('Morphometric parameters'),
+                fileFilter=('CSV files (*.csv)')
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterFileDestination(
+                self.MORPHOMETRICS_PARAMETERS_STANDARD,
+                self.tr('Morphometric parameters standardized'),
                 fileFilter=('CSV files (*.csv)')
             )
         )
@@ -277,11 +277,10 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         selectedParametersInversely = self.parameterAsEnums(parameters, self.SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL, context)
         selectedStringsInversely = [self.parametersToChoose[i] for i in selectedParametersInversely]
 
-        useSimpleCpFormula = self.parameterAsBoolean(parameters, self.USE_SIMPLE_CP_FORMULA, context)
-
         decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
 
         pathParameters = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS, context)
+        pathParametersStandardized = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS_STANDARD, context)
         pathCorrMatrix = self.parameterAsFileOutput(parameters, self.CORRELATION_MATRIX, context)
         pathVarExplained = self.parameterAsFileOutput(parameters, self.TOTAL_VARIANCE_EXPLAINED_TABLE, context)
         pathRotUnrot = self.parameterAsFileOutput(parameters, self.UNROTATED_AND_ROTATED_MATRIX, context)
@@ -301,7 +300,7 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calcPCA(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength)
+        calcWMCIFS(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathCorrMatrix,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pathParametersStandardized)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -324,7 +323,7 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate basin priority (PCA-FA-WSA)'
+        return 'Calculate basin priority (WMCI-FS)'
 
     def displayName(self):
         '''
@@ -371,8 +370,6 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         <strong>Decimal places of the result: </strong>Number of decimal places in results.
         <strong>Morphometric parameters: </strong>File with all morphometric parameters calculated individually for each basin.
         <strong>Correlation table: </strong>File containing the table with the intercorrelation matrix of the parameters selected by the user.
-        <strong>Total variance explained table: </strong>Amount of variance explained by each component of the PCA analysis (eigenvectors and eigenvalues), selected based on Kaiser's rule (eigenvectors with eigenvalues > 1).
-        <strong>Unrotated and rotated matrix: </strong>Matrix with the correlation of the parameters in relation to the selected components, unrotated and rotated by the varimax method.
         <strong>Ranking table with compound parameter values: </strong>Table with ranked, weighted parameters and compound values with the final ranking.
         <strong>Ranked basins PCA: </strong>Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
                        
@@ -389,4 +386,4 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return morphometricAnalysisPCA()
+        return morphometricAnalysisWMCIFS()

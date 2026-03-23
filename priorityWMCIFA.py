@@ -43,9 +43,9 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterBoolean,
                        QgsProcessingParameterFeatureSink,
                        QgsField)
-from .algorithms.priorizationPCAcalc import calcPCA,verifyLibs
+from .algorithms.priorizationWMCIFA import calcWMCIFA,verifyLibs
 
-class morphometricAnalysisPCA(QgsProcessingAlgorithm):
+class morphometricAnalysisWMCIFA(QgsProcessingAlgorithm):
     '''
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -64,6 +64,7 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
     # calling from the QGIS console.
 
     MORPHOMETRICS_PARAMETERS = 'MORPHOMETRICS_PARAMETERS'
+    MORPHOMETRICS_PARAMETERS_STANDARD = 'MORPHOMETRICS_PARAMETERS_STANDARDIZED'
     CORRELATION_MATRIX = 'CORRELATION_MATRIX'
     TOTAL_VARIANCE_EXPLAINED_TABLE = 'TOTAL_VARIANCE_EXPLAINED_TABLE'
     UNROTATED_AND_ROTATED_MATRIX = 'UNROTATED_AND_ROTATED_MATRIX'
@@ -74,7 +75,6 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
     SELECTED_PARAMETERS_DIRECTLY_PROPORTIONAL = 'SELECTED_PARAMETERS_DIRECTLY_PROPORTIONAL'
     SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL = 'SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL'
-    USE_SIMPLE_CP_FORMULA = 'USE_SIMPLE_CP_FORMULA'
     BASINS_RANKED = 'BASINS_RANKED'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
@@ -165,14 +165,6 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterBoolean(
-                self.USE_SIMPLE_CP_FORMULA,
-                self.tr('Calculate compound parameter without WSA'),
-                defaultValue=False,
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
                 self.tr('Channel coordinate precision'),
@@ -212,6 +204,14 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
             QgsProcessingParameterFileDestination(
                 self.MORPHOMETRICS_PARAMETERS,
                 self.tr('Morphometric parameters'),
+                fileFilter=('CSV files (*.csv)')
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterFileDestination(
+                self.MORPHOMETRICS_PARAMETERS_STANDARD,
+                self.tr('Morphometric parameters standardized'),
                 fileFilter=('CSV files (*.csv)')
             )
         )
@@ -277,11 +277,10 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         selectedParametersInversely = self.parameterAsEnums(parameters, self.SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL, context)
         selectedStringsInversely = [self.parametersToChoose[i] for i in selectedParametersInversely]
 
-        useSimpleCpFormula = self.parameterAsBoolean(parameters, self.USE_SIMPLE_CP_FORMULA, context)
-
         decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
 
         pathParameters = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS, context)
+        pathParametersStandardized = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS_STANDARD, context)
         pathCorrMatrix = self.parameterAsFileOutput(parameters, self.CORRELATION_MATRIX, context)
         pathVarExplained = self.parameterAsFileOutput(parameters, self.TOTAL_VARIANCE_EXPLAINED_TABLE, context)
         pathRotUnrot = self.parameterAsFileOutput(parameters, self.UNROTATED_AND_ROTATED_MATRIX, context)
@@ -301,7 +300,7 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calcPCA(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength)
+        calcWMCIFA(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pathParametersStandardized)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -310,6 +309,7 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
         return {self.MORPHOMETRICS_PARAMETERS: pathParameters,
+                self.MORPHOMETRICS_PARAMETERS_STANDARD: pathParametersStandardized,
                 self.CORRELATION_MATRIX: pathCorrMatrix,
                 self.TOTAL_VARIANCE_EXPLAINED_TABLE: pathVarExplained,
                 self.UNROTATED_AND_ROTATED_MATRIX: pathRotUnrot,
@@ -324,7 +324,7 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate basin priority (PCA-FA-WSA)'
+        return 'Calculate basin priority (WMCI-FA)'
 
     def displayName(self):
         '''
@@ -389,4 +389,4 @@ class morphometricAnalysisPCA(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return morphometricAnalysisPCA()
+        return morphometricAnalysisWMCIFA()

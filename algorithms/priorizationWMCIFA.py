@@ -352,7 +352,6 @@ def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
     if gdfStream.empty:
         gdfShape['Basin length (Lg) (km)'] = None
         return
-
     maxOrder = gdfStream['order'].max()
     filterMaxOrder = gdfStream[gdfStream['order'] == maxOrder]
 
@@ -838,20 +837,18 @@ def jenksBreaks(data, n_classes):
     breaks[0] = data[0]
 
     if len(np.unique(breaks)) != len(breaks):
-        print(breaks)
-        print(np.diff(breaks))
-        bad_value = breaks[np.where(np.diff(breaks) == 0)[0][0]]
-        data = data[data != bad_value]
-        new_breaks = jenksBreaks(data, n_classes)
+        equalValues = breaks[np.where(np.diff(breaks) == 0)[0][0]]
+        data = data[data != equalValues]
+        newBreaks = jenksBreaks(data, n_classes)
         breaks[0] = float('-inf')
         breaks[-1] = float('inf')
-        return new_breaks
+        return newBreaks
 
     breaks[0] = float('-inf')
     breaks[-1] = float('inf')
     return breaks
 
-def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength):
+def calcWMCIFA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pathParametersStandard):
 
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
@@ -876,18 +873,42 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
 
     for col in allSelectedParameters:
         basinsWithNan = gdfMorpParam[gdfMorpParam[col].isna()].index.tolist()
-        
+
         for basin in basinsWithNan:
             feedback.pushWarning(str(basin) + ' does not have the morphometric parameter ' + str(col) + ' so the parameter will be ignored in the analysis.')
 
-    gdfWithSelectedParameters = gdfMorpParam.loc[:, allSelectedParameters].dropna(axis=1)    
-    X = gdfWithSelectedParameters.values
+    gdfWithSelectedParametersStandard = gdfMorpParam.loc[:, allSelectedParameters].dropna(axis=1)
+    selectedParametersDirectly = [col for col in selectedParametersDirectly if col in gdfWithSelectedParametersStandard.columns]
+    selectedParametersInversely = [col for col in selectedParametersInversely if col in gdfWithSelectedParametersStandard.columns]
 
-    selectedParametersDirectly = [col for col in selectedParametersDirectly if col in gdfWithSelectedParameters.columns]
-    selectedParametersInversely = [col for col in selectedParametersInversely if col in gdfWithSelectedParameters.columns]
+    for col in selectedParametersDirectly:
+        vmin = gdfWithSelectedParametersStandard[col].min()
+        vmax = gdfWithSelectedParametersStandard[col].max()
+
+        if vmax != vmin:
+            gdfWithSelectedParametersStandard[col] = (gdfWithSelectedParametersStandard[col] - vmin) / (vmax - vmin)
+        else:
+            feedback.pushWarning('The parameter ' + str(col) + ' variation is 0, making standardization impossible.')
+
+    for col in selectedParametersInversely:
+        vmin = gdfWithSelectedParametersStandard[col].min()
+        vmax = gdfWithSelectedParametersStandard[col].max()
+
+        if vmax != vmin:
+            gdfWithSelectedParametersStandard[col] = 1 - (gdfWithSelectedParametersStandard[col] - vmin) / (vmax - vmin)
+        else:
+            feedback.pushWarning('The parameter ' + str(col) + ' variation is 0, making standardization impossible.')
+
+    gdfWithSelectedParametersStandard.to_csv(pathParametersStandard, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
+
+    columns = gdfWithSelectedParametersStandard.columns
+
+    gdfWithSelectedParametersStandard = gpd.pd.DataFrame(gdfWithSelectedParametersStandard, columns=columns)
+
+    X = gdfWithSelectedParametersStandard.values
 
     covMatrix = np.corrcoef(X, rowvar=False)
-    paramNames = gdfWithSelectedParameters.columns
+    paramNames = gdfWithSelectedParametersStandard.columns
     dfCorr = gpd.pd.DataFrame(covMatrix, columns=paramNames, index=paramNames)
 
     eigVals, eigVecs = np.linalg.eigh(dfCorr)
@@ -950,36 +971,31 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
 
     weights = colSums / totalSum
 
-    rankingDirect = gdfWithSelectedParameters.loc[:, list(set(selectedParams) & set(selectedParametersDirectly))] \
-        .rank(method='min', ascending=False)
+    wmciDirect = gdfWithSelectedParametersStandard.loc[:, list(set(selectedParams) & set(selectedParametersDirectly))]
+    wmciInverse = gdfWithSelectedParametersStandard.loc[:, list(set(selectedParams) & set(selectedParametersInversely))]
 
-    rankingInverse = gdfWithSelectedParameters.loc[:, list(set(selectedParams) & set(selectedParametersInversely))] \
-        .rank(method='min', ascending=True)
+    rankingPerParam = gpd.pd.concat([wmciDirect, wmciInverse], axis=1)
 
-    rankingPerParam = gpd.pd.concat([rankingDirect, rankingInverse], axis=1)
+    weightedRanking = rankingPerParam * weights
+    vulnerabilityIndex = weightedRanking.sum(axis=1)
 
-    if useSimpleCpFormula is True:
-        vulnerabilityIndex = rankingPerParam.sum(axis=1) / rankingPerParam.shape[1]
-    else:
-        weightedRanking = rankingPerParam * weights
-        vulnerabilityIndex = weightedRanking.sum(axis=1)
+    ranking = vulnerabilityIndex.rank(method='min', ascending=False)
 
-    ranking = vulnerabilityIndex.rank(method='min', ascending=True)
     nClasses = 5
-
+    
     breaks = jenksBreaks(vulnerabilityIndex, nClasses)
-
+    
     priorityJenks = np.digitize(vulnerabilityIndex.values, breaks[1:-1], right=True) +1
-
+    
     priorityLabels = {
-        5: "Very low",
-        4: "Low",
+        1: "Very low",
+        2: "Low",
         3: "Medium",
-        2: "High",
-        1: "Very high"
+        4: "High",
+        5: "Very high"
     }
 
-    priorityText = np.vectorize(priorityLabels.get)(priorityJenks)
+    priority_text = np.vectorize(priorityLabels.get)(priorityJenks)
 
     dfCorr.to_csv(pathCorrMatrix, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
@@ -1010,21 +1026,17 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
 
     dfLoadingsCombined.to_csv(pathRotUnrot, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
-    if useSimpleCpFormula is True:
-        rankingPerParam["Compound parameter"] = vulnerabilityIndex
-    else:
-        rankingPerParam["Compound parameter weighted"] = vulnerabilityIndex
+    rankingPerParam["Watershed Morphometric Composite Index (WMCI)"] = vulnerabilityIndex
     rankingPerParam["Ranking"] = ranking
-    rankingPerParam["Priority"] = priorityText
-    if useSimpleCpFormula is False:
-        weightedRankingCols = weightedRanking.add_suffix(" weighted")
-        rankingPerParam = gpd.pd.concat(
-            [weightedRankingCols, 
-             rankingPerParam["Compound parameter weighted"],
-             rankingPerParam["Ranking"],
-             rankingPerParam["Priority"]],
-            axis=1
-        )
+    rankingPerParam["Priority"] = priority_text
+
+    rankingPerParam = gpd.pd.concat(
+        [weightedRanking, 
+            rankingPerParam["Watershed Morphometric Composite Index (WMCI)"],
+            rankingPerParam["Ranking"],
+            rankingPerParam["Priority"]],
+        axis=1
+    )
 
     rankingPerParam.to_csv(pathRankCp, index=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
@@ -1033,7 +1045,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
         f.setGeometry(feat.geometry())
         attrs = feat.attributes()
         attrs.append(float(ranking.iloc[i]))
-        attrs.append(str(priorityText[i]))
+        attrs.append(str(priority_text[i]))
         f.setAttributes(attrs)
 
         basinsRanked.addFeature(f)

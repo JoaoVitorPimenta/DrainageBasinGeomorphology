@@ -32,7 +32,7 @@ This tool calculates all morphometric parameters of the watershed as shown in th
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
-**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
 
 **Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
@@ -49,7 +49,7 @@ This tool calculates linear parameters of the watershed as shown in the table be
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
-**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
 
 **Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
@@ -66,7 +66,7 @@ This tool calculates relief parameters of the watershed as shown in the table be
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
-**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
 
 **Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
@@ -81,7 +81,7 @@ This tool calculates shape parameters of the watershed as shown in the table bel
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
-**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
 
 **Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
@@ -300,6 +300,76 @@ This tool calculates all morphometric parameters selected of each basin feature 
 
 **Ranked basins PCA** - Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
 
+## Calculate basin priority (WMCA-FA)
+This tool calculates all morphometric parameters selected of each basin feature individually and then calculates a priority order for the basins, based on the parameters selected by the user and the WMCA-FA method.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
+
+**Parameters for morphometric analysis (directly proportional)** - Morphometric parameters directly proportional to the priority the user wants to analyze.
+
+**Parameters for morphometric analysis (indirectly proportional)** - Morphometric parameters indirectly proportional to the priority the user wants to analyze.
+
+**Decimal places of the result** - Number of decimal places in results.
+
+**Output:**  
+**Morphometric parameters** - Morphometric parameters calculated, for each basin, in .csv.
+
+**Morphometric parameters standardized** - Morphometric parameters calculated, for each basin, in .csv.
+
+**Correlation table** - File containing the table with the intercorrelation matrix of the parameters selected by the user.
+
+**Total variance explained table** - Amount of variance explained by each component of the PCA analysis (eigenvectors and eigenvalues), selected based on Kaiser's rule (eigenvectors with eigenvalues > 1).
+
+**Unrotated and rotated matrix** - Matrix with the correlation of the parameters in relation to the selected components, unrotated and rotated by the varimax method.
+
+**Ranking table with compound parameter values** - Table with ranked and compound values with the final ranking.
+
+**Ranked basins WMCA-FA** - Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
+
+## Calculate basin priority (WMCA-FS)
+This tool calculates all morphometric parameters selected of each basin feature individually and then calculates a priority order for the basins, based on the parameters selected by the user and the WMCA-FS method.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
+
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
+
+**Parameters for morphometric analysis (directly proportional)** - Morphometric parameters directly proportional to the priority the user wants to analyze.
+
+**Parameters for morphometric analysis (indirectly proportional)** - Morphometric parameters indirectly proportional to the priority the user wants to analyze.
+
+**Decimal places of the result** - Number of decimal places in results.
+
+**Output:**  
+**Morphometric parameters** - Morphometric parameters calculated, for each basin, in .csv.
+
+**Morphometric parameters standardized** - Morphometric parameters calculated, for each basin, in .csv.
+
+**Correlation table** - File containing the table with the intercorrelation matrix of the parameters selected by the user.
+
+**Total variance explained table** - Amount of variance explained by each component of the PCA analysis (eigenvectors and eigenvalues), selected based on Kaiser's rule (eigenvectors with eigenvalues > 1).
+
+**Unrotated and rotated matrix** - Matrix with the correlation of the parameters in relation to the selected components, unrotated and rotated by the varimax method.
+
+**Ranking table with compound parameter values** - Table with ranked and compound values with the final ranking.
+
+**Ranked basins WMCA-FS** - Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
+
 ## Recommendations 
 All inputs must be in a projected coordinate system for consistent results.
 
@@ -348,10 +418,10 @@ If you have any questions, suggestions, errors or need information/training abou
 | Shape        | Form Factor   | _Ff_        | _A / Lb²_          | Measures compactness of area relative to length.                           |  Horton, R. E. (1932)              |
 | Shape        | Lemniscate Ratio | _K_     | _Lb² / 4A_       | index of adjustment of drainage basin shape to the ideal.                                              |   Chorley et al. (1957)             |
 | Shape        | Shape Index   | _Sb_        | _Lb² / A_          | Inverse of Form Factor.                                                    |     Horton (1932)           |
-| Shape        | Compactness Coefficient | _Cc_ | _P / 2 × √(πA)_    | Compactness normalized for a circle.                                       |      Horton (1932)          |
+| Shape        | Compactness Coefficient | _Cc_ | _P / (2 × √(πA))_    | Compactness normalized for a circle.                                       |      Horton (1932)          |
 | Relief       | Minimum Elevation | _Emin_   | Direct measurement | Minimum elevation within basin.                                            | DEM Data           |
 | Relief       | Maximum Elevation | _Emax_   | Direct measurement | Maximum elevation within basin.                                            | DEM Data           |
-| Relief       | Mean Elevation | _Emean_     | _(Emax + Emin) / 2_ | Average of highest and lowest elevations.                                 | DEM Data           |
+| Relief       | Mean Elevation | _Emean_     | _Direct measurement_ | Average of highest and lowest elevations.                                 | DEM Data           |
 | Relief       | Relief (Bh)    | _Bh_        | _Emax – Emin_      | Total relief (elevation range).                                           | DEM Data           |
 | Relief       | Relief Ratio   | _Rh_        | _Bh / Lb_          | Ratio of relief to basin length.                                          | Schumm (1956)    |
 | Relief       | Relative Relief** | _Rhp_      | _Bh / P_           | Ratio of relief to basin perimeter.                                            |  Melton (1957)  |
@@ -437,11 +507,21 @@ This tool fills and cuts the DEM based on the elevation - area - volume curve (a
 
 This tool is used to calculate basin priority based on user-selected parameters. Examples of scientific studies that use this method include (Pastor et al., 2024) and (Rosado Victoria et al., 2025). Basin ranking is performed using the compound parameter, which is the average of the parameter rankings for each parameter.
 
-## Calculate basin priority (PCA)
+## Calculate basin priority (PCA-FA-WSA)
 
 This tool is used to calculate basin priority based on user-selected parameters prioritized using the Principal Component Analysis statistical method. Examples of scientific studies using this method include (Ojha et al., 2023) and (Govarthanambikai & Sridhar, 2024). After a PCA analysis to select the morphometric parameters that best explain the physical phenomenon, a weight is assigned to each parameter (based on the correlation with the eigenvectors). The compound parameter is then averaged by calculating the rankings of the selected parameters with assigned weights. The rotation used after PCA analysis to have a better distribution of results is varimax.
 
+## Calculate basin priority (WMCI-FA)
+
+Several gaps were identified in previous research on prioritizing basins in relation to basin morphometric parameters. These include: arbitrary relationship of parameters to erosion and lack of data normalization, among others. Therefore, a new index is proposed to represent basin fragility to erosion: the Watershed Morphometric Composite Index (WMCI) (Ghimire, 2025). This tool replicates the entire process exemplified by the index's creator (Ghimire, 2025). In this case, the PCA-FA-WSA process is applied to the parameters (WMCI-FA).
+
+## Calculate basin priority (WMCI-FS)
+
+Several gaps were identified in previous research on prioritizing basins in relation to basin morphometric parameters. These include: arbitrary relationship of parameters to erosion and lack of data normalization, among others. Therefore, a new index is proposed to represent basin fragility to erosion: the Watershed Morphometric Composite Index (WMCI) (Ghimire,2025). This tool replicates the entire process exemplified by the index's creator (Ghimire, 2025). In this case, the WSA process is applied to all parameters (WMCI-FS).
+
 ## References
+- Ghimire, S. K., Lu, Y., & Wang, Y. (2025). An improved framework to prioritize sub-watersheds: Construction of Watershed Morphometric Composite Index (WMCI) for mountain soil conservation. Ecological Indicators, 177, 113817. https://doi.org/10.1016/j.ecolind.2025.113817
+
 - Horton, R. E. (1932). Drainage-basin characteristics. Transactions of the American Geophysical Union, 13, 350–361.
 
 - Smith, K. (1950). Standards for Grading Textures of Erosional Topography. American Journal of Science, 248, 655–668.
@@ -450,7 +530,7 @@ This tool is used to calculate basin priority based on user-selected parameters 
 
 - Miller, V. C. (1953). A quantitative geomorphologic study of drainage basin characteristics in the Clinch mountain area, Virginia and Tennessee (Technical Report No. 3). Columbia University, New York.
 
-- Strahler, A. N. (1954). Quantitative geomorphology of drainage basins and channel networks. In V. T. Chow (Ed.), Handbook of Applied Hydrology (Vol. 4, pp. 39–76). McGraw-Hill.
+- Strahler, A. (1964) Quantitative Geomorphology of Drainage Basins and Channel Networks. In: Chow, V., Ed., Handbook of Applied Hydrology, McGraw Hill, New York, 439-476.
 
 - Schumm, H. J. (1956). Evolution of drainage systems and slopes in badlands at Perth Amboy, New Jersey. Geological Society of America Bulletin, 67(5), 597–646.
 
@@ -477,3 +557,6 @@ This tool is used to calculate basin priority based on user-selected parameters 
 - Ojha, S., Puri, L., Bist, S. P., Bastola, A. P., & Acharya, B. (2023). Watershed prioritization of Kailali district through morphometric parameters and land-use/land-cover datasets using GIS. Heliyon, 9(6), e16489. https://doi.org/10.1016/j.heliyon.2023.e16489
 
 - Govarthanambikai, K., & Sridhar, S. (2024). Prioritization of watershed using morphometric parameters through geospatial and PCA technique for Noyyal River Basin, Tamil Nadu, India. Journal of Water and Climate Change, 15(3), 1218–1231. https://doi.org/10.2166/wcc.2024.546
+
+## additional information and context
+Hi! My name is João Vitor Pimenta, I created this software in my graduation to automatize subject works, but its scope kept expanding (I started programming as a hobby/learning project) and then I thought, "what if this is useful to other people?" and decided to publish it on the GitHub repository and the official QGIS repository. Because I don't have formal training in computer science (although I seek knowledge and know things about it), I naturally use AI to assist me. I only use it for writing code, and I analyze/test the code myself.
