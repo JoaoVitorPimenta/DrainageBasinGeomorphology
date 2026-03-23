@@ -6,7 +6,6 @@
 name=Drainage Basin Geomorphology
 qgisMinimumVersion=4.00
 qgisMaximumVersion=4.99
-supportsQt6=True
 description=This plugin provides tools for geomorphological analysis in drainage basins.
 version=2.0.0
 author=João Vitor Pimenta
