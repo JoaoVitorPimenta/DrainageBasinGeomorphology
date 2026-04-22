@@ -7,6 +7,8 @@
 
 import sys
 import getpass
+from defusedxml.xmlrpc import monkey_patch
+monkey_patch()
 import xmlrpc.client
 from optparse import OptionParser
 
