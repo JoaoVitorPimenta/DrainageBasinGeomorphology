@@ -622,10 +622,10 @@ If you have any questions, suggestions, errors or need information/training abou
 | Relief       | Ruggedness Number | _Rn_     | _Bh × Dd_          | Product of relief and drainage density.                                   | Strahler (1954)      |
 | Relief       | Dissection Index | _Di_      | _(Emax - Emin) / Emax_           | Ratio of relief to perimeter.                                             | Nir Dov (1957)      |
 | Relief       | Gradient Ratio | _Gr_       | _(Relief source - Relief mouth) / Lch_         | Ratio between the difference in altitude of the main channel and its length.                                   |  Sreedevi (2005)  |
-| Tectonic | Transverse Topographic Symmetry Factor | _TTSF_ | _⟨Da⟩ / ⟨Dd⟩_ | Ratio between the mean distance to the main river and the mean distance to the basin boundary. | Taib et al. (2024)
+| Tectonic | Transverse Topographic Symmetry Factor | _TTSF_ | _⟨Da / Dd⟩_ | Ratio between the mean distance to the main river and the mean distance to the basin boundary. | Taib et al. (2024)
 | Tectonic | Basin Asymmetry | _AF_ | _Ar / At_ | Ratio between the area of the basin to the right of the main channel and the total basin area. | Taib et al. (2024)
-| Tectonic | Stream Length-Gradient Index Mean | _SLm_ | _⟨(ΔH / ΔL) × L⟩_ | Ratio between channel slope and channel length, used to identify variations in channel gradient. | Taib et al. (2024)
-| Tectonic | Total Stream Length-Gradient Index Total Mean  | _SLmt_ | _⟨ΔH / ln L⟩_ | Mean sum of the SL index values along the channels. | Taib et al. (2024)
+| Tectonic | Stream Length-Gradient Index Mean | _SLm_ | _⟨(ΔH / ΔL) × L⟩_ | Mean of the main channel's SL in sections (ratio between elevation and length variation). | Taib et al. (2024)
+| Tectonic | Total Stream Length-Gradient Index Total Mean  | _SLmt_ | _⟨ΔH / ln L⟩_ | Mean of the main channel's SL totals (ratio between elevation variation and Ln of L). | Taib et al. (2024)
 | Tectonic | Valley Floor Width-to-Valley Height Ratio | _Vf_ | _⟨Vfw / ((Eld - Esc) + (Erd - Esc))⟩_ | Ratio between valley floor width and valley height. | Taib et al. (2024)
 
 *This formula is sometimes used as N/P (all channels are used) but in Smith original work it is N1/P, partly because he uses first-order channels as an approximation for the contour lines.
@@ -763,7 +763,7 @@ The classifications are based on Jenks' natural breaks (Jenks, 1967) and on five
 
 - Govarthanambikai, K., & Sridhar, S. (2024). Prioritization of watershed using morphometric parameters through geospatial and PCA technique for Noyyal River Basin, Tamil Nadu, India. Journal of Water and Climate Change, 15(3), 1218–1231. https://doi.org/10.2166/wcc.2024.546
 
-- Taib, H., Hadji, R., Hamed, Y. et al. Evaluation of relative tectonic activity in a semiarid basin: analysis of geomorphic indices and morphometric parameters in the Meskiana watershed. Euro-Mediterr J Environ Integr 9, 843–858 (2024). https://doi.org/10.1007/s41207-023-00458-z
+- Taib, H., Hadji, R., Hamed, Y. et al. (2024). Evaluation of relative tectonic activity in a semiarid basin: analysis of geomorphic indices and morphometric parameters in the Meskiana watershed. Euro-Mediterr J Environ Integr 9, 843–858. https://doi.org/10.1007/s41207-023-00458-z
 
 ## Observation
 All code results are reviewed by a human (me) before being committed. However, this does not rule out the possibility that, in specific cases, things might not go as expected. Therefore, it is essential that users review the output when using the plugin. Use at your own risk!
