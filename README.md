@@ -626,7 +626,7 @@ If you have any questions, suggestions, errors or need information/training abou
 | Tectonic | Basin Asymmetry | _AF_ | _Ar / At_ | Ratio between the area of the basin to the right of the main channel and the total basin area. | Taib et al. (2024)
 | Tectonic | Stream Length-Gradient Index Mean | _SLm_ | _⟨(ΔH / ΔL) × L⟩_ | Mean of the main channel's SL in sections (ratio between elevation and length variation). | Taib et al. (2024)
 | Tectonic | Total Stream Length-Gradient Index Total Mean  | _SLmt_ | _⟨ΔH / ln L⟩_ | Mean of the main channel's SL totals (ratio between elevation variation and Ln of L). | Taib et al. (2024)
-| Tectonic | Valley Floor Width-to-Valley Height Ratio | _Vf_ | _⟨Vfw / ((Eld - Esc) + (Erd - Esc))⟩_ | Ratio between valley floor width and valley height. | Taib et al. (2024)
+| Tectonic | Valley Floor Width-to-Valley Height Ratio | _Vf_ | _⟨2Vfw / ((Eld - Esc) + (Erd - Esc))⟩_ | Ratio between valley floor width and valley height. | Taib et al. (2024)
 
 *This formula is sometimes used as N/P (all channels are used) but in Smith original work it is N1/P, partly because he uses first-order channels as an approximation for the contour lines.
 
@@ -772,7 +772,8 @@ All code results are reviewed by a human (me) before being committed. However, t
 Hi! My name is João Vitor Pimenta, I created this software in my graduation to automatize subject works, but its scope kept expanding (I started programming as a hobby/learning project) and then I thought, "what if this is useful to other people?" and decided to publish it on the GitHub repository and the official QGIS repository. Because I don't have formal training in computer science (although I seek knowledge and know things about it), I naturally use AI to assist me. I only use it for writing code, and I analyze/test the code myself.
 
 ## Next steps
-- Add mountain front sinuosity index
+- Add mountain front sinuosity index.
+- Organize the code/README.
 - Create a video tutorial to use the plugin.
 - Provide practical examples of using the plugin.
 - Create an algorithm to group geomorphometrically similar basins (such as k-clusterings).
