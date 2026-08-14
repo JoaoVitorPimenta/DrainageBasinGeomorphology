@@ -17,6 +17,10 @@ The following technologies were used in processing the algorithms of this plugin
 With QGIS open, follow these steps: plugins -> manage and install plugins -> install from ZIP
 Then select the ZIP containing this plugin -> install plugin or place this plugin in the folder corresponding to plugins installed in QGIS.
 
+![](imagesREADME/manage_install_plugins.png)
+![](imagesREADME/install_plugin.png)
+![](imagesREADME/plugin_in_toolbox.png)
+
 # Tools
 This plugin offers tools for studying the geomorphology of drainage basins, are they:
 
@@ -31,6 +35,18 @@ This tool calculates all morphometric parameters of the watershed as shown in th
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Number of sections for SL index** - It is the number of sections used to calculate the SL index.
+
+**Limit for valley floor** - It is the height limit relative to the drainage point for calculating the valley floor.
+
+**Minimum height for valley peak** - It is the minimum value for considering discontinuities and calculating the valley height.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Number of points to calculate TTSF** - It is the number of points used to calculate the TTSF.
+
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
 
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
 
@@ -49,12 +65,14 @@ This tool calculates linear parameters of the watershed as shown in the table be
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
+
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
 
 **Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
 **Output:**  
-**All morphometric parameters** - Linear parameters calculated, for each basin in .csv.
+**Linear parameters** - Linear parameters calculated, for each basin in .csv.
 
 ## Calculate relief parameters
 This tool calculates relief parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
@@ -65,6 +83,8 @@ This tool calculates relief parameters of the watershed as shown in the table be
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
 
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
 
@@ -81,12 +101,146 @@ This tool calculates shape parameters of the watershed as shown in the table bel
 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
+
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
 
 **Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
 
 **Output:**  
 **Shape parameters** - Shape parameters calculated, for each basin, in .csv.
+
+## Calculate tectonic parameters
+This tool calculates tectonic parameters of the watershed as shown in the table below. If any known parameter is not being calculated, feel free to message me.
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Number of sections for SL index** - It is the number of sections used to calculate the SL index.
+
+**Limit for valley floor** - It is the height limit relative to the drainage point for calculating the valley floor.
+
+**Minimum height for valley peak** - It is the minimum value for considering discontinuities and calculating the valley height.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Number of points to calculate TTSF** - It is the number of points used to calculate the TTSF.
+
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
+
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
+
+**Output:**  
+**Tectonic parameters** - All morphometric parameters calculated, for each basin, in .csv.
+
+# Auxiliary
+
+## Calculate basin Da and Dd
+This tool calculates Da and Dd distance (used in TTSF calc).
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Number of points to calculate TTSF** - It is the number of points used to calculate the TTSF.
+
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
+
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
+
+**Output:**  
+**Da and Dd** - A vector containing the Dd and Da, for all basins.
+
+## Calculate basin divide
+This tool calculates the left and right area of the watersheds (used in AF calc).
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
+
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
+
+**Output:**  
+**Divided basins** - Vector containing features with the basin sections divided into left and right sides.
+
+## Calculate basin midline
+This tool calculates basin midline (used in TTSF calc).
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Output:**  
+**Midlines** - A vector containing the midlines, for all basins.
+
+## Calculate basin Vf
+This tool calculates valley floor width and valley distance (used in Vf calc)
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Limit for valley floor** - It is the height limit relative to the drainage point for calculating the valley floor.
+
+**Minimum height for valley peak** - It is the minimum value for considering discontinuities and calculating the valley height.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Number of points to calculate TTSF** - It is the number of points used to calculate the TTSF.
+
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
+
+**Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
+
+**Output:**  
+**Valley distance** - A vector containing the distances between the two peaks of the valleys.
+
+**Valley floor width** - A vector containing the valley floor.
+
+## Calculate SL index
+This tool calculates SL index of the watershed main channel (used in SL index calc).
+
+**Inputs:**  
+**Drainage basins** - Vector layer containing drainage basin features.
+
+**Channel network** - Vector layer containing the drainage network of the drainage basins.
+
+**DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Number of sections for SL index** - It is the number of sections used to calculate the SL index.
+
+**Use lch as longest drainage and not the main channel** - The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations
+
+**Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx.
+
+**Output:**  
+**SL index center points** - The center point of each SL step.
+
+**SL index distances** - The distance from the central point to the point furthest upstream in the channel.
+
+**SL index steps** - The SL step equally spaced.
 
 # Basin EAV curves
 
@@ -250,6 +404,16 @@ This tool calculates all morphometric parameters selected of each basin feature 
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
 
+**Number of sections for SL index** - It is the number of sections used to calculate the SL index.
+
+**Limit for valley floor** - It is the height limit relative to the drainage point for calculating the valley floor.
+
+**Minimum relief for valley height** - It is the minimum value for considering discontinuities and calculating the valley height.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Number of points to calculate TTSF** - It is the number of points used to calculate the TTSF.
+
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
 **Minimum channel length** - It is used to correct intersection errors, as well as channel network precision.
@@ -276,6 +440,16 @@ This tool calculates all morphometric parameters selected of each basin feature 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Number of sections for SL index** - It is the number of sections used to calculate the SL index.
+
+**Limit for valley floor** - It is the height limit relative to the drainage point for calculating the valley floor.
+
+**Minimum relief for valley height** - It is the minimum value for considering discontinuities and calculating the valley height.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Number of points to calculate TTSF** - It is the number of points used to calculate the TTSF.
 
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
@@ -309,6 +483,16 @@ This tool calculates all morphometric parameters selected of each basin feature 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Number of sections for SL index** - It is the number of sections used to calculate the SL index.
+
+**Limit for valley floor** - It is the height limit relative to the drainage point for calculating the valley floor.
+
+**Minimum relief for valley height** - It is the minimum value for considering discontinuities and calculating the valley height.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Number of points to calculate TTSF** - It is the number of points used to calculate the TTSF.
 
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
@@ -344,6 +528,16 @@ This tool calculates all morphometric parameters selected of each basin feature 
 **Channel network** - Vector layer containing the drainage network of the drainage basins.
 
 **DEM** - Digital Elevation Model in the area of the drainage basins.
+
+**Number of sections for SL index** - It is the number of sections used to calculate the SL index.
+
+**Limit for valley floor** - It is the height limit relative to the drainage point for calculating the valley floor.
+
+**Minimum relief for valley height** - It is the minimum value for considering discontinuities and calculating the valley height.
+
+**Number of points to create midline** - It is the number of points used to construct the midline.
+
+**Number of points to calculate TTSF** - It is the number of points used to calculate the TTSF.
 
 **Channel coordinate precision** - It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin.
 
@@ -428,6 +622,11 @@ If you have any questions, suggestions, errors or need information/training abou
 | Relief       | Ruggedness Number | _Rn_     | _Bh × Dd_          | Product of relief and drainage density.                                   | Strahler (1954)      |
 | Relief       | Dissection Index | _Di_      | _(Emax - Emin) / Emax_           | Ratio of relief to perimeter.                                             | Nir Dov (1957)      |
 | Relief       | Gradient Ratio | _Gr_       | _(Relief source - Relief mouth) / Lch_         | Ratio between the difference in altitude of the main channel and its length.                                   |  Sreedevi (2005)  |
+| Tectonic | Transverse Topographic Symmetry Factor | _TTSF_ | _⟨Da⟩ / ⟨Dd⟩_ | Ratio between the mean distance to the main river and the mean distance to the basin boundary. | Taib et al. (2024)
+| Tectonic | Basin Asymmetry | _AF_ | _Ar / At_ | Ratio between the area of the basin to the right of the main channel and the total basin area. | Taib et al. (2024)
+| Tectonic | Stream Length-Gradient Index Mean | _SLm_ | _⟨(ΔH / ΔL) × L⟩_ | Ratio between channel slope and channel length, used to identify variations in channel gradient. | Taib et al. (2024)
+| Tectonic | Total Stream Length-Gradient Index Total Mean  | _SLmt_ | _⟨ΔH / ln L⟩_ | Mean sum of the SL index values along the channels. | Taib et al. (2024)
+| Tectonic | Valley Floor Width-to-Valley Height Ratio | _Vf_ | _⟨Vfw / ((Eld - Esc) + (Erd - Esc))⟩_ | Ratio between valley floor width and valley height. | Taib et al. (2024)
 
 *This formula is sometimes used as N/P (all channels are used) but in Smith original work it is N1/P, partly because he uses first-order channels as an approximation for the contour lines.
 
@@ -524,7 +723,7 @@ Several gaps were identified in previous research on prioritizing basins in rela
 The classifications are based on Jenks' natural breaks (Jenks, 1967) and on five classifications: Very low, low, medium, high, and very high.
 
 ## References
-- JENKS, G. F. The data model concept in statistical mapping. International Yearbook of Cartography, v. 7, p. 186–190, 1967.
+- Jenks, G. F. The data model concept in statistical mapping. International Yearbook of Cartography, v. 7, p. 186–190, 1967.
 
 - Ghimire, S. K., Lu, Y., & Wang, Y. (2025). An improved framework to prioritize sub-watersheds: Construction of Watershed Morphometric Composite Index (WMCI) for mountain soil conservation. Ecological Indicators, 177, 113817. https://doi.org/10.1016/j.ecolind.2025.113817
 
@@ -564,5 +763,16 @@ The classifications are based on Jenks' natural breaks (Jenks, 1967) and on five
 
 - Govarthanambikai, K., & Sridhar, S. (2024). Prioritization of watershed using morphometric parameters through geospatial and PCA technique for Noyyal River Basin, Tamil Nadu, India. Journal of Water and Climate Change, 15(3), 1218–1231. https://doi.org/10.2166/wcc.2024.546
 
-## additional information and context
+- Taib, H., Hadji, R., Hamed, Y. et al. Evaluation of relative tectonic activity in a semiarid basin: analysis of geomorphic indices and morphometric parameters in the Meskiana watershed. Euro-Mediterr J Environ Integr 9, 843–858 (2024). https://doi.org/10.1007/s41207-023-00458-z
+
+## Observation
+All code results are reviewed by a human (me) before being committed. However, this does not rule out the possibility that, in specific cases, things might not go as expected. Therefore, it is essential that users review the output when using the plugin. Use at your own risk!
+
+## Additional information and context
 Hi! My name is João Vitor Pimenta, I created this software in my graduation to automatize subject works, but its scope kept expanding (I started programming as a hobby/learning project) and then I thought, "what if this is useful to other people?" and decided to publish it on the GitHub repository and the official QGIS repository. Because I don't have formal training in computer science (although I seek knowledge and know things about it), I naturally use AI to assist me. I only use it for writing code, and I analyze/test the code myself.
+
+## Next steps
+- Add mountain front sinuosity index
+- Create a video tutorial to use the plugin.
+- Provide practical examples of using the plugin.
+- Create an algorithm to group geomorphometrically similar basins (such as k-clusterings).

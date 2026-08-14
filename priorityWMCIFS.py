@@ -78,6 +78,11 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
     BASINS_RANKED = 'BASINS_RANKED'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
+    LIMIT_FOR_VALLEY_FLOOR = 'LIMIT_FOR_VALLEY_FLOOR'
+    MIN_FOR_VALLEY_HEIGHT = 'MIN_FOR_VALLEY_HEIGHT'
+    USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
+    POINTS_TTSF = 'POINTS_TTSF'
+    N_SECTIONS_SL = 'N_SECTIONS_SL'
 
     def initAlgorithm(self, config):
         '''
@@ -108,6 +113,57 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
                 self.DEM,
                 self.tr('DEM'),
                 [QgsProcessing.TypeRaster]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.N_SECTIONS_SL,
+                self.tr('Number of sections for SL'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=1,
+                defaultValue=10
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.LIMIT_FOR_VALLEY_FLOOR,
+                self.tr('Limit for valley floor'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.1,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.MIN_FOR_VALLEY_HEIGHT,
+                self.tr('Minimum height for valley peak'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=1.0,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.POINTS_TTSF,
+                self.tr('Number of points for TTSF'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=0,
+                defaultValue=50,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_LONGEST_DRAINAGE,
+                self.tr('Use lch as longest drainage and not the main channel'),
+                defaultValue=False
             )
         )
 
@@ -142,12 +198,18 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
                          'Ruggedness number (Rn)',
                          'Dissection index (Di)',
                          'Gradient ratio (Gr)',
+                         'Transverse topographic symmetry factor (TTSF)',
+                         'Assimetry factor (AF)',
+                         'Stream-Length index mean (SLm)',
+                         'Stream-Length index total mean (SLtm)',
+                         'Stream-Length index (SLm/SLtm)',
+                         'Valley floor width-height ratio (Vf)',
                          'None']
 
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.SELECTED_PARAMETERS_DIRECTLY_PROPORTIONAL,
-                description='Parameters for PCA analysis (directly proportional)',
+                description='Parameters for WMCI-FS analysis (directly proportional)',
                 options=self.parametersToChoose,
                 allowMultiple=True,
                 defaultValue=[],
@@ -157,7 +219,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.SELECTED_PARAMETERS_INVERSELY_PROPORTIONAL,
-                description='Parameters for PCA analysis (inversely proportional)',
+                description='Parameters for WMCI-FS analysis (inversely proportional)',
                 options=self.parametersToChoose,
                 allowMultiple=True,
                 defaultValue=[],
@@ -251,7 +313,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.BASINS_RANKED,
-                self.tr('Ranked basins PCA'))
+                self.tr('Ranked basins WMCI-FS'))
             )
 
     def processAlgorithm(self, parameters, context, feedback):
@@ -267,6 +329,14 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
         channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
+
+        pointsTTSF = self.parameterAsInt(parameters, self.POINTS_TTSF, context)
+
+        limitForValleyFloor = self.parameterAsDouble(parameters, self.LIMIT_FOR_VALLEY_FLOOR, context)
+
+        minForValleyHeight = self.parameterAsDouble(parameters, self.MIN_FOR_VALLEY_HEIGHT, context)
+
+        useLongestDrainage = self.parameterAsBoolean(parameters, self.USE_LONGEST_DRAINAGE, context)
 
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
         minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
@@ -286,6 +356,8 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
         pathRotUnrot = self.parameterAsFileOutput(parameters, self.UNROTATED_AND_ROTATED_MATRIX, context)
         pathRankCp = self.parameterAsFileOutput(parameters, self.RANKING_TABLE_WITH_CP_VALUES, context)
 
+        nSectionsSL = self.parameterAsInt(parameters, self.N_SECTIONS_SL, context)
+
         fields = basinSource.fields()
         fields.append(QgsField("ranking", QVariant.Double))
         fields.append(QgsField("priority", QVariant.String))
@@ -300,7 +372,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calcWMCIFS(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathCorrMatrix,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pathParametersStandardized)
+        calcWMCIFS(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathCorrMatrix,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pathParametersStandardized,pointsTTSF,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -363,15 +435,21 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins.
-        <strong>Parameters for morphometric analysis (directly proportional): </strong>Morphometric parameters directly proportional to the priority the user wants to analyze.
-        <strong>Parameters for morphometric analysis (indirectly proportional): </strong>Morphometric parameters indirectly proportional to the priority the user wants to analyze.
+        <strong>Number of sections for SL index: </strong>It is the number of sections used to calculate the SL index.
+        <strong>Limit for valley floor: </strong>Its the height limit to calculate the valley floor.
+        <strong>Minimum height for valley: </strong>Its the minimum height difference between one point and and next point to consider a valley peak. A valley peak is defined as the first point preceding a downward slope. A minimum threshold is applied to prevent minor dips which could result from inaccuracies from being counted.
+        <strong>Number of points for midline: </strong>Its the number of points to create the midline of the basin.
+        <strong>Number of points for TTSF: </strong>Its the number of points in the midline to calculate the TTSF.
+        <strong>Use lch as longest drainage and not the main channel: </strong>The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations (see README).
+        <strong>Parameters for WMCI-FS analysis (directly proportional): </strong>Morphometric parameters directly proportional to the priority the user wants to analyze.
+        <strong>Parameters for WMCI-FS analysis (indirectly proportional): </strong>Morphometric parameters indirectly proportional to the priority the user wants to analyze.
         <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
         <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
         <strong>Decimal places of the result: </strong>Number of decimal places in results.
         <strong>Morphometric parameters: </strong>File with all morphometric parameters calculated individually for each basin.
         <strong>Correlation table: </strong>File containing the table with the intercorrelation matrix of the parameters selected by the user.
         <strong>Ranking table with compound parameter values: </strong>Table with ranked, weighted parameters and compound values with the final ranking.
-        <strong>Ranked basins PCA: </strong>Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
+        <strong>Ranked basins WMCI-FS: </strong>Original basin vector with two columns added, one with the compound parameter and the other with the final basin ranking.
                        
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
                        

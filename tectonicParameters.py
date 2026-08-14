@@ -38,10 +38,11 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterNumber,
-                       QgsProcessingParameterBoolean)
-from .algorithms.parametersProcessing import calculateShapeParameters,verifyLibs
+                       QgsProcessingParameterBoolean,
+                       QgsProcessingParameterRasterLayer)
+from .algorithms.parametersProcessing import calculateTectonicParameters,verifyLibs
 
-class shapeParametersCalc(QgsProcessingAlgorithm):
+class tectonicParametersCalc(QgsProcessingAlgorithm):
     '''
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -59,14 +60,19 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    SHAPE_PARAMETERS = 'SHAPE_PARAMETERS'
+    TECTONIC_PARAMETERS = 'TECTONIC_PARAMETERS'
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
-    CHANNEL_NETWORK = 'CHANNEL_NETWORK'
+    LIMIT_FOR_VALLEY_FLOOR = 'LIMIT_FOR_VALLEY_FLOOR'
+    MIN_FOR_VALLEY_HEIGHT = 'MIN_FOR_VALLEY_HEIGHT'
+    USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
     CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
+    CHANNEL_NETWORK = 'CHANNEL_NETWORK'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
-    USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
+    POINTS_TTSF = 'POINTS_TTSF'
+    POINTS_MIDLINE = 'POINTS_MIDLINE'
+    N_SECTIONS_SL = 'N_SECTIONS_SL'
 
     def initAlgorithm(self, config):
         '''
@@ -89,6 +95,68 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
                 [QgsProcessing.TypeVectorLine]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
+                self.DEM,
+                self.tr('DEM'),
+                [QgsProcessing.TypeRaster]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.N_SECTIONS_SL,
+                self.tr('Number of sections for SL index'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=1,
+                defaultValue=10
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.LIMIT_FOR_VALLEY_FLOOR,
+                self.tr('Limit for valley floor'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.1,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.MIN_FOR_VALLEY_HEIGHT,
+                self.tr('Minimum height for valley peak'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=1.0,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.POINTS_MIDLINE,
+                self.tr('Number of points to create midline'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=2,
+                defaultValue=50,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.POINTS_TTSF,
+                self.tr('Number of points to calculate TTSF'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=0,
+                defaultValue=50,
+                optional=True
             )
         )
 
@@ -138,8 +206,8 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         # algorithm is run in QGIS).
         self.addParameter(
             QgsProcessingParameterFileDestination(
-                self.SHAPE_PARAMETERS,
-                self.tr('Shape parameters'),
+                self.TECTONIC_PARAMETERS,
+                self.tr('Tectonic parameters'),
                 fileFilter=('CSV files (*.csv)')
             )
         )
@@ -156,7 +224,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
-        useLongestRiver = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
+        demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
@@ -164,10 +232,22 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
 
-        path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
+        path = self.parameterAsFileOutput(parameters, self.TECTONIC_PARAMETERS, context)
+
+        pointsTTSF = self.parameterAsInt(parameters, self.POINTS_TTSF, context)
+
+        pointsMidline = self.parameterAsInt(parameters, self.POINTS_MIDLINE, context)
+
+        limitForValleyFloor = self.parameterAsDouble(parameters, self.LIMIT_FOR_VALLEY_FLOOR, context)
+
+        minForValleyHeight = self.parameterAsDouble(parameters, self.MIN_FOR_VALLEY_HEIGHT, context)
+
+        useLongestDrainage = self.parameterAsBoolean(parameters, self.USE_LONGEST_DRAINAGE, context)
+
+        nSectionsSL = self.parameterAsInt(parameters, self.N_SECTIONS_SL, context)
 
         verifyLibs()
-        calculateShapeParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength,useLongestRiver)
+        calculateTectonicParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength,pointsTTSF,limitForValleyFloor,minForValleyHeight,useLongestDrainage,pointsMidline,nSectionsSL)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -175,7 +255,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         # statistics, etc. These should all be included in the returned
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
-        return {self.SHAPE_PARAMETERS: path}
+        return {self.TECTONIC_PARAMETERS: path}
 
     def name(self):
         '''
@@ -185,7 +265,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate shape parameters'
+        return 'Calculate tectonic parameters'
 
     def displayName(self):
         '''
@@ -219,15 +299,20 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates all shape parameters of each basin feature individually.               
+        This tool calculates all tectonic parameters of each basin feature individually.               
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
-        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding
+        <strong>Limit for valley floor: </strong>Its the height limit to calculate the valley floor.
+        <strong>Minimum height for valley: </strong>Its the minimum height difference between one point and and next point to consider a valley peak. A valley peak is defined as the first point preceding a downward slope. A minimum threshold is applied to prevent minor dips which could result from inaccuracies from being counted.
+        <strong>Number of points for midline: </strong>Its the number of points to create the midline of the basin.
+        <strong>Number of points for TTSF: </strong>Its the number of points in the midline to calculate the TTSF.
+        <strong>Use lch as longest drainage and not the main channel: </strong>The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations (see README).
+        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
         <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
-        <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
+        <strong>Tectonic parameters: </strong>File with all tectonic parameters calculated individually for each basin.
         
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
                        
@@ -242,4 +327,4 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return shapeParametersCalc()
+        return tectonicParametersCalc()

@@ -30,18 +30,23 @@ __copyright__ = '(C) 2025 by João Vitor Pimenta'
 
 __revision__ = '$Format:%H$'
 
+from dataclasses import fields
 import os
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterNumber,
-                       QgsProcessingParameterBoolean)
-from .algorithms.parametersProcessing import calculateShapeParameters,verifyLibs
+                        QgsProcessingParameterFeatureSink,
+                        QgsProcessingParameterNumber,
+                        QgsFields,
+                        QgsWkbTypes,
+                        QgsProcessingParameterBoolean,
+                        QgsField
+                        )
+from .algorithms.auxiliarys.DaDd import calculateDaDd,verifyLibs
 
-class shapeParametersCalc(QgsProcessingAlgorithm):
+class DaDdCalc(QgsProcessingAlgorithm):
     '''
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -59,14 +64,15 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    SHAPE_PARAMETERS = 'SHAPE_PARAMETERS'
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
-    DEM = 'DEM'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
     CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
-    DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
     USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
+    POINTS_MIDLINE = 'POINTS_MIDLINE'
+    POINTS_TTSF = 'POINTS_TTSF'
+    DA = 'DA'
+    DD = 'DD'
 
     def initAlgorithm(self, config):
         '''
@@ -84,11 +90,34 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
             )
         )
 
+        # We add the channel network input.
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
                 [QgsProcessing.TypeVectorLine]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.POINTS_MIDLINE,
+                self.tr('Number of points to create midline'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=2,
+                defaultValue=50,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.POINTS_TTSF,
+                self.tr('Number of points to calculate TTSF'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=1,
+                defaultValue=50,
+                optional=True
             )
         )
 
@@ -100,6 +129,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
             )
         )
 
+        # We add the channel coordinate precision input.
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
@@ -111,6 +141,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
             )
         )
 
+        # We add the minimum channel length input.
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.MINIMUM_CHANNEL_LENGTH,
@@ -122,27 +153,20 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
             )
         )
 
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.DECIMAL_PLACES,
-                self.tr('Decimal places of the result'),
-                type=QgsProcessingParameterNumber.Integer,
-                minValue=0,
-                defaultValue=2,
-                optional=False
-            )
-        )
-
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
         self.addParameter(
-            QgsProcessingParameterFileDestination(
-                self.SHAPE_PARAMETERS,
-                self.tr('Shape parameters'),
-                fileFilter=('CSV files (*.csv)')
+            QgsProcessingParameterFeatureSink(
+                self.DA,
+                self.tr('Da'))
             )
-        )
+
+        self.addParameter(
+            QgsProcessingParameterFeatureSink(
+                self.DD,
+                self.tr('Dd'))
+            )
 
     def processAlgorithm(self, parameters, context, feedback):
         '''
@@ -154,20 +178,113 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         # dictionary returned by the processAlgorithm function.
         basinSource = self.parameterAsSource(parameters, self.DRAINAGE_BASINS, context)
 
-        channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
-
-        useLongestRiver = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
+        channelNetworkSource = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
         minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
 
-        decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
+        useLongestRiver = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
 
-        path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
+        pointsMidline = self.parameterAsInt(parameters, self.POINTS_MIDLINE, context)
+
+        pointsTTSF = self.parameterAsInt(parameters, self.POINTS_TTSF, context)
+
+        daFields = QgsFields()
+
+        daFields.append(
+            QgsField(
+                "basin_id",
+                QVariant.Int
+            )
+        )
+
+        daFields.append(
+            QgsField(
+                "Da",
+                QVariant.Double
+            )
+        )
+
+        daFields.append(
+            QgsField(
+                "Dd",
+                QVariant.Double
+            )
+        )
+
+
+        daFields.append(
+            QgsField(
+                "TTSF",
+                QVariant.Double
+            )
+        )
+
+        daFields.append(
+            QgsField(
+                "TTSF_mean",
+                QVariant.Double
+            )
+        )
+
+        da, daPath = self.parameterAsSink(
+            parameters,
+            self.DA,
+            context,
+            daFields,
+            QgsWkbTypes.LineString,
+            basinSource.sourceCrs()
+        )
+
+        ddFields = QgsFields()
+
+        ddFields.append(
+            QgsField(
+                "basin_id",
+                QVariant.Int
+            )
+        )
+
+        ddFields.append(
+            QgsField(
+                "Da",
+                QVariant.Double
+            )
+        )
+
+        ddFields.append(
+            QgsField(
+                "Dd",
+                QVariant.Double
+            )
+        )
+
+        ddFields.append(
+            QgsField(
+                "TTSF",
+                QVariant.Double
+            )
+        )
+
+        ddFields.append(
+            QgsField(
+                "TTSF_mean",
+                QVariant.Double
+            )
+        )
+
+        dd, ddPath = self.parameterAsSink(
+            parameters,
+            self.DD,
+            context,
+            ddFields,
+            QgsWkbTypes.LineString,
+            basinSource.sourceCrs()
+        )
 
         verifyLibs()
-        calculateShapeParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength,useLongestRiver)
+        calculateDaDd(basinSource, channelNetworkSource, feedback, precisionSnapCoordinates, minimumChannelLength, pointsTTSF, da, dd, useLongestRiver, pointsMidline)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -175,7 +292,8 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         # statistics, etc. These should all be included in the returned
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
-        return {self.SHAPE_PARAMETERS: path}
+        return {self.DA: daPath, 
+                self.DD: ddPath}
 
     def name(self):
         '''
@@ -185,7 +303,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate shape parameters'
+        return 'Calculate basin Da and Dd'
 
     def displayName(self):
         '''
@@ -195,14 +313,14 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         return self.tr(self.name())
 
     def groupId(self):
-        return "basin_morph_params"
+        return "basin_auxiliary"
 
     def group(self):
         '''
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         '''
-        return self.tr("Basin morphometric parameters")
+        return self.tr("Auxiliary")
 
     def icon(self):
         """
@@ -219,21 +337,25 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates all shape parameters of each basin feature individually.               
+        This tool calculates Da and Dd for each drainage basin.              
                 </p>
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
-        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding
+        <strong>Number of points for midline: </strong>Its the number of points to create the midline of the basin.
+        <strong>Number of points for TTSF: </strong>Its the number of points in the midline to calculate the TTSF.
+        <strong>Use lch as longest drainage and not the main channel: </strong>The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations (see README).
+        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
         <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
-        <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
-        
+        <strong>Da: </strong>Layer containing the distances from midline to channels for each drainage basin.
+        <strong>Dd: </strong>Layer containing the distances from midline to drainage divide for each drainage basin.
+
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
                        
         If you need more information about how the plugin works, such as the calculations it performs, among other things, access: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
         If you have found any bugs, errors or have any requests to make, among other things, please acess: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues
-        If you need training for the plugin, or want to contact the plugin author for any reason, send an email to: jvpjoaopimentadev@gmail.com                </p>
+        If you need training for the plugin, or want to contact the plugin author for any reason, send an email to: jvpjoaopimentadev@gmail.com
+                </p>
             </body>
         </html>
                     """)
@@ -242,4 +364,4 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return shapeParametersCalc()
+        return DaDdCalc()

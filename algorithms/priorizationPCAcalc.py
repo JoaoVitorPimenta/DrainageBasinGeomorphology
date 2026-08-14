@@ -30,670 +30,76 @@ __copyright__ = '(C) 2025 by João Vitor Pimenta'
 
 __revision__ = '$Format:%H$'
 
-from math import pi
-from qgis.core import QgsPointXY, QgsRaster, QgsProcessingException, QgsGeometry, QgsWkbTypes, QgsFeature
+from qgis.core import QgsProcessingException, QgsFeature
 import geopandas as gpd
 import numpy as np
-from osgeo import gdal, ogr
+from .parametersProcessing import (
+    getStreamsInsideLayer,
+    createGdfStream,
+    obtainFirstAndLastPoint,
+    createOrderColumn,
+    fillOrder,
+    mergeStreams,
+    createGdfShape,
+    selectStreamsInsideBasin,
+    calculateStreamLength,
+    createGdfLinear,
+    calculateStreamNumber,
+    calculateTotalStreamLength,
+    calculateMeanStreamLength,
+    calculateStreamLengthRatio,
+    calculateStreamLengthRatioMean,
+    calculateBifurcationRatio,
+    calculateBifurcationRatioMean,
+    calculateRhoCoefficient,
+    calculateSinuosityIndex,
+    calculateAreaPerimeter,
+    calculateFitnessRatio,
+    calculateBasinLength,
+    calculateWanderingRatio,
+    calculateDrainageDensity,
+    calculateStreamFrequency,
+    calculateDrainageTexture,
+    calculateLengthOverlandFlow,
+    calculateConstantChannel,
+    calculateDrainageIntensity,
+    calculateInfiltrationNumber,
+    calculateCirculatoryRatio,
+    calculateElongationRatio,
+    calculateFormFactor,
+    calculateLemniscateRatio,
+    calculateShapeIndex,
+    calculateCompactnessCoefficient,
+    createGdfRelief,
+    calculateMinMaxMeanElevation,
+    calculateRelief,
+    calculateReliefRatio,
+    calculateRelativeRelief,
+    calculateRuggednessNumber,
+    calculateDissectionIndex,
+    calculateGradientRatio,
+    createGdfTectonic,
+    calculateVoronoiSkeleton,
+    longestPath,
+    TransverseTopographicSymmetryFactor,
+    assimetryIndex,
+    calculateSLindexMainChannel,
+    valleyFloorWidthHeight,
+    createGdfConcatenated,
+    loadDEM
+)
 
 def verifyLibs():
-        try:
-            import geopandas
-        except ImportError:
-            raise QgsProcessingException('Geopandas library not found, please install it and try again.')
-def getStreamsInsideLayer(streamLayer, drainageBasinLayer, feedback, precisionSnapCoordinates):    
-    streamsWithinLayer = []
-    for basin in drainageBasinLayer.getFeatures():
-        basinGeom = basin.geometry()
-
-        for stream in streamLayer.getFeatures():
-            streamGeom = stream.geometry()
-            if streamGeom.intersects(basinGeom):
-                intersection = streamGeom.intersection(basinGeom)
-                snappedGeom = intersection.snappedToGrid(precisionSnapCoordinates, precisionSnapCoordinates)
-                streamsWithinLayer.append(snappedGeom)
-
-        if not streamsWithinLayer:
-            feedback.pushWarning('There are no channels entirely within the basin of id '+str(basin.id())+' and the calculation of some parameters for this basin may be compromised')
-
-    return streamsWithinLayer
-def selectStreamsInsideBasin(streamGdf, drainageBasinGdf):
-    linesInBasins = gpd.overlay(streamGdf, drainageBasinGdf, how="intersection")
-    if linesInBasins.empty:
-        return linesInBasins
-
-    coords = linesInBasins.geometry.apply(
-        lambda geom: (
-            [geom.coords[0], geom.coords[-1]] if geom.geom_type == "LineString"
-            else [list(geom.geoms[0].coords)[0], list(geom.geoms[-1].coords)[-1]] if geom.geom_type == "MultiLineString"
-            else [None, None]
-        )
-    )
-
-    linesInBasins["first"] = coords.str[0]
-    linesInBasins["last"]  = coords.str[1]
-
-    return linesInBasins
-def createGdfStream(streams):
-    geometries2d = []
-
-    for feat in streams:
-        if feat.constGet() is None:
-            continue
-        if feat.constGet().is3D():
-            feat.get().dropZValue()
-        if feat.constGet().isMeasure():
-            feat.get().dropMValue()
-
-        if not feat.isMultipart():
-            geomType = feat.wkbType()
-            if QgsWkbTypes.geometryType(geomType) != QgsWkbTypes.PointGeometry:
-                geometries2d.append(feat)
-
-        else:
-            multiGeom = feat.asGeometryCollection()
-            for part in multiGeom:
-                geomType = part.wkbType()
-                if QgsWkbTypes.geometryType(geomType) != QgsWkbTypes.PointGeometry:
-                    geometries2d.append(part)
-
-    gdfStream = gpd.GeoDataFrame(
-        geometry=geometries2d
-    )
-    return gdfStream
-def obtainFirstAndLastPoint(gdfStream):
-    if gdfStream.empty:
-        return
-    coords = gdfStream.geometry.apply(lambda geom: [geom.coords[0], geom.coords[-1]])
-    gdfStream['first'] = coords.str[0]
-    gdfStream['last'] = coords.str[1]
-    return
-
-def createOrderColumn(gdfStream):
-    gdfStream['order'] = None
-    return
-
-def findOrder(gdf, streamMap, index):
-    if gdf.at[index, 'order'] is not None:
-        return
-
-    stream = gdf.loc[index]
-    first = str(stream['first'])
-
-    if first not in streamMap:
-        gdf.at[index, 'order'] = 1
-        return
-
-    tributariesIndexes = streamMap[first]
-    maxOrder = 1
-    maxOrderCount = 0
-
-    for tributaryIndex in tributariesIndexes:
-        if gdf.at[tributaryIndex, 'order'] is None:
-            try:
-                findOrder(gdf, streamMap, tributaryIndex)
-            except RecursionError:
-                raise QgsProcessingException('The channels are forming a loop, making it impossible to classify the channels (check that the channel coordinate precision is not causing the channels to merge and form a loop).')
-
-        tributary_order = gdf.at[tributaryIndex, 'order']
-
-        if maxOrder == tributary_order:
-            maxOrderCount += 1
-        elif maxOrder < tributary_order:
-            maxOrder = tributary_order
-            maxOrderCount = 1
-
-    gdf.at[index, 'order'] = maxOrder + 1 if maxOrderCount > 1 else maxOrder
-
-def createStreamMap(gdfStream):
-    streamMap = {}
-    for index, row in gdfStream.iterrows():
-        last = str(row['last'])
-
-        if last not in streamMap:
-            streamMap[last] = []
-
-        streamMap[last].append(index)
-    return streamMap
-
-def fillOrder(gdfStream):
-    gdfStream['order'] = None
-    streamMap = createStreamMap(gdfStream)
-
-    for index in gdfStream.index:
-        findOrder(gdfStream, streamMap, index)
-
-def mergeStreams(gdf):
-    if gdf.empty:
-        return
-
-    gdf['processed'] = False
-    newRows = []
-    indicesToRemove = []
-
-    for idx in gdf.index:
-        if gdf.loc[idx, 'processed']:
-            continue
-
-        currentIdx = idx
-        chain = [currentIdx]
-        gdf.loc[currentIdx, 'processed'] = True
-        currentOrder = gdf.loc[currentIdx, 'order']
-
-        while True:
-            currentStart = gdf.loc[currentIdx, 'first']
-            candidates = gdf[
-                (gdf['last'] == currentStart) & 
-                (gdf['order'] == currentOrder) & 
-                (~gdf['processed'])
-            ]
-
-            if len(candidates) != 1:
-                break
-
-            nextIdx = candidates.index[0]
-            chain.insert(0, nextIdx)
-            gdf.loc[nextIdx, 'processed'] = True
-            currentIdx = nextIdx
-
-        currentIdx = idx
-
-        while True:
-            currentEnd = gdf.loc[currentIdx, 'last']
-            candidates = gdf[
-                (gdf['first'] == currentEnd) &
-                (gdf['order'] == currentOrder) &
-                (~gdf['processed'])
-            ]
-
-            if len(candidates) != 1:
-                break
-
-            nextIdx = candidates.index[0]
-            chain.append(nextIdx)
-            gdf.loc[nextIdx, 'processed'] = True
-            currentIdx = nextIdx
-
-        if len(chain) > 1:
-            geoms = gdf.loc[chain, 'geometry'].tolist()
-
-            allCoords = []
-            for i, geom in enumerate(geoms):
-                if i == 0:
-                    allCoords.extend(geom.coords[:])
-                else:
-                    allCoords.extend(geom.coords[1:])
-            
-            newGeom = geoms[0].__class__(allCoords)
-            
-            newRows.append({
-                'geometry': newGeom,
-                'first': allCoords[0],
-                'last': allCoords[-1],
-                'order': currentOrder
-            })
-            
-            indicesToRemove.extend(chain)
-
-    gdf.drop(indicesToRemove, inplace=True)
-    
-    for row in newRows:
-        newIndex = gdf.index.max() + 1 if not gdf.empty else 0
-        gdf.loc[newIndex] = row
-    
-    gdf.drop(columns=['processed'], inplace=True, errors='ignore')
-    
-    if not gdf.index.is_unique:
-        gdf.reset_index(drop=True, inplace=True)
-    return
-
-def calculateStreamLength(gdfStream,minimumChannelLength):
-    gdfStream['length'] = gdfStream.geometry.length
-    gdfStream.query('length > ' + str(minimumChannelLength), inplace=True)
-    return
-
-def createGdfLinear(gdfStream):
-    if gdfStream.empty:
-        gdfLinear = gpd.GeoDataFrame({'Stream Order': [1]})
-        gdfLinear.loc[len(gdfLinear)] = [None]
-        return gdfLinear
-
-    maxStreamOrder = gdfStream['order'].max()
-    gdfLinear = gpd.GeoDataFrame({'Stream Order': range(1, maxStreamOrder + 1)})
-    gdfLinear.loc[len(gdfLinear)] = [None]
-    return gdfLinear
-
-def calculateStreamNumber (gdfStream,gdfLinear):
-    streamNumber = gdfStream['order'].value_counts().sort_index()
-    gdfLinear['Stream number'] = gdfLinear['Stream Order'].map(streamNumber)
-    return
-
-def calculateTotalStreamLength(gdfStream,gdfLinear):
-    gdfWithSumLength = gdfStream.groupby('order')['length'].sum()
-    gdfLinear['Stream length total (km)'] = gdfLinear['Stream Order'].map(gdfWithSumLength)/1000
-    return
-
-def calculateMeanStreamLength(gdfStream,gdfLinear):
-    gdfWithMeansLenghts = gdfStream.groupby('order')['length'].mean()
-    gdfLinear['Stream length mean (km)'] = gdfLinear['Stream Order'].map(gdfWithMeansLenghts)/1000
-    return
-
-def calculateStreamLengthRatio (gdfLinear):
-    lengthGroupedByOrder = gdfLinear.set_index('Stream Order')['Stream length mean (km)']
-    streamLengthRatio = (lengthGroupedByOrder / lengthGroupedByOrder.shift(+1))
-    gdfLinear['Stream length ratio'] = gdfLinear['Stream Order'].map(streamLengthRatio)
-    return
-
-def calculateStreamLengthRatioMean (gdfLinear):
-    streamLengthRatioMean = gdfLinear['Stream length ratio'].mean()
-    gdfLinear.loc[gdfLinear.index[-1], 'Mean stream length ratio'] = streamLengthRatioMean
-    return
-
-def calculateBifurcationRatio (gdfLinear):
-    streamNumber = gdfLinear.set_index('Stream Order')['Stream number']
-    bifurcationRatio = streamNumber/streamNumber.shift(-1)
-    gdfLinear['Bifurcation ratio'] = gdfLinear['Stream Order'].map(bifurcationRatio)
-    return
-
-def calculateBifurcationRatioMean (gdfLinear):
-    bifurcationRatioMean = gdfLinear['Bifurcation ratio'].mean()
-    gdfLinear.loc[gdfLinear.index[-1], 'Mean bifurcation ratio'] = bifurcationRatioMean
-    return
-
-def calculateRhoCoefficient (gdfLinear):
-    Rlm = gdfLinear['Stream length ratio'].mean()
-    Rbm = gdfLinear['Bifurcation ratio'].mean()
-
-    RhoCoefficient = Rlm/Rbm
-    gdfLinear.loc[gdfLinear.index[-1], 'RHO coefficient'] = RhoCoefficient
-    return
-
-def calculateSinuosityIndex(gdfStream,gdfLinear):
-    if gdfStream.empty:
-        gdfLinear['Main channel sinuosity index'] = None
-        return
-
-    maxOrder = gdfStream['order'].max()
-    filterMaxOrder = gdfStream[gdfStream['order'] == maxOrder]
-
-    firstPoint = filterMaxOrder.iloc[-1]['last']
-    lastPoint = filterMaxOrder.iloc[0]['first']
-
-    straightLine = QgsGeometry.fromPolylineXY([
-        QgsPointXY(firstPoint[0], firstPoint[1]),
-        QgsPointXY(lastPoint[0], lastPoint[1])
-    ])
-
-    straightLineLength = straightLine.length()/1000
-
-    totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream length total (km)'].values[0]
-    sinuosityIndex = totalLength/straightLineLength
-    gdfLinear.loc[gdfLinear.index[-1], 'Main channel sinuosity index'] = sinuosityIndex
-    return
-
-def createGdfShape(basin):
-    basinGeom = basin.geometry()
-    gdfShape = gpd.GeoDataFrame(geometry=[basinGeom])
-    return gdfShape
-
-def calculateAreaPerimeter(gdfShape):
-    gdfShape['Area (km2)'] = [gdfShape.geometry.area/1000000]
-    gdfShape['Perimeter (km)'] = [gdfShape.geometry.length/1000]
-    return
-
-def calculateFitnessRatio(gdfShape,gdfLinear):
-    maxOrder = gdfLinear['Stream Order'].max()
-    totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream length total (km)'].values[0]
-    fitnessRatio = (totalLength/gdfShape['Perimeter (km)'])
-    gdfLinear.loc[gdfLinear.index[-1], 'Fitness ratio (Rf)'] = fitnessRatio.iloc[0][0]
-    return
-
-def calculateBasinLength(gdfStream,gdfShape,basin,feedback):
-    if gdfStream.empty:
-        gdfShape['Basin length (Lg) (km)'] = None
-        return
-
-    maxOrder = gdfStream['order'].max()
-    filterMaxOrder = gdfStream[gdfStream['order'] == maxOrder]
-
-    firstPoint = filterMaxOrder.iloc[-1]['last']
-    lastPoint = filterMaxOrder.iloc[0]['first']
-
-    dx = lastPoint[0] - firstPoint[0]
-    dy = lastPoint[1] - firstPoint[1]
-
-    minX, minY, maxX, maxY = gdfShape.total_bounds
-    maxDimBasin = max(maxX - minX, maxY - minY)
-    mult = maxDimBasin
-
-    firstExtended = QgsPointXY(firstPoint[0] - dx * mult, firstPoint[1] - dy * mult)
-    lastExtended = QgsPointXY(lastPoint[0] + dx * mult, lastPoint[1] + dy * mult)
-
-    parallelLine = QgsGeometry.fromPolylineXY([firstExtended, lastExtended])
-    intersection = parallelLine.intersection(QgsGeometry.fromWkt(gdfShape.boundary.iloc[0].wkt))
-
-    if intersection.isEmpty():
-        feedback.pushWarning('A parallel line between higher order channels does not intersect the perimeter of the basin of id'+str(basin.id())+', the drainage network has errors!')
-        gdfShape['Basin length (Lg) (km)'] = None
-        return
-
-    pointsIntersection = intersection.asMultiPoint()
-    pointsOrdered = sorted(pointsIntersection, key=lambda p: (p.y(), p.x()))
-
-    basinLengthLine = QgsGeometry.fromPolylineXY(pointsOrdered)
-    basinLength = basinLengthLine.length()
-    gdfShape['Basin length (Lg) (km)'] = basinLength/1000
-    return
-
-def calculateWanderingRatio(gdfShape,gdfLinear):
-    maxOrder = gdfLinear['Stream Order'].max()
-    totalLength = gdfLinear.loc[gdfLinear['Stream Order'] == maxOrder, 'Stream length total (km)'].values[0]
-    wanderingRatio = (totalLength/gdfShape['Basin length (Lg) (km)'])
-    gdfLinear.loc[gdfLinear.index[-1], 'Wandering ratio (Rw)'] = wanderingRatio.iloc[0]
-    return
-
-def calculateStreamFrequency(gdfShape,gdfLinear):
-    numStreams = gdfLinear['Stream number'].sum()
-    streamFrequency = numStreams/gdfShape['Area (km2)']
-    gdfLinear.loc[gdfLinear.index[-1], 'Stream frequency (Fs) (1/km2)'] = streamFrequency.iloc[0][0]
-    if gpd.pd.isna(numStreams) or numStreams == 0:
-        gdfLinear.loc[gdfLinear.index[-1], 'Stream frequency (Fs) (1/km2)'] = gpd.pd.NA
-    return
-
-def calculateDrainageDensity(gdfShape,gdfLinear):
-    sumLengths = gdfLinear['Stream length total (km)'].sum()
-    drainageDensity = sumLengths/gdfShape['Area (km2)']
-    gdfLinear.loc[gdfLinear.index[-1], 'Drainage density (Dd) (km/km2)'] = drainageDensity.iloc[0][0]
-    if gpd.pd.isna(sumLengths) or sumLengths == 0:
-        gdfLinear.loc[gdfLinear.index[-1], 'Drainage density (Dd) (km/km2)'] = gpd.pd.NA
-    return
-
-def calculateDrainageTexture(gdfShape,gdfLinear):
-    sumStreams = gdfLinear.loc[gdfLinear['Stream Order'] == 1, 'Stream number'].sum()
-    perimeter = gdfShape['Perimeter (km)']
-    drainageTexture = sumStreams/perimeter
-    gdfLinear.loc[gdfLinear.index[-1], 'Drainage texture (Dt) (1/km)'] = drainageTexture.iloc[0][0]
-    if gpd.pd.isna(sumStreams) or sumStreams == 0:
-        gdfLinear.loc[gdfLinear.index[-1], 'Drainage texture (Dt) (1/km)'] = gpd.pd.NA
-    return
-
-def calculateLengthOverlandFlow(gdfLinear):
-    lengthOverlandFlow = 1/(2*gdfLinear['Drainage density (Dd) (km/km2)'])
-    gdfLinear['Length of overland flow (Lo) (km)'] = lengthOverlandFlow
-    return
-
-def calculateDrainageIntensity(gdfLinear):
-    streamFrequency = gdfLinear['Stream frequency (Fs) (1/km2)']
-    drainageDensity = gdfLinear['Drainage density (Dd) (km/km2)']
-    drainageIntensity = streamFrequency/drainageDensity
-    gdfLinear['Drainage intensity (Di) (1/km)'] = drainageIntensity
-    return
-
-def calculateInfiltrationNumber(gdfLinear):
-    streamFrequency = gdfLinear['Stream frequency (Fs) (1/km2)']
-    drainageDensity = gdfLinear['Drainage density (Dd) (km/km2)']
-    drainageIntensity = streamFrequency*drainageDensity
-    gdfLinear['Infiltration number (If) (km/km4)'] = drainageIntensity
-    return
-
-def calculateConstantChannel(gdfLinear):
-    constantOfChannel = 1/gdfLinear['Drainage density (Dd) (km/km2)']
-    gdfLinear['Constant of channel maintenance (Ccm) (km2/km)'] = constantOfChannel
-    return
-
-def calculateCirculatoryRatio(gdfShape):
-    area = gdfShape['Area (km2)']
-    perimeter = gdfShape['Perimeter (km)']
-    gdfShape['Circulatory ratio (Rc)'] = 4*pi*area/(perimeter**2)
-    return
-
-def calculateElongationRatio(gdfShape):
-    area = gdfShape['Area (km2)']
-    length = gdfShape['Basin length (Lg) (km)']
-    gdfShape['Elongation ratio (Re)'] = (2*(area/pi)**0.5)/length
-    return
-
-def calculateFormFactor(gdfShape):
-    area = gdfShape['Area (km2)']
-    length = gdfShape['Basin length (Lg) (km)']
-    gdfShape['Form factor (Ff)'] = area/(length**2)
-    return
-
-def calculateLemniscateRatio(gdfShape):
-    area = gdfShape['Area (km2)']
-    length = gdfShape['Basin length (Lg) (km)']
-    gdfShape['Lemniscate ratio (K)'] = (length**2)/(4*area)
-    return
-
-def calculateShapeIndex(gdfShape):
-    area = gdfShape['Area (km2)']
-    length = gdfShape['Basin length (Lg) (km)']
-    gdfShape['Shape index (Sb)'] = (length**2)/area
-    return
-
-def calculateCompactnessCoefficient(gdfShape):
-    area = gdfShape['Area (km2)']
-    perimeter = gdfShape['Perimeter (km)']
-    gdfShape['Compactness coefficient (Cc)'] = perimeter/(2*(pi*area)**0.5)
-    return
-
-def createGdfRelief():
-    gdfRelief = gpd.GeoDataFrame(index=[0])
-    return gdfRelief
-
-def loadDEM(demLayer):
-    DEMpath = demLayer.dataProvider().dataSourceUri().split('|')[0]
-    ds = gdal.Open(DEMpath)
-    band = ds.GetRasterBand(1)
-    demArray = band.ReadAsArray()
-    noData = band.GetNoDataValue() if band.GetNoDataValue() is not None else -9999
-    gt = ds.GetGeoTransform()
-    proj = ds.GetProjection()
-    rows, cols = demArray.shape
-    ds = None
-    return demArray, noData, gt, proj, rows, cols
-
-def calculateMinMaxMeanElevation(demArray,noData,gt,proj,rows,cols,basin,gdfRelief,feedback):
-    basinGeom = basin.geometry()
-    wkb = basinGeom.asWkb()
-    ogrGeom = ogr.CreateGeometryFromWkb(wkb)
-
-    rasterDrive = gdal.GetDriverByName('MEM')
-    vectorDrive = ogr.GetDriverByName('Memory')
-    vectorDriveSource    = vectorDrive.CreateDataSource('wrk')
-    vectorLayer = vectorDriveSource.CreateLayer('lyr', None, ogr.wkbUnknown)
-    featureDef   = vectorLayer.GetLayerDefn()
-    ogrFeat  = ogr.Feature(featureDef)
-    ogrFeat.SetGeometry(ogrGeom)
-    vectorLayer.CreateFeature(ogrFeat)
-    ogrFeat = None
-
-    maskDS = rasterDrive.Create('', cols, rows, 1, gdal.GDT_Byte)
-    maskDS.SetGeoTransform(gt)
-    maskDS.SetProjection(proj)
-    gdal.RasterizeLayer(maskDS, [1], vectorLayer, burn_values=[1])
-
-    mask = maskDS.GetRasterBand(1).ReadAsArray()
-    validMask = (mask == 1) & (demArray != noData)
-    validDataInsideBasin = demArray[validMask].tolist()
-
-    if not validDataInsideBasin:
-        feedback.pushWarning('There is no valid raster data in the basin of id '+str(basin.id())+' and the calculation of some parameters for this basin may be compromised')
-        gdfRelief['Minimum elevation (m)'] = None
-        gdfRelief['Maximum elevation (m)'] = None
-        gdfRelief['Mean elevation (m)'] = None
-        return
-
-    minElev = min(validDataInsideBasin)
-    maxElev = max(validDataInsideBasin)
-    meanElev = ((sum(validDataInsideBasin))/(len(validDataInsideBasin)))
-
-    gdfRelief['Minimum elevation (m)'] = minElev
-    gdfRelief['Maximum elevation (m)'] = maxElev
-    gdfRelief['Mean elevation (m)'] = meanElev
-    return
-
-def calculateRelief(gdfRelief):
-    minElevation = gdfRelief['Minimum elevation (m)']
-    maxElevation = gdfRelief['Maximum elevation (m)']
-    gdfRelief['Relief (Bh) (m)'] = maxElevation - minElevation
-    return
-
-def calculateReliefRatio(gdfRelief,gdfShape):
-    relief = gdfRelief['Relief (Bh) (m)']
-    reliefInKm = relief/1000
-    length = gdfShape['Basin length (Lg) (km)']
-    gdfRelief['Relief ratio (Rh)'] = reliefInKm/length
-    return
-
-def calculateRelativeRelief (gdfRelief,gdfShape):
-    relief = gdfRelief['Relief (Bh) (m)']
-    reliefInKm = relief/1000
-    perimeter = gdfShape['Perimeter (km)']
-    gdfRelief['Relative relief (Rhp)'] = reliefInKm/perimeter
-    return
-
-def calculateRuggednessNumber (gdfRelief,gdfLinear):
-    relief = gdfRelief['Relief (Bh) (m)']
-    reliefInKm = relief/1000
-    drainageDensity = gdfLinear['Drainage density (Dd) (km/km2)'].iloc[-1]
-    gdfRelief['Ruggedness number (Rn)'] = reliefInKm * drainageDensity
-    return
-
-def calculateDissectionIndex (gdfRelief):
-    minElev = gdfRelief['Minimum elevation (m)']
-    maxElev = gdfRelief['Maximum elevation (m)']
-    gdfRelief['Dissection index (Di)'] = (maxElev - minElev)/maxElev
-    return
-
-def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief):
-    if gdfStream.empty:
-        gdfRelief['Gradient ratio (Gr)'] = None
-        return
-
-    maxOrder = gdfStream['order'].max()
-    filterMaxOrder = gdfStream[gdfStream['order'] == maxOrder]
-
-    firstPoint = filterMaxOrder.iloc[-1]['last']
-    lastPoint = filterMaxOrder.iloc[0]['first']
-    
-    firstPointQgs = QgsPointXY(firstPoint[0], firstPoint[1])
-    lastPointQgs = QgsPointXY(lastPoint[0], lastPoint[1])
-
-    identificatorFirst = dem.dataProvider().identify(firstPointQgs, QgsRaster.IdentifyFormatValue)
-    identificatorLast = dem.dataProvider().identify(lastPointQgs, QgsRaster.IdentifyFormatValue)
-
-    lowestPointKm = identificatorFirst.results()[1]/1000
-    hightestPointKm = identificatorLast.results()[1]/1000
-
-    if lowestPointKm is None or hightestPointKm is None:
-        gdfRelief['Gradient ratio (Gr)'] = None
-        return
-
-    maxOrder = gdfLinear['Stream Order'].max()
-    filteredMaxOrder = gdfLinear[gdfLinear['Stream Order'] == maxOrder]
-    
-    ls = filteredMaxOrder['Stream length total (km)'].values
-    gdfRelief['Gradient ratio (Gr)'] = (hightestPointKm - lowestPointKm)/ls
-    return
-
-def intToRoman(num):
-    val = [1000, 900, 500, 400, 100, 90,  50,  40, 10, 9, 5, 4, 1]
-    syms = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I']
-    roman = ''
-    for i in range(len(val)):
-        count = num // val[i]
-        roman += syms[i] * count
-        num -= val[i] * count
-    return roman
-
-def createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin):
-    gdfLinearGeneral = gdfLinear[gdfLinear['Stream Order'].isna()].drop(columns='Stream Order').reset_index(drop=True)
-
-    gdfLinearOrders = gdfLinear[gdfLinear['Stream Order'].notna()].copy()
-    gdfLinearOrders['Stream Order'] = gdfLinearOrders['Stream Order'].astype(int)
-
-    columnsToPivote = [
-        col for col in gdfLinearOrders.columns
-        if col not in ['Stream Order', '__row__'] and gdfLinearOrders[col].notna().any()
-    ]
-
-    gdfLinearOrders = gdfLinearOrders[['Stream Order'] + columnsToPivote]
-    gdfLinearOrders['__row__'] = 0
-    gdfLinearPivoted = gdfLinearOrders.pivot(index='__row__', columns='Stream Order')
-
-    gdfLinearPivoted.columns = [
-        f'{col[0]} {intToRoman(col[1])}' for col in gdfLinearPivoted.columns
-    ]
-    gdfLinearPivoted = gdfLinearPivoted.reset_index(drop=True)
-
-    pivotedColumnsBase = set(col.split(' ')[0] for col in gdfLinearPivoted.columns)
-    columnsWithoutPivote = [col for col in gdfLinearGeneral.columns if col not in pivotedColumnsBase]
-
-    gdfLinearGeneralFiltered = gdfLinearGeneral[columnsWithoutPivote].dropna(axis=1, how='all')
-    finalGdfLinear = gpd.pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
-    finalGdfLinear.index = ['Basin id ' + str(basin.id())]
-
-    gdfShape.drop(columns='geometry', inplace=True)
-    for col in gdfShape.columns:
-        gdfShape[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfShape[col]]
-    finalGdfShapeFloat = gdfShape.astype(float)
-    finalGdfShapeFloat.index = ['Basin id ' + str(basin.id())]
-
-    for col in gdfRelief.columns:
-        gdfRelief[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfRelief[col]]
-    finalGdfReliefFloat = gdfRelief.astype(float)
-    finalGdfReliefFloat.index = ['Basin id ' + str(basin.id())]
-    gdfFinalAll = gpd.pd.concat([finalGdfLinear, finalGdfShapeFloat, finalGdfReliefFloat], ignore_index=False, axis=1)
-
-    return gdfFinalAll
-
-def formatGdfLinear(gdfLinear,basin):
-    gdfLinearGeneral = gdfLinear[gdfLinear['Stream Order'].isna()].drop(columns='Stream Order').reset_index(drop=True)
-
-    gdfLinearOrders = gdfLinear[gdfLinear['Stream Order'].notna()].copy()
-    gdfLinearOrders['Stream Order'] = gdfLinearOrders['Stream Order'].astype(int)
-
-    columnsToPivote = [
-        col for col in gdfLinearOrders.columns
-        if col not in ['Stream Order', '__row__'] and gdfLinearOrders[col].notna().any()
-    ]
-
-    gdfLinearOrders = gdfLinearOrders[['Stream Order'] + columnsToPivote]
-    gdfLinearOrders['__row__'] = 0  # índice comum fictício
-    gdfLinearPivoted = gdfLinearOrders.pivot(index='__row__', columns='Stream Order')
-
-    gdfLinearPivoted.columns = [
-        f'{col[0]} {intToRoman(col[1])}' for col in gdfLinearPivoted.columns
-    ]
-    gdfLinearPivoted = gdfLinearPivoted.reset_index(drop=True)
-
-    pivotedColumnsBase = set(col.split(' ')[0] for col in gdfLinearPivoted.columns)
-    columnsWithoutPivote = [col for col in gdfLinearGeneral.columns if col not in pivotedColumnsBase]
-
-    gdfLinearGeneralFiltered = gdfLinearGeneral[columnsWithoutPivote].dropna(axis=1, how='all')
-
-    finalGdfLinear = gpd.pd.concat([gdfLinearPivoted, gdfLinearGeneralFiltered], axis=1)
-
-    finalGdfLinear.index = ['Basin id ' + str(basin.id())]
-    return finalGdfLinear
-
-def formatGdfShape(gdfShape,basin):
-    gdfShape.drop(columns='geometry', inplace=True)
-    for col in gdfShape.columns:
-        gdfShape[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfShape[col]]
-    gdfShapeFloat = gdfShape.astype(float)
-    gdfShapeFloat.index = ['Basin id ' + str(basin.id())]
-    return gdfShapeFloat
-
-def formatGdfRelief(gdfRelief,basin):
-    for col in gdfRelief.columns:
-        gdfRelief[col] = [x.iloc[0] if hasattr(x, "iloc") else x for x in gdfRelief[col]]
-    gdfReliefFloat = gdfRelief.astype(float)
-    gdfReliefFloat.index = ['Basin id ' + str(basin.id())]
-    return gdfReliefFloat
-
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength):
+    try:
+        import geopandas
+    except ImportError:
+        raise QgsProcessingException('Geopandas library not found, please install it and try again.')
+    try:
+        import numpy
+    except ImportError:
+        raise QgsProcessingException('Numpy library not found, please install it and try again.')
+
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -723,13 +129,13 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
         calculateBifurcationRatio(gdfLinear)
         calculateBifurcationRatioMean(gdfLinear)
         calculateRhoCoefficient(gdfLinear)
-        calculateSinuosityIndex(gdfStreamsInside,gdfLinear)
+        calculateSinuosityIndex(gdfStreamsInside,gdfLinear,useLongestRiver,precisionSnapCoordinates)
         if feedback.isCanceled():
             return
         calculateAreaPerimeter(gdfShape)
-        calculateFitnessRatio(gdfShape,gdfLinear)
-        calculateBasinLength(gdfStreamsInside,gdfShape,basin,feedback)
-        calculateWanderingRatio(gdfShape,gdfLinear)
+        calculateFitnessRatio(gdfShape,gdfLinear,gdfStreamsInside,useLongestRiver,precisionSnapCoordinates)
+        calculateBasinLength(gdfStreamsInside,gdfShape,basin,feedback,useLongestRiver,precisionSnapCoordinates)
+        calculateWanderingRatio(gdfShape,gdfLinear,gdfStreamsInside,useLongestRiver,precisionSnapCoordinates)
         calculateDrainageDensity(gdfShape,gdfLinear)
         calculateStreamFrequency(gdfShape,gdfLinear)
         calculateDrainageTexture(gdfShape,gdfLinear)
@@ -752,10 +158,17 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
         calculateRelativeRelief(gdfRelief,gdfShape)
         calculateRuggednessNumber(gdfRelief,gdfLinear)
         calculateDissectionIndex(gdfRelief)
-        calculateGradientRatio(gdfStreamsInside,gdfLinear,demLayer,gdfRelief)
+        calculateGradientRatio(gdfStreamsInside,gdfLinear,demLayer,gdfRelief,useLongestRiver,precisionSnapCoordinates)
         if feedback.isCanceled():
             return
-        gdfConcatenated = createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin)
+        gdfTectonic = createGdfTectonic()
+        skelet = calculateVoronoiSkeleton(gdfShape, n_points=50, min_length=0.0)
+        midline = longestPath(skelet)
+        TransverseTopographicSymmetryFactor(midline, gdfStreamsInside, gdfShape, gdfTectonic, nPoints, basin, feedback, useLongestRiver,precisionSnapCoordinates)
+        assimetryIndex(gdfShape, gdfStreamsInside, gdfTectonic, useLongestRiver,precisionSnapCoordinates)
+        calculateSLindexMainChannel(gdfStreamsInside,demLayer,gdfTectonic,useLongestRiver, precisionSnapCoordinates, nSectionsSL)
+        valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, demLayer, gdfTectonic, limitForValleyFloor, minForValleyHeight, feedback, useLongestRiver,precisionSnapCoordinates)
+        gdfConcatenated = createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin,gdfTectonic)
         gdfConcatenateds.append(gdfConcatenated)
 
         barProgress = int((idx + 1) * step)
@@ -803,7 +216,8 @@ def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
 def jenksBreaks(data, n_classes):
     data = np.sort(np.asarray(data, dtype=float))
     n = len(data)
-
+    if n < n_classes:
+        raise QgsProcessingException('Insufficient data for Fisher-Jenks classification without any class colapse.')
     mat1 = np.full((n + 1, n_classes + 1), np.inf)
     mat2 = np.zeros((n + 1, n_classes + 1), dtype=int)
     mat1[0, :] = 0.0
@@ -838,8 +252,6 @@ def jenksBreaks(data, n_classes):
     breaks[0] = data[0]
 
     if len(np.unique(breaks)) != len(breaks):
-        print(breaks)
-        print(np.diff(breaks))
         bad_value = breaks[np.where(np.diff(breaks) == 0)[0][0]]
         data = data[data != bad_value]
         new_breaks = jenksBreaks(data, n_classes)
@@ -851,7 +263,7 @@ def jenksBreaks(data, n_classes):
     breaks[-1] = float('inf')
     return breaks
 
-def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength):
+def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL):
 
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
@@ -870,7 +282,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
     if 'None' in allSelectedParameters:
         allSelectedParameters.remove('None')
 
-    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength)
+    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL)
     gdfMorpParam = gdfMorpParam[allSelectedParameters]
     gdfMorpParam.to_csv(pathParameters, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 

@@ -37,7 +37,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterNumber)
+                       QgsProcessingParameterNumber,
+                       QgsProcessingParameterBoolean)
 from .algorithms.parametersProcessing import calculateLinearParameters,verifyLibs
 
 class linearParametersCalc(QgsProcessingAlgorithm):
@@ -65,6 +66,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
     CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
+    USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
 
     def initAlgorithm(self, config):
         '''
@@ -87,6 +89,14 @@ class linearParametersCalc(QgsProcessingAlgorithm):
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
                 [QgsProcessing.TypeVectorLine]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_LONGEST_DRAINAGE,
+                self.tr('Use lch as longest drainage and not the main channel'),
+                defaultValue=False
             )
         )
 
@@ -146,6 +156,8 @@ class linearParametersCalc(QgsProcessingAlgorithm):
 
         channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
+        useLongestRiver = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
+
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
         minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
@@ -155,7 +167,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
         path = self.parameterAsFileOutput(parameters, self.LINEAR_PARAMETERS, context)
 
         verifyLibs()
-        calculateLinearParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength)
+        calculateLinearParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength,useLongestRiver)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

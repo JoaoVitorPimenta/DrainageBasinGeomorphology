@@ -49,6 +49,13 @@ from .priorityPCA import morphometricAnalysisPCA
 from .priorityMorph import morphometricAnalysisMorphometric
 from .priorityWMCIFA import morphometricAnalysisWMCIFA
 from .priorityWMCIFS import morphometricAnalysisWMCIFS
+from .midLine import midLineCalc
+from .DaDd import DaDdCalc
+from .basinDivide import divideBasinCalc
+from .VfVh import VfVhCalc
+from .tectonicParameters import tectonicParametersCalc
+from .straightLineChannel import straightChannelCalc
+from .SLindex import slIndexCalc
 
 class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
 
@@ -85,6 +92,13 @@ class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
         self.addAlgorithm(morphometricAnalysisMorphometric())
         self.addAlgorithm(morphometricAnalysisWMCIFS())
         self.addAlgorithm(morphometricAnalysisWMCIFA())
+        self.addAlgorithm(midLineCalc())
+        self.addAlgorithm(DaDdCalc())
+        self.addAlgorithm(divideBasinCalc())
+        self.addAlgorithm(VfVhCalc())
+        self.addAlgorithm(tectonicParametersCalc())
+        self.addAlgorithm(straightChannelCalc())
+        self.addAlgorithm(slIndexCalc())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
 

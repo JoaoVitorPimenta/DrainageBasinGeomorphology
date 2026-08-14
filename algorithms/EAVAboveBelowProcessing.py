@@ -33,13 +33,11 @@ __revision__ = '$Format:%H$'
 from qgis.core import QgsProcessingException
 from collections import Counter
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from osgeo import gdal, ogr
 import numpy as np
 import csv
 import itertools
 import bisect
-import os
 
 def verifyLibs():
         try:

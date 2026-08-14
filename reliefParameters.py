@@ -38,7 +38,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterNumber)
+                       QgsProcessingParameterNumber,
+                       QgsProcessingParameterBoolean)
 from .algorithms.parametersProcessing import runReliefParameters,verifyLibs
 
 class reliefParametersCalc(QgsProcessingAlgorithm):
@@ -66,7 +67,7 @@ class reliefParametersCalc(QgsProcessingAlgorithm):
     CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
-
+    USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
     def initAlgorithm(self, config):
         '''
         Here we define the inputs and output of the algorithm, along
@@ -96,6 +97,14 @@ class reliefParametersCalc(QgsProcessingAlgorithm):
                 self.DEM,
                 self.tr('DEM'),
                 [QgsProcessing.TypeRaster]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_LONGEST_DRAINAGE,
+                self.tr('Use lch as longest drainage instead of main channel'),
+                defaultValue=False
             )
         )
 
@@ -161,12 +170,14 @@ class reliefParametersCalc(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
+        useLongestRiver = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
+
         decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
 
         path = self.parameterAsFileOutput(parameters, self.RELIEF_PARAMETERS, context)
 
         verifyLibs()
-        runReliefParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength)
+        runReliefParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength,useLongestRiver)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

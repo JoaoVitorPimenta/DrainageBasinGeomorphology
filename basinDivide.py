@@ -31,17 +31,20 @@ __copyright__ = '(C) 2025 by João Vitor Pimenta'
 __revision__ = '$Format:%H$'
 
 import os
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterNumber,
-                       QgsProcessingParameterBoolean)
-from .algorithms.parametersProcessing import calculateShapeParameters,verifyLibs
+                        QgsProcessingParameterFeatureSink,
+                        QgsProcessingParameterNumber,
+                        QgsFields,
+                        QgsField,
+                        QgsProcessingParameterBoolean
+                        )
+from .algorithms.auxiliarys.divideBasin import calculateBasinDivide,verifyLibs
 
-class shapeParametersCalc(QgsProcessingAlgorithm):
+class divideBasinCalc(QgsProcessingAlgorithm):
     '''
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -59,13 +62,11 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    SHAPE_PARAMETERS = 'SHAPE_PARAMETERS'
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
-    DEM = 'DEM'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
     CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
-    DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
+    BASINS_DIVIDED = 'BASINS_DIVIDED'
     USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
 
     def initAlgorithm(self, config):
@@ -84,6 +85,9 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
             )
         )
 
+        # We add a feature sink in which to store our processed features (this
+        # usually takes the form of a newly created vector layer when the
+        # algorithm is run in QGIS).
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.CHANNEL_NETWORK,
@@ -111,6 +115,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
             )
         )
 
+        # We add the minimum channel length input.
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.MINIMUM_CHANNEL_LENGTH,
@@ -123,26 +128,10 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterNumber(
-                self.DECIMAL_PLACES,
-                self.tr('Decimal places of the result'),
-                type=QgsProcessingParameterNumber.Integer,
-                minValue=0,
-                defaultValue=2,
-                optional=False
+            QgsProcessingParameterFeatureSink(
+                self.BASINS_DIVIDED,
+                self.tr('Divided basins'))
             )
-        )
-
-        # We add a feature sink in which to store our processed features (this
-        # usually takes the form of a newly created vector layer when the
-        # algorithm is run in QGIS).
-        self.addParameter(
-            QgsProcessingParameterFileDestination(
-                self.SHAPE_PARAMETERS,
-                self.tr('Shape parameters'),
-                fileFilter=('CSV files (*.csv)')
-            )
-        )
 
     def processAlgorithm(self, parameters, context, feedback):
         '''
@@ -154,28 +143,59 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         # dictionary returned by the processAlgorithm function.
         basinSource = self.parameterAsSource(parameters, self.DRAINAGE_BASINS, context)
 
-        channelNetwork = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
-
-        useLongestRiver = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
+        channelNetworkSource = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
         minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
 
-        decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
+        useLongestDrainage = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
 
-        path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
+        basinDividedFields = QgsFields()
+
+        basinDividedFields.append(
+            QgsField(
+                "basin_id",
+                QVariant.Int
+            )
+        )
+
+        basinDividedFields.append(
+            QgsField(
+                "area_right",
+                QVariant.Double
+            )
+        )
+
+        basinDividedFields.append(
+            QgsField(
+                "area_total",
+                QVariant.Double
+            )
+        )
+
+        basinDividedFields.append(
+            QgsField(
+                "AF",
+                QVariant.Double
+            )
+        )
+
+        dividedBasin, path = self.parameterAsSink(
+            parameters,
+            self.BASINS_DIVIDED,
+            context,
+            basinDividedFields,
+            basinSource.wkbType(),
+            basinSource.sourceCrs()
+        )
 
         verifyLibs()
-        calculateShapeParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength,useLongestRiver)
+        calculateBasinDivide(basinSource, channelNetworkSource, feedback, precisionSnapCoordinates, minimumChannelLength, dividedBasin, useLongestDrainage)
 
-        # Return the results of the algorithm. In this case our only result is
-        # the feature sink which contains the processed features, but some
-        # algorithms may return multiple feature sinks, calculated numeric
-        # statistics, etc. These should all be included in the returned
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
-        return {self.SHAPE_PARAMETERS: path}
+        return {self.BASINS_DIVIDED: path}
 
     def name(self):
         '''
@@ -185,7 +205,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate shape parameters'
+        return 'Calculate basin divide'
 
     def displayName(self):
         '''
@@ -195,14 +215,14 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         return self.tr(self.name())
 
     def groupId(self):
-        return "basin_morph_params"
+        return "basin_auxiliary"
 
     def group(self):
         '''
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         '''
-        return self.tr("Basin morphometric parameters")
+        return self.tr("Auxiliary")
 
     def icon(self):
         """
@@ -219,21 +239,23 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates all shape parameters of each basin feature individually.               
+        This tool calculates the divide of each drainage basin.              
                 </p>
+        It is related to the calculation of the assimetry factor.
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
-        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding
+        <strong>Use lch as longest drainage and not the main channel: </strong>The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations (see README).
+        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
         <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
-        <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
-        
+        <strong>Divided basins: </strong>Layer containing the divided drainage basins (left and right parts).
+
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
                        
         If you need more information about how the plugin works, such as the calculations it performs, among other things, access: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology
         If you have found any bugs, errors or have any requests to make, among other things, please acess: https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomorphology/issues
-        If you need training for the plugin, or want to contact the plugin author for any reason, send an email to: jvpjoaopimentadev@gmail.com                </p>
+        If you need training for the plugin, or want to contact the plugin author for any reason, send an email to: jvpjoaopimentadev@gmail.com
+                </p>
             </body>
         </html>
                     """)
@@ -242,4 +264,4 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return shapeParametersCalc()
+        return divideBasinCalc()

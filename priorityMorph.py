@@ -74,6 +74,11 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
     BASINS_RANKED = 'BASINS_RANKED'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
     MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
+    LIMIT_FOR_VALLEY_FLOOR = 'LIMIT_FOR_VALLEY_FLOOR'
+    MIN_FOR_VALLEY_HEIGHT = 'MIN_FOR_VALLEY_HEIGHT'
+    USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
+    POINTS_TTSF = 'POINTS_TTSF'
+    N_SECTIONS_SL = 'N_SECTIONS_SL'
 
     def initAlgorithm(self, config):
         '''
@@ -104,6 +109,57 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
                 self.DEM,
                 self.tr('DEM'),
                 [QgsProcessing.TypeRaster]
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.N_SECTIONS_SL,
+                self.tr('Number of sections for SL'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=1,
+                defaultValue=10
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.LIMIT_FOR_VALLEY_FLOOR,
+                self.tr('Limit for valley floor'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=0.1,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.MIN_FOR_VALLEY_HEIGHT,
+                self.tr('Minimum height for valley peak'),
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0,
+                defaultValue=1.0,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.POINTS_TTSF,
+                self.tr('Number of points for TTSF'),
+                type=QgsProcessingParameterNumber.Integer,
+                minValue=0,
+                defaultValue=50,
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.USE_LONGEST_DRAINAGE,
+                self.tr('Use lch as longest drainage and not the main channel'),
+                defaultValue=False
             )
         )
 
@@ -138,6 +194,12 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
                          'Ruggedness number (Rn)',
                          'Dissection index (Di)',
                          'Gradient ratio (Gr)',
+                         'Transverse topographic symmetry factor (TTSF)',
+                         'Assimetry factor (AF)',
+                         'Stream-Length index mean (SLm)',
+                         'Stream-Length index total mean (SLtm)',
+                         'Stream-Length index (SLm/SLtm)',
+                         'Valley floor width-height ratio (Vf)',
                          'None']
 
         self.addParameter(
@@ -232,6 +294,14 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
+        pointsTTSF = self.parameterAsInt(parameters, self.POINTS_TTSF, context)
+
+        limitForValleyFloor = self.parameterAsDouble(parameters, self.LIMIT_FOR_VALLEY_FLOOR, context)
+
+        minForValleyHeight = self.parameterAsDouble(parameters, self.MIN_FOR_VALLEY_HEIGHT, context)
+
+        useLongestDrainage = self.parameterAsBoolean(parameters, self.USE_LONGEST_DRAINAGE, context)
+
         precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
 
         minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
@@ -247,6 +317,8 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         pathParameters = self.parameterAsFileOutput(parameters, self.MORPHOMETRICS_PARAMETERS, context)
         pathRankCp = self.parameterAsFileOutput(parameters, self.RANKING_TABLE_WITH_CP_VALUES, context)
 
+        nSectionsSL = self.parameterAsInt(parameters, self.N_SECTIONS_SL, context)
+
         fields = basinSource.fields()
         fields.append(QgsField("ranking", QVariant.Double))
         fields.append(QgsField("priority", QVariant.String))
@@ -261,7 +333,7 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calcMorphPriority(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathRankCp,basinsRanked,pathParameters,minimumChannelLength)
+        calcMorphPriority(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pointsTTSF,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -321,6 +393,12 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
+        <strong>Number of sections for SL index: </strong>It is the number of sections used to calculate the SL index.
+        <strong>Limit for valley floor: </strong>Its the height limit to calculate the valley floor.
+        <strong>Minimum height for valley: </strong>Its the minimum height difference between one point and and next point to consider a valley peak. A valley peak is defined as the first point preceding a downward slope. A minimum threshold is applied to prevent minor dips which could result from inaccuracies from being counted.
+        <strong>Number of points for midline: </strong>Its the number of points to create the midline of the basin.
+        <strong>Number of points for TTSF: </strong>Its the number of points in the midline to calculate the TTSF.
+        <strong>Use lch as longest drainage and not the main channel: </strong>The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations (see README).
         <strong>Parameters for morphometric analysis (directly proportional): </strong>Morphometric parameters directly proportional to the priority the user wants to analyze.
         <strong>Parameters for morphometric analysis (indirectly proportional): </strong>Morphometric parameters indirectly proportional to the priority the user wants to analyze.
         <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
