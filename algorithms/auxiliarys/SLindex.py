@@ -162,7 +162,7 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, preci
 
         identificatorUpstream = dem.dataProvider().identify(
             upstreamPointQgs,
-            QgsRaster.IdentifyFormatValue
+            QgsRaster.IdentifyFormat.IdentifyFormatValue
         )
 
         if identificatorUpstream.isValid():
@@ -180,7 +180,7 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, preci
 
         identificatorDownstream = dem.dataProvider().identify(
             downstreamPointQgs,
-            QgsRaster.IdentifyFormatValue
+            QgsRaster.IdentifyFormat.IdentifyFormatValue
         )
 
         if identificatorDownstream.isValid():

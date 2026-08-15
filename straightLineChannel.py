@@ -187,7 +187,7 @@ class straightChannelCalc(QgsProcessingAlgorithm):
             self.STRAIGHT_LINES,
             context,
             straightLinesFields,
-            QgsWkbTypes.LineString,
+            QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 

@@ -128,7 +128,7 @@ class midLineCalc(QgsProcessingAlgorithm):
             self.MIDLINES,
             context,
             midLineFields,
-            QgsWkbTypes.LineString,
+            QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 

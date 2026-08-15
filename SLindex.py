@@ -454,7 +454,7 @@ class slIndexCalc(QgsProcessingAlgorithm):
             self.SL_INDEX_STEPS,
             context,
             slIndexStepsFields,
-            QgsWkbTypes.LineString,
+            QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 
@@ -463,7 +463,7 @@ class slIndexCalc(QgsProcessingAlgorithm):
             self.SL_INDEX_POINTS,
             context,
             slIndexPointsFields,
-            QgsWkbTypes.Point,
+            QgsWkbTypes.Type.Point,
             basinSource.sourceCrs()
         )
 
@@ -472,7 +472,7 @@ class slIndexCalc(QgsProcessingAlgorithm):
             self.SL_INDEX_DISTANCES,
             context,
             slIndexDistancesFields,
-            QgsWkbTypes.LineString,
+            QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 

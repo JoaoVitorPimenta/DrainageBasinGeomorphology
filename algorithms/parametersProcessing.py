@@ -129,14 +129,14 @@ def createGdfStream(streams):
 
         if not feat.isMultipart():
             geomType = feat.wkbType()
-            if QgsWkbTypes.geometryType(geomType) != QgsWkbTypes.PointGeometry:
+            if QgsWkbTypes.geometryType(geomType) != QgsWkbTypes.GeometryType.PointGeometry:
                 geometries2d.append(feat)
 
         else:
             multiGeom = feat.asGeometryCollection()
             for part in multiGeom:
                 geomType = part.wkbType()
-                if QgsWkbTypes.geometryType(geomType) != QgsWkbTypes.PointGeometry:
+                if QgsWkbTypes.geometryType(geomType) != QgsWkbTypes.GeometryType.PointGeometry:
                     geometries2d.append(part)
 
     gdfStream = gpd.GeoDataFrame(
@@ -814,8 +814,8 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief,useLongestRiver, pr
     firstPointQgs = QgsPointXY(firstPoint[0], firstPoint[1])
     lastPointQgs = QgsPointXY(lastPoint[0], lastPoint[1])
 
-    identificatorFirst = dem.dataProvider().identify(firstPointQgs, QgsRaster.IdentifyFormatValue)
-    identificatorLast = dem.dataProvider().identify(lastPointQgs, QgsRaster.IdentifyFormatValue)
+    identificatorFirst = dem.dataProvider().identify(firstPointQgs, QgsRaster.IdentifyFormat.IdentifyFormatValue)
+    identificatorLast = dem.dataProvider().identify(lastPointQgs, QgsRaster.IdentifyFormat.IdentifyFormatValue)
 
     lowestPointKm = identificatorFirst.results()[1]/1000
     hightestPointKm = identificatorLast.results()[1]/1000
@@ -1800,7 +1800,7 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, preci
 
         identificatorUpstream = dem.dataProvider().identify(
             upstreamPointQgs,
-            QgsRaster.IdentifyFormatValue
+            QgsRaster.IdentifyFormat.IdentifyFormatValue
         )
 
         if identificatorUpstream.isValid():
@@ -1818,7 +1818,7 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, preci
 
         identificatorDownstream = dem.dataProvider().identify(
             downstreamPointQgs,
-            QgsRaster.IdentifyFormatValue
+            QgsRaster.IdentifyFormat.IdentifyFormatValue
         )
 
         if identificatorDownstream.isValid():
@@ -2030,7 +2030,7 @@ def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, gdfTectonic
 
             identify = provider.identify(
                 pointQgs,
-                QgsRaster.IdentifyFormatValue
+                QgsRaster.IdentifyFormat.IdentifyFormatValue
             )
 
             if identify.isValid():
@@ -2067,7 +2067,7 @@ def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, gdfTectonic
 
         identify = provider.identify(
             pointQgs,
-            QgsRaster.IdentifyFormatValue
+            QgsRaster.IdentifyFormat.IdentifyFormatValue
         )
 
         if identify.isValid():

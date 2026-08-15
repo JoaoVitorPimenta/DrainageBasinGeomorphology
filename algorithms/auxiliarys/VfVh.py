@@ -226,7 +226,7 @@ def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, limitForVal
 
             identify = provider.identify(
                 pointQgs,
-                QgsRaster.IdentifyFormatValue
+                QgsRaster.IdentifyFormat.IdentifyFormatValue
             )
 
             if identify.isValid():
@@ -261,7 +261,7 @@ def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, limitForVal
 
         identify = provider.identify(
             pointQgs,
-            QgsRaster.IdentifyFormatValue
+            QgsRaster.IdentifyFormat.IdentifyFormatValue
         )
 
         if identify.isValid():

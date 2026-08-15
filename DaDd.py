@@ -233,7 +233,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
             self.DA,
             context,
             daFields,
-            QgsWkbTypes.LineString,
+            QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 
@@ -279,7 +279,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
             self.DD,
             context,
             ddFields,
-            QgsWkbTypes.LineString,
+            QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 

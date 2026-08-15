@@ -310,7 +310,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             self.VALLEY_HEIGHT,
             context,
             fieldsLimits,
-            QgsWkbTypes.LineString,
+            QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 
@@ -319,7 +319,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             self.VALLEY_FLOOR_WIDTH,
             context,
             fields1m,
-            QgsWkbTypes.LineString,
+            QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 
