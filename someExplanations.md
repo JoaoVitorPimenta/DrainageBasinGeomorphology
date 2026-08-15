@@ -22,3 +22,6 @@ A similar process applies to the valley floor-to-valley height calculation: a li
 
 In my searchs, I encountered various morphometric indices calculated from the main channel (like sinuosity, TTSF, fitness, etc...) in one of two ways: either based on Strahler order or using the longest channel (Horton's classification of the main channel). Consequently, I included an option in the plugin's various tools to calculate metrics based on either the main channel or the longest channel.  
 For instance, if the indices are being calculated for a single basin, using either the longest channel or the main channel works fine. However, if the indices are calculated for sub-basins (basins situated between other basins), it may be more appropriate to use the main channel for the calculation, given that it represents the continuation of the upstream channel.
+
+## Midline
+The midlines are constructed using the Voronoi polygonization method.
