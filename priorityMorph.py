@@ -79,6 +79,7 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
     USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
     POINTS_TTSF = 'POINTS_TTSF'
     N_SECTIONS_SL = 'N_SECTIONS_SL'
+    POINTS_MIDLINE = 'POINTS_MIDLINE'
 
     def initAlgorithm(self, config):
         '''
@@ -146,12 +147,23 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
+                self.POINTS_MIDLINE,
+                self.tr('Number of points to create midline'),
+                type=QgsProcessingParameterNumber.Type.Integer,
+                minValue=2,
+                defaultValue=50,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
                 self.POINTS_TTSF,
                 self.tr('Number of points for TTSF'),
                 type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=0,
                 defaultValue=50,
-                optional=True
+                optional=False
             )
         )
 
@@ -225,10 +237,10 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision'),
+                self.tr('Channel coordinate precision to snap'),
                 type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
-                defaultValue=0.000001,
+                defaultValue=0.01,
                 optional=True
             )
         )
@@ -239,7 +251,7 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
                 self.tr('Minimum channel length'),
                 type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
-                defaultValue=0.000001,
+                defaultValue=0.01,
                 optional=True
             )
         )
@@ -318,6 +330,7 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         pathRankCp = self.parameterAsFileOutput(parameters, self.RANKING_TABLE_WITH_CP_VALUES, context)
 
         nSectionsSL = self.parameterAsInt(parameters, self.N_SECTIONS_SL, context)
+        pointsMidline = self.parameterAsInt(parameters, self.POINTS_MIDLINE, context)
 
         fields = basinSource.fields()
         fields.append(QgsField("ranking", QVariant.Double))
@@ -333,7 +346,7 @@ class morphometricAnalysisMorphometric(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calcMorphPriority(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pointsTTSF,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL)
+        calcMorphPriority(basinSource,channelNetwork,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedStringsDirectly,selectedStringsInversely,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pointsTTSF,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL,pointsMidline)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

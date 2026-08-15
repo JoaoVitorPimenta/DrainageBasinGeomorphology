@@ -89,7 +89,7 @@ class midLineCalc(QgsProcessingAlgorithm):
                 type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=2,
                 defaultValue=50,
-                optional=True
+                optional=False
             )
         )
 

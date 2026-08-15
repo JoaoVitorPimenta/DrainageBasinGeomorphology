@@ -99,7 +99,7 @@ def verifyLibs():
     except ImportError:
         raise QgsProcessingException('Numpy library not found, please install it and try again.')
 
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL):
+def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL,pointsMidline):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
@@ -162,7 +162,7 @@ def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,
         if feedback.isCanceled():
             return
         gdfTectonic = createGdfTectonic()
-        skelet = calculateVoronoiSkeleton(gdfShape, n_points=50, min_length=0.0)
+        skelet = calculateVoronoiSkeleton(gdfShape, pointsMidline, min_length=0.0)
         midline = longestPath(skelet)
         TransverseTopographicSymmetryFactor(midline, gdfStreamsInside, gdfShape, gdfTectonic, nPoints, basin, feedback, useLongestRiver,precisionSnapCoordinates)
         assimetryIndex(gdfShape, gdfStreamsInside, gdfTectonic, useLongestRiver,precisionSnapCoordinates)
@@ -217,7 +217,7 @@ def jenksBreaks(data, n_classes):
     data = np.sort(np.asarray(data, dtype=float))
     n = len(data)
     if n < n_classes:
-        raise QgsProcessingException('Insufficient data for Fisher-Jenks classification without any class colapse.')
+        raise QgsProcessingException('Insufficient data for Fisher-Jenks classification without any class colapse. Try again with more basins or more parameters.')
     mat1 = np.full((n + 1, n_classes + 1), np.inf)
     mat2 = np.zeros((n + 1, n_classes + 1), dtype=int)
     mat1[0, :] = 0.0
@@ -263,7 +263,7 @@ def jenksBreaks(data, n_classes):
     breaks[-1] = float('inf')
     return breaks
 
-def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL):
+def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL,pointsMidline):
 
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
@@ -282,7 +282,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordi
     if 'None' in allSelectedParameters:
         allSelectedParameters.remove('None')
 
-    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL)
+    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL,pointsMidline)
     gdfMorpParam = gdfMorpParam[allSelectedParameters]
     gdfMorpParam.to_csv(pathParameters, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 

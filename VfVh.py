@@ -142,10 +142,10 @@ class VfVhCalc(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision'),
+                self.tr('Channel coordinate precision to snap'),
                 type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
-                defaultValue=0.000001,
+                defaultValue=0.01,
                 optional=True
             )
         )
@@ -157,7 +157,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
                 self.tr('Minimum channel length'),
                 type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
-                defaultValue=0.000001,
+                defaultValue=0.01,
                 optional=True
             )
         )

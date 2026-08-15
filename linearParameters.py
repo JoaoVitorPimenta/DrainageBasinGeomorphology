@@ -103,11 +103,11 @@ class linearParametersCalc(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision'),
+                self.tr('Channel coordinate precision to snap'),
                 type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
-                defaultValue=0.000001,
-                optional=True
+                defaultValue=0.01,
+                optional=False
             )
         )
 
@@ -117,8 +117,8 @@ class linearParametersCalc(QgsProcessingAlgorithm):
                 self.tr('Minimum channel length'),
                 type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
-                defaultValue=0.000001,
-                optional=True
+                defaultValue=0.01,
+                optional=False
             )
         )
 
