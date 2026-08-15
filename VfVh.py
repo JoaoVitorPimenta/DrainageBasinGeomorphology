@@ -87,7 +87,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -96,7 +96,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
-                [QgsProcessing.TypeVectorLine]
+                [QgsProcessing.SourceType.TypeVectorLine]
             )
         )
 
@@ -104,7 +104,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 self.DEM,
                 self.tr('DEM'),
-                [QgsProcessing.TypeRaster]
+                [QgsProcessing.SourceType.TypeRaster]
             )
         )
 
@@ -112,7 +112,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.LIMIT_FOR_VALLEY_FLOOR,
                 self.tr('Limit height for valley floor'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.1,
                 optional=False
@@ -123,7 +123,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.MIN_FOR_VALLEY_HEIGHT,
                 self.tr('Minimum height for valley peak'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=1.0,
                 optional=False
@@ -143,7 +143,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
                 self.tr('Channel coordinate precision'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True
@@ -155,7 +155,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.MINIMUM_CHANNEL_LENGTH,
                 self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True

@@ -84,7 +84,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -92,7 +92,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 self.DEM,
                 self.tr('DEM'),
-                [QgsProcessing.TypeRaster]
+                [QgsProcessing.SourceType.TypeRaster]
             )
         )
 
@@ -100,7 +100,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.DISTANCE_BETWEEN_CONTOUR_LINES,
                 self.tr('Distance between contour lines'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=10
             )
@@ -118,7 +118,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.BASE_LEVEL,
                 self.tr('Base level'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=1000
             )
@@ -136,7 +136,7 @@ class EAVBelowCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.DECIMAL_PLACES,
                 self.tr('Decimal places of the result'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=0,
                 defaultValue=2,
                 optional=False

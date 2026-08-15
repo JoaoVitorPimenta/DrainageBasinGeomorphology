@@ -87,7 +87,7 @@ class cuttedCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -95,7 +95,7 @@ class cuttedCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 self.DEM,
                 self.tr('DEM'),
-                [QgsProcessing.TypeRaster]
+                [QgsProcessing.SourceType.TypeRaster]
             )
         )
 
@@ -117,7 +117,7 @@ class cuttedCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.INPUT_PARAMETER,
                 'Parameter value',
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 defaultValue='10.000000',
                 maxValue=float('inf'),
                 minValue=0
@@ -128,7 +128,7 @@ class cuttedCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.NO_DATA_VALUE,
                 'Nodata value for output band',
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 defaultValue=None,
                 optional=True
             )

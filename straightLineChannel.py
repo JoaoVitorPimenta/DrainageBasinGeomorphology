@@ -82,7 +82,7 @@ class straightChannelCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -93,7 +93,7 @@ class straightChannelCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
-                [QgsProcessing.TypeVectorLine]
+                [QgsProcessing.SourceType.TypeVectorLine]
             )
         )
 
@@ -109,7 +109,7 @@ class straightChannelCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
                 self.tr('Channel coordinate precision'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True
@@ -121,7 +121,7 @@ class straightChannelCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.MINIMUM_CHANNEL_LENGTH,
                 self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True

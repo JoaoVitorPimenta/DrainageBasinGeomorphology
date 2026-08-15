@@ -81,7 +81,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -89,7 +89,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 self.DEM,
                 self.tr('DEM'),
-                [QgsProcessing.TypeRaster]
+                [QgsProcessing.SourceType.TypeRaster]
             )
         )
 
@@ -99,7 +99,7 @@ class hypsometricCurveCalc(QgsProcessingAlgorithm):
                 self.tr('Distance between contour lines'),
                 defaultValue=10,
                 minValue=0,
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
             )
         )
 

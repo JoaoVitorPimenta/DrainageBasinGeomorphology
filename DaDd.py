@@ -86,7 +86,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -95,7 +95,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
-                [QgsProcessing.TypeVectorLine]
+                [QgsProcessing.SourceType.TypeVectorLine]
             )
         )
 
@@ -103,7 +103,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.POINTS_MIDLINE,
                 self.tr('Number of points to create midline'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=2,
                 defaultValue=50,
                 optional=True
@@ -114,7 +114,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.POINTS_TTSF,
                 self.tr('Number of points to calculate TTSF'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=1,
                 defaultValue=50,
                 optional=True
@@ -134,7 +134,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
                 self.tr('Channel coordinate precision'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True
@@ -146,7 +146,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.MINIMUM_CHANNEL_LENGTH,
                 self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True

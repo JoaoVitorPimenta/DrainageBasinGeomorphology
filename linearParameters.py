@@ -80,7 +80,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -88,7 +88,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
-                [QgsProcessing.TypeVectorLine]
+                [QgsProcessing.SourceType.TypeVectorLine]
             )
         )
 
@@ -104,7 +104,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
                 self.tr('Channel coordinate precision'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True
@@ -115,7 +115,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.MINIMUM_CHANNEL_LENGTH,
                 self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True
@@ -126,7 +126,7 @@ class linearParametersCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.DECIMAL_PLACES,
                 self.tr('Decimal places of the result'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=0,
                 defaultValue=2,
                 optional=False

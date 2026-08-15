@@ -51,7 +51,10 @@ class TestInit(unittest.TestCase):
         parser.optionxform = str
         parser.read(file_path)
         message = 'Cannot find a section named "general" in %s' % file_path
-        assert parser.has_section('general'), message
+
+        if not parser.has_section('general'):
+            raise ValueError(message)
+
         metadata.extend(parser.items('general'))
 
         for expectation in required_metadata:

@@ -96,7 +96,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -104,7 +104,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
-                [QgsProcessing.TypeVectorLine]
+                [QgsProcessing.SourceType.TypeVectorLine]
             )
         )
 
@@ -112,7 +112,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 self.DEM,
                 self.tr('DEM'),
-                [QgsProcessing.TypeRaster]
+                [QgsProcessing.SourceType.TypeRaster]
             )
         )
 
@@ -120,7 +120,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.N_SECTIONS_SL,
                 self.tr('Number of sections for SL'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=1,
                 defaultValue=10
             )
@@ -130,7 +130,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.LIMIT_FOR_VALLEY_FLOOR,
                 self.tr('Limit for valley floor'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.1,
                 optional=False
@@ -141,7 +141,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.MIN_FOR_VALLEY_HEIGHT,
                 self.tr('Minimum height for valley peak'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=1.0,
                 optional=False
@@ -152,7 +152,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.POINTS_TTSF,
                 self.tr('Number of points for TTSF'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=0,
                 defaultValue=50,
                 optional=True
@@ -230,7 +230,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.CHANNEL_COORDINATE_PRECISION,
                 self.tr('Channel coordinate precision'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True
@@ -241,7 +241,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.MINIMUM_CHANNEL_LENGTH,
                 self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.000001,
                 optional=True
@@ -252,7 +252,7 @@ class morphometricAnalysisWMCIFS(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.DECIMAL_PLACES,
                 self.tr('Decimal places of the result'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=0,
                 defaultValue=2,
                 optional=False

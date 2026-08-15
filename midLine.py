@@ -78,7 +78,7 @@ class midLineCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.DRAINAGE_BASINS,
                 self.tr('Drainage basins'),
-                [QgsProcessing.TypeVectorPolygon]
+                [QgsProcessing.SourceType.TypeVectorPolygon]
             )
         )
 
@@ -86,7 +86,7 @@ class midLineCalc(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.POINTS_MIDLINE,
                 self.tr('Number of points to create midline'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=2,
                 defaultValue=50,
                 optional=True
