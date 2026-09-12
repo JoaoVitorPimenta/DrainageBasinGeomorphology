@@ -58,7 +58,7 @@ def verifyLibs():
     except ImportError:
         raise QgsProcessingException('Shapely library not found, please install it and try again.')
 
-def assimetryIndex(gdfShape, gdfStreamsInside, useLongestRiver, precisionSnapCoordinates):
+def assimetryIndex(gdfShape, gdfStreamsInside, useLongestRiver):
     maxOrder = gdfStreamsInside['order'].max()
     filterMaxOrder = gdfStreamsInside[gdfStreamsInside['order'] == maxOrder]
 
@@ -82,8 +82,7 @@ def assimetryIndex(gdfShape, gdfStreamsInside, useLongestRiver, precisionSnapCoo
 
         mainRiver = longestDrainage(
             merged,
-            tuple(filterMaxOrder.iloc[-1]['last']),
-            precisionSnapCoordinates
+            tuple(filterMaxOrder.iloc[-1]['last'])
         )
         
         filterMaxOrder = gpd.GeoDataFrame(geometry=[mainRiver])
@@ -296,14 +295,14 @@ def assimetryIndex(gdfShape, gdfStreamsInside, useLongestRiver, precisionSnapCoo
     return gdfParts
 
 
-def calculateBasinDivide(drainageBasinLayer, streamLayer, feedback, precisionSnapCoordinates, minimumChannelLength, divideBasin, useLongestDrainage):
+def calculateBasinDivide(drainageBasinLayer, streamLayer, feedback, divideBasin, useLongestDrainage):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     streamsInside = getStreamsInsideLayer(
         streamLayer, drainageBasinLayer,
-        feedback, precisionSnapCoordinates
+        feedback
     )
 
     gdfStream = createGdfStream(streamsInside)
@@ -317,9 +316,9 @@ def calculateBasinDivide(drainageBasinLayer, streamLayer, feedback, precisionSna
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         gdfShape = createGdfShape(basin)
-        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape)
-        calculateStreamLength(gdfStreamsInside,minimumChannelLength)
-        gdf = assimetryIndex(gdfShape, gdfStreamsInside, useLongestDrainage, precisionSnapCoordinates)
+        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape, basin, feedback, streams=True)
+        calculateStreamLength(gdfStreamsInside)
+        gdf = assimetryIndex(gdfShape, gdfStreamsInside, useLongestDrainage)
         gdf["basin_id"] = int(basin.id())
         if feedback.isCanceled():
             return

@@ -65,7 +65,7 @@ def verifyLibs():
     except ImportError:
         raise QgsProcessingException('Shapely library not found, please install it and try again.')
 
-def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, precisionSnapCoordinates, nSectionsSL):
+def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, nSectionsSL):
     maxOrder = gdfStream['order'].max()
     filterMaxOrder = gdfStream[gdfStream['order'] == maxOrder]
 
@@ -92,8 +92,7 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, preci
         filterMaxOrder = gdfStream[gdfStream['order'] == maxOrder]
         mainRiver = longestDrainage(
             merged,
-            tuple(filterMaxOrder.iloc[-1]['last']), 
-            precisionSnapCoordinates
+            tuple(filterMaxOrder.iloc[-1]['last'])
         )
         
         filterMaxOrder = gpd.GeoDataFrame(geometry=[mainRiver])
@@ -240,12 +239,12 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, preci
 
     return gdfSections, gdfPoints, gdfDistances
 
-def calculateSLindexGeometry(drainageBasinLayer,streamLayer,dem,feedback,precisionSnapCoordinates,minimumChannelLength,useLongestRiver,SLsteps,SLcenterPoints,SLdistances,nSectionsSL):
+def calculateSLindexGeometry(drainageBasinLayer,streamLayer,dem,feedback,useLongestRiver,SLsteps,SLcenterPoints,SLdistances,nSectionsSL):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
-    streamsInside = getStreamsInsideLayer(streamLayer, drainageBasinLayer, feedback, precisionSnapCoordinates)
+    streamsInside = getStreamsInsideLayer(streamLayer, drainageBasinLayer, feedback)
     gdfStream = createGdfStream(streamsInside)
     obtainFirstAndLastPoint(gdfStream)
     createOrderColumn(gdfStream)
@@ -257,10 +256,10 @@ def calculateSLindexGeometry(drainageBasinLayer,streamLayer,dem,feedback,precisi
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         gdfShape = createGdfShape(basin)
-        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape)
-        calculateStreamLength(gdfStreamsInside,minimumChannelLength)
+        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape, basin, feedback, streams=True)
+        calculateStreamLength(gdfStreamsInside)
         gdfTectonic = createGdfTectonic()
-        gdfSections, gdfPoints, gdfDistances = calculateSLindexMainChannel(gdfStreamsInside,dem,gdfTectonic,useLongestRiver, precisionSnapCoordinates, nSectionsSL)
+        gdfSections, gdfPoints, gdfDistances = calculateSLindexMainChannel(gdfStreamsInside,dem,gdfTectonic,useLongestRiver, nSectionsSL)
 
         if feedback.isCanceled():
             return

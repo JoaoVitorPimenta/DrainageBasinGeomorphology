@@ -56,6 +56,7 @@ from .VfVh import VfVhCalc
 from .tectonicParameters import tectonicParametersCalc
 from .straightLineChannel import straightChannelCalc
 from .SLindex import slIndexCalc
+from .basinShape import lengthWidthChannelCalc
 
 class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
 
@@ -99,6 +100,7 @@ class DrainageBasinGeomorphologyProvider(QgsProcessingProvider):
         self.addAlgorithm(tectonicParametersCalc())
         self.addAlgorithm(straightChannelCalc())
         self.addAlgorithm(slIndexCalc())
+        self.addAlgorithm(lengthWidthChannelCalc())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
 

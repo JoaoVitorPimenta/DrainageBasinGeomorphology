@@ -66,8 +66,6 @@ class DaDdCalc(QgsProcessingAlgorithm):
 
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
-    MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
     USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
     POINTS_MIDLINE = 'POINTS_MIDLINE'
     POINTS_TTSF = 'POINTS_TTSF'
@@ -105,7 +103,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
                 self.tr('Number of points to create midline'),
                 type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=2,
-                defaultValue=50,
+                defaultValue=10,
                 optional=False
             )
         )
@@ -113,7 +111,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.POINTS_TTSF,
-                self.tr('Number of points to calculate TTSF'),
+                self.tr('Number of points for TTSF calculation'),
                 type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=1,
                 defaultValue=50,
@@ -129,43 +127,19 @@ class DaDdCalc(QgsProcessingAlgorithm):
             )
         )
 
-        # We add the channel coordinate precision input.
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision to snap'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        # We add the minimum channel length input.
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.MINIMUM_CHANNEL_LENGTH,
-                self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
         self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.DA,
-                self.tr('Da'))
+                self.tr('Das'))
             )
 
         self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.DD,
-                self.tr('Dd'))
+                self.tr('Dds'))
             )
 
     def processAlgorithm(self, parameters, context, feedback):
@@ -179,10 +153,6 @@ class DaDdCalc(QgsProcessingAlgorithm):
         basinSource = self.parameterAsSource(parameters, self.DRAINAGE_BASINS, context)
 
         channelNetworkSource = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
-
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
-
-        minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
 
         useLongestRiver = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
 
@@ -284,7 +254,7 @@ class DaDdCalc(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calculateDaDd(basinSource, channelNetworkSource, feedback, precisionSnapCoordinates, minimumChannelLength, pointsTTSF, da, dd, useLongestRiver, pointsMidline)
+        calculateDaDd(basinSource, channelNetworkSource, feedback, pointsTTSF, da, dd, useLongestRiver, pointsMidline)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -345,10 +315,8 @@ class DaDdCalc(QgsProcessingAlgorithm):
         <strong>Number of points for midline: </strong>Its the number of points to create the midline of the basin.
         <strong>Number of points for TTSF: </strong>Its the number of points in the midline to calculate the TTSF.
         <strong>Use lch as longest drainage and not the main channel: </strong>The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations (see README).
-        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
-        <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
-        <strong>Da: </strong>Layer containing the distances from midline to channels for each drainage basin.
-        <strong>Dd: </strong>Layer containing the distances from midline to drainage divide for each drainage basin.
+        <strong>Das: </strong>Layer containing the distances from midline to channels for each drainage basin.
+        <strong>Dds: </strong>Layer containing the distances from midline to drainage divide for each drainage basin.
 
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
                        

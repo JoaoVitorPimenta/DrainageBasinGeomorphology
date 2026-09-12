@@ -63,10 +63,9 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     DEM = 'DEM'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
     DECIMAL_PLACES = 'DECIMAL_PLACES'
-    MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
     USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
+    POINTS_BS = 'POINTS_BS'
 
     def initAlgorithm(self, config):
         '''
@@ -93,32 +92,21 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
+            QgsProcessingParameterNumber(
+                self.POINTS_BS,
+                self.tr('Number of points to calculate basin width'),
+                type=QgsProcessingParameterNumber.Type.Integer,
+                minValue=1,
+                defaultValue=10,
+                optional=False
+            )
+        )
+
+        self.addParameter(
             QgsProcessingParameterBoolean(
                 self.USE_LONGEST_DRAINAGE,
                 self.tr('Use lch as longest drainage and not the main channel'),
                 defaultValue=False
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision to snap'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.MINIMUM_CHANNEL_LENGTH,
-                self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
             )
         )
 
@@ -158,16 +146,14 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
 
         useLongestRiver = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
 
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
-
-        minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
-
         decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
 
         path = self.parameterAsFileOutput(parameters, self.SHAPE_PARAMETERS, context)
 
+        nPointsBs = self.parameterAsInt(parameters, self.POINTS_BS, context)
+
         verifyLibs()
-        calculateShapeParameters(basinSource,channelNetwork,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength,useLongestRiver)
+        calculateShapeParameters(basinSource,channelNetwork,path,feedback,decimalPlaces,useLongestRiver,nPointsBs)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some
@@ -225,8 +211,7 @@ class shapeParametersCalc(QgsProcessingAlgorithm):
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
         <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
-        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding
-        <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
+        <strong>Number of points to calculate basin width: <strong>Number of points along the basin length line to draw orthogonal lines (the longest line will be basin width).
         <strong>Shape parameters: </strong>File with all shape parameters calculated individually for each basin.
         
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).

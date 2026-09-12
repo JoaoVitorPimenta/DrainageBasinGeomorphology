@@ -34,58 +34,7 @@ from qgis.core import QgsProcessingException, QgsFeature
 import geopandas as gpd
 import numpy as np
 from .parametersProcessing import (
-    getStreamsInsideLayer,
-    createGdfStream,
-    obtainFirstAndLastPoint,
-    createOrderColumn,
-    fillOrder,
-    mergeStreams,
-    createGdfShape,
-    selectStreamsInsideBasin,
-    calculateStreamLength,
-    createGdfLinear,
-    calculateStreamNumber,
-    calculateTotalStreamLength,
-    calculateMeanStreamLength,
-    calculateStreamLengthRatio,
-    calculateStreamLengthRatioMean,
-    calculateBifurcationRatio,
-    calculateBifurcationRatioMean,
-    calculateRhoCoefficient,
-    calculateSinuosityIndex,
-    calculateAreaPerimeter,
-    calculateFitnessRatio,
-    calculateBasinLength,
-    calculateWanderingRatio,
-    calculateDrainageDensity,
-    calculateStreamFrequency,
-    calculateDrainageTexture,
-    calculateLengthOverlandFlow,
-    calculateConstantChannel,
-    calculateDrainageIntensity,
-    calculateInfiltrationNumber,
-    calculateCirculatoryRatio,
-    calculateElongationRatio,
-    calculateFormFactor,
-    calculateLemniscateRatio,
-    calculateShapeIndex,
-    calculateCompactnessCoefficient,
-    createGdfRelief,
-    calculateMinMaxMeanElevation,
-    calculateRelief,
-    calculateReliefRatio,
-    calculateRelativeRelief,
-    calculateRuggednessNumber,
-    calculateDissectionIndex,
-    calculateGradientRatio,
-    createGdfTectonic,
-    calculateVoronoiSkeleton,
-    longestPath,
-    TransverseTopographicSymmetryFactor,
-    assimetryIndex,
-    calculateSLindexMainChannel,
-    valleyFloorWidthHeight,
-    createGdfConcatenated,
+    createGdfParameters,
     loadDEM
 )
 
@@ -98,90 +47,6 @@ def verifyLibs():
         import numpy
     except ImportError:
         raise QgsProcessingException('Numpy library not found, please install it and try again.')
-def calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL,pointsMidline):
-    feedback.setProgress(0)
-    total = drainageBasinLayer.featureCount()
-    step = 100.0 / total if total else 0
-
-    gdfConcatenateds = []
-    
-    streamsInside = getStreamsInsideLayer(streamLayer, drainageBasinLayer, feedback, precisionSnapCoordinates)
-    gdfStream = createGdfStream(streamsInside)
-    obtainFirstAndLastPoint(gdfStream)
-    createOrderColumn(gdfStream)
-    fillOrder(gdfStream)
-    mergeStreams(gdfStream)
-
-    for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
-        gdfShape = createGdfShape(basin)
-        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape)
-        if feedback.isCanceled():
-            return
-        calculateStreamLength(gdfStreamsInside,minimumChannelLength)
-        gdfLinear = createGdfLinear(gdfStreamsInside)
-        calculateStreamNumber(gdfStreamsInside,gdfLinear)
-        calculateTotalStreamLength(gdfStreamsInside,gdfLinear)
-        calculateMeanStreamLength(gdfStreamsInside,gdfLinear)
-        calculateStreamLengthRatio(gdfLinear)
-        calculateStreamLengthRatioMean(gdfLinear)
-        calculateBifurcationRatio(gdfLinear)
-        calculateBifurcationRatioMean(gdfLinear)
-        calculateRhoCoefficient(gdfLinear)
-        calculateSinuosityIndex(gdfStreamsInside,gdfLinear,useLongestRiver,precisionSnapCoordinates)
-        if feedback.isCanceled():
-            return
-        calculateAreaPerimeter(gdfShape)
-        calculateFitnessRatio(gdfShape,gdfLinear,gdfStreamsInside,useLongestRiver,precisionSnapCoordinates)
-        calculateBasinLength(gdfStreamsInside,gdfShape,basin,feedback,useLongestRiver,precisionSnapCoordinates)
-        calculateWanderingRatio(gdfShape,gdfLinear,gdfStreamsInside,useLongestRiver,precisionSnapCoordinates)
-        calculateDrainageDensity(gdfShape,gdfLinear)
-        calculateStreamFrequency(gdfShape,gdfLinear)
-        calculateDrainageTexture(gdfShape,gdfLinear)
-        calculateLengthOverlandFlow(gdfLinear)
-        calculateConstantChannel(gdfLinear)
-        calculateDrainageIntensity(gdfLinear)
-        calculateInfiltrationNumber(gdfLinear)
-        calculateCirculatoryRatio(gdfShape)
-        calculateElongationRatio(gdfShape)
-        calculateFormFactor(gdfShape)
-        calculateLemniscateRatio(gdfShape)
-        calculateShapeIndex(gdfShape)
-        calculateCompactnessCoefficient(gdfShape)
-        if feedback.isCanceled():
-            return
-        gdfRelief = createGdfRelief()
-        calculateMinMaxMeanElevation(demArray,noData,gt,proj,rows,cols,basin,gdfRelief,feedback)
-        calculateRelief(gdfRelief)
-        calculateReliefRatio(gdfRelief,gdfShape)
-        calculateRelativeRelief(gdfRelief,gdfShape)
-        calculateRuggednessNumber(gdfRelief,gdfLinear)
-        calculateDissectionIndex(gdfRelief)
-        calculateGradientRatio(gdfStreamsInside,gdfLinear,demLayer,gdfRelief,useLongestRiver,precisionSnapCoordinates)
-        if feedback.isCanceled():
-            return
-        gdfTectonic = createGdfTectonic()
-        skelet = calculateVoronoiSkeleton(gdfShape, pointsMidline, min_length=0.0)
-        midline = longestPath(skelet)
-        TransverseTopographicSymmetryFactor(midline, gdfStreamsInside, gdfShape, gdfTectonic, nPoints, basin, feedback, useLongestRiver,precisionSnapCoordinates)
-        assimetryIndex(gdfShape, gdfStreamsInside, gdfTectonic, useLongestRiver,precisionSnapCoordinates)
-        calculateSLindexMainChannel(gdfStreamsInside,demLayer,gdfTectonic,useLongestRiver, precisionSnapCoordinates, nSectionsSL)
-        valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, demLayer, gdfTectonic, limitForValleyFloor, minForValleyHeight, feedback, useLongestRiver,precisionSnapCoordinates)
-        gdfConcatenated = createGdfConcatenated(gdfLinear,gdfShape,gdfRelief,basin,gdfTectonic)
-        gdfConcatenateds.append(gdfConcatenated)
-
-        barProgress = int((idx + 1) * step)
-        feedback.setProgress(barProgress)
-        feedback.setProgressText('Basin id '+str(basin.id())+' processing completed')
-
-    if feedback.isCanceled():
-        return
-
-    gdfMostColumns = max(gdfConcatenateds, key=lambda df: len(df.columns))
-    gdfFinal = gpd.pd.concat(gdfConcatenateds, ignore_index=False, axis=0, sort=False)
-    gdfFinal = gdfFinal.reindex(columns=gdfMostColumns.columns)
-
-    return gdfFinal
 
 def varimaxRotator(loadings, normalize=True, max_iter=1000, tol=1e-5):
     X = loadings.copy()
@@ -262,7 +127,7 @@ def jenksBreaks(data, n_classes):
     breaks[-1] = float('inf')
     return breaks
 
-def calcWMCIFA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,minimumChannelLength,pathParametersStandard,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL,pointsMidline):
+def calcWMCIFA(drainageBasinLayer,streamLayer,demLayer,feedback,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,pathParametersStandard,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL,pointsMidline,mountainFronts,nPointsValley,limitDescend,nPointsBs):
 
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
@@ -281,7 +146,7 @@ def calcWMCIFA(drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoo
     if 'None' in allSelectedParameters:
         allSelectedParameters.remove('None')
 
-    gdfMorpParam = calculateMorphometrics(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,precisionSnapCoordinates,minimumChannelLength,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL,pointsMidline)
+    gdfMorpParam = createGdfParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL,pointsMidline,mountainFronts,nPointsValley,limitDescend,nPointsBs)
     gdfMorpParam = gdfMorpParam[allSelectedParameters]
     gdfMorpParam.to_csv(pathParameters, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 

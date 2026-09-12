@@ -62,7 +62,7 @@ def verifyLibs():
     except ImportError:
         raise QgsProcessingException('Numpy library not found, please install it and try again.')
 
-def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, limitForValleyFloor, minForValleyHeight, useLongestRiver, precisionSnapCoordinates):
+def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, limitForValleyFloor, minForValleyHeight, useLongestRiver, limitDescendValley):
 
     maxOrder = gdfStreamsInside["order"].max()
     filterMaxOrder = gdfStreamsInside[gdfStreamsInside["order"] == maxOrder]
@@ -88,8 +88,7 @@ def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, limitForVal
         filterMaxOrder = gdfStreamsInside[gdfStreamsInside['order'] == maxOrder]
         mainRiver = longestDrainage(
             merged,
-            tuple(filterMaxOrder.iloc[-1]['last']),
-            precisionSnapCoordinates
+            tuple(filterMaxOrder.iloc[-1]['last'])
         )
         
         filterMaxOrder = gpd.GeoDataFrame(geometry=[mainRiver])
@@ -291,7 +290,7 @@ def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, limitForVal
 
             diff = profile[leftIndex - 1]["elevation"] - profile[leftIndex]["elevation"]
 
-            if diff >= -0.1:
+            if diff >= -(limitDescendValley):
                 leftIndex -= 1
             else:
                 break
@@ -302,7 +301,7 @@ def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, limitForVal
 
             diff = profile[rightIndex + 1]["elevation"] - profile[rightIndex]["elevation"]
 
-            if diff >= -0.1:
+            if diff >= -(limitDescendValley):
                 rightIndex += 1
             else:
                 break
@@ -443,14 +442,14 @@ def loadDEM(demLayer):
     ds = None
     return demArray, noData, gt, proj, rows, cols
 
-def calculateVfVh(drainageBasinLayer, streamLayer, feedback, precisionSnapCoordinates, minimumChannelLength, sinkLimits, sink1m, demLayer, nPoints, limitForValleyFloor, minForValleyHeight, useLongestDrainage):
+def calculateVfVh(drainageBasinLayer, streamLayer, feedback, sinkLimits, sink1m, demLayer, nPoints, limitForValleyFloor, minForValleyHeight, useLongestDrainage, limitDescendValley):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     streamsInside = getStreamsInsideLayer(
         streamLayer, drainageBasinLayer,
-        feedback, precisionSnapCoordinates
+        feedback
     )
 
     gdfStream = createGdfStream(streamsInside)
@@ -465,10 +464,10 @@ def calculateVfVh(drainageBasinLayer, streamLayer, feedback, precisionSnapCoordi
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         gdfShape = createGdfShape(basin)
-        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape)
-        calculateStreamLength(gdfStreamsInside,minimumChannelLength)
+        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape, basin, feedback, streams=True)
+        calculateStreamLength(gdfStreamsInside)
 
-        gdfLimits, gdf1m = valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, demLayer, limitForValleyFloor, minForValleyHeight, useLongestDrainage, precisionSnapCoordinates)
+        gdfLimits, gdf1m = valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, demLayer, limitForValleyFloor, minForValleyHeight, useLongestDrainage, limitDescendValley)
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)

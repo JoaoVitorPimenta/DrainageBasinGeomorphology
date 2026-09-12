@@ -73,6 +73,10 @@ class tectonicParametersCalc(QgsProcessingAlgorithm):
     POINTS_TTSF = 'POINTS_TTSF'
     POINTS_MIDLINE = 'POINTS_MIDLINE'
     N_SECTIONS_SL = 'N_SECTIONS_SL'
+    MOUNTAIN_FRONTS = 'MOUNTAIN_FRONTS'
+    N_POINTS_VALLEY = 'N_POINTS_VALLEY'
+    LIMIT_DESCEND = 'LIMIT_DESCEND'
+    POINTS_BS = 'POINTS_BS'
 
     def initAlgorithm(self, config):
         '''
@@ -107,6 +111,15 @@ class tectonicParametersCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
+            QgsProcessingParameterFeatureSource(
+                self.MOUNTAIN_FRONTS,
+                self.tr('Mountain fronts'),
+                [QgsProcessing.SourceType.TypeVectorLine],
+                optional=True
+            )
+        )
+
+        self.addParameter(
             QgsProcessingParameterNumber(
                 self.N_SECTIONS_SL,
                 self.tr('Number of sections for SL index'),
@@ -118,8 +131,29 @@ class tectonicParametersCalc(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterNumber(
+                self.N_POINTS_VALLEY,
+                self.tr('Number of points for valley floor to valley height calculation'),
+                type=QgsProcessingParameterNumber.Type.Integer,
+                minValue=1,
+                defaultValue=10
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
                 self.LIMIT_FOR_VALLEY_FLOOR,
                 self.tr('Limit for valley floor'),
+                type=QgsProcessingParameterNumber.Type.Double,
+                minValue=0,
+                defaultValue=0.1,
+                optional=False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.LIMIT_DESCEND,
+                self.tr('Limit descend to consider valley'),
                 type=QgsProcessingParameterNumber.Type.Double,
                 minValue=0,
                 defaultValue=0.1,
@@ -152,11 +186,22 @@ class tectonicParametersCalc(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.POINTS_TTSF,
-                self.tr('Number of points to calculate TTSF'),
+                self.tr('Number of points for TTSF calculation'),
                 type=QgsProcessingParameterNumber.Type.Integer,
                 minValue=0,
-                defaultValue=50,
+                defaultValue=10,
                 optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.POINTS_BS,
+                self.tr('Number of points to calculate basin width'),
+                type=QgsProcessingParameterNumber.Type.Integer,
+                minValue=1,
+                defaultValue=10,
+                optional=False
             )
         )
 
@@ -165,28 +210,6 @@ class tectonicParametersCalc(QgsProcessingAlgorithm):
                 self.USE_LONGEST_DRAINAGE,
                 self.tr('Use lch as longest drainage and not the main channel'),
                 defaultValue=False
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision to snap'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.MINIMUM_CHANNEL_LENGTH,
-                self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
             )
         )
 
@@ -226,12 +249,6 @@ class tectonicParametersCalc(QgsProcessingAlgorithm):
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
 
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
-
-        minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
-
-        decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
-
         path = self.parameterAsFileOutput(parameters, self.TECTONIC_PARAMETERS, context)
 
         pointsTTSF = self.parameterAsInt(parameters, self.POINTS_TTSF, context)
@@ -246,8 +263,18 @@ class tectonicParametersCalc(QgsProcessingAlgorithm):
 
         nSectionsSL = self.parameterAsInt(parameters, self.N_SECTIONS_SL, context)
 
+        mountainFronts = self.parameterAsSource(parameters, self.MOUNTAIN_FRONTS, context)
+
+        nPointsValley = self.parameterAsInt(parameters, self.N_POINTS_VALLEY, context)
+
+        decimalPlaces = self.parameterAsInt(parameters, self.DECIMAL_PLACES, context)
+
+        limitDescendValley = self.parameterAsDouble(parameters, self.LIMIT_DESCEND, context)
+
+        pointsBs = self.parameterAsInt(parameters, self.POINTS_BS, context)
+
         verifyLibs()
-        calculateTectonicParameters(basinSource,channelNetwork,demLayer,path,feedback,precisionSnapCoordinates,decimalPlaces,minimumChannelLength,pointsTTSF,limitForValleyFloor,minForValleyHeight,useLongestDrainage,pointsMidline,nSectionsSL)
+        calculateTectonicParameters(basinSource,channelNetwork,demLayer,path,feedback,decimalPlaces,pointsTTSF,limitForValleyFloor,minForValleyHeight,useLongestDrainage,pointsMidline,nSectionsSL,mountainFronts,nPointsValley,limitDescendValley,pointsBs)
 
         # Return the results of the algorithm. In this case our only result is
         # the feature sink which contains the processed features, but some

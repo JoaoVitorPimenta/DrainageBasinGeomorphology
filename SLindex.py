@@ -66,8 +66,6 @@ class slIndexCalc(QgsProcessingAlgorithm):
 
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
-    MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
     SL_INDEX_POINTS = 'SL_INDEX_POINTS'
     SL_INDEX_STEPS = 'SL_INDEX_STEPS'
     SL_INDEX_DISTANCES = 'SL_INDEX_DISTANCES'
@@ -129,29 +127,6 @@ class slIndexCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterNumber(
-                self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision to snap'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        # We add the minimum channel length input.
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.MINIMUM_CHANNEL_LENGTH,
-                self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.SL_INDEX_POINTS,
                 self.tr('SL index center points'))
@@ -182,10 +157,6 @@ class slIndexCalc(QgsProcessingAlgorithm):
         channelNetworkSource = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
         demLayer = self.parameterAsRasterLayer(parameters, self.DEM, context)
-
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
-
-        minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
 
         useLongestDrainage = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
 
@@ -477,7 +448,7 @@ class slIndexCalc(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calculateSLindexGeometry(basinSource, channelNetworkSource, demLayer, feedback, precisionSnapCoordinates, minimumChannelLength, useLongestDrainage, slIndexSteps, slIndexPoints, slIndexDistances, nSectionsSL)
+        calculateSLindexGeometry(basinSource, channelNetworkSource, demLayer, feedback, useLongestDrainage, slIndexSteps, slIndexPoints, slIndexDistances, nSectionsSL)
 
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.

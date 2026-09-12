@@ -152,7 +152,7 @@ class midLineCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate basin midlines'
+        return 'Calculate basin midline'
 
     def displayName(self):
         '''

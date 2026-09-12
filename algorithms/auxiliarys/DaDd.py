@@ -63,7 +63,7 @@ def verifyLibs():
     except ImportError:
         raise QgsProcessingException('Numpy library not found, please install it and try again.')
 
-def TransverseTopographicSymmetryFactor(midline, gdfStreamsInside, gdfShape, nPoints, basin, feedback, useLongestRiver, precisionSnapCoordinates=0.001):
+def TransverseTopographicSymmetryFactor(midline, gdfStreamsInside, gdfShape, nPoints, basin, feedback, useLongestRiver):
     maxOrder = gdfStreamsInside['order'].max()
     filterMaxOrder = gdfStreamsInside[gdfStreamsInside['order'] == maxOrder]
 
@@ -88,8 +88,7 @@ def TransverseTopographicSymmetryFactor(midline, gdfStreamsInside, gdfShape, nPo
         filterMaxOrder = gdfStreamsInside[gdfStreamsInside['order'] == maxOrder]
         mainRiver = longestDrainage(
             merged,
-            tuple(filterMaxOrder.iloc[-1]['last']),
-            precisionSnapCoordinates
+            tuple(filterMaxOrder.iloc[-1]['last'])
         )
         
         filterMaxOrder = gpd.GeoDataFrame(geometry=[mainRiver])
@@ -386,7 +385,6 @@ def TransverseTopographicSymmetryFactor(midline, gdfStreamsInside, gdfShape, nPo
 
 
     if noRiverPoints > 0:
-
         feedback.pushWarning(
             f"{noRiverPoints} point(s) did not intersect the main river in basin ID {basin.id()} "
             f"during the TTSF calculation."
@@ -411,14 +409,14 @@ def TransverseTopographicSymmetryFactor(midline, gdfStreamsInside, gdfShape, nPo
     return gdfDa, gdfDd
 
 
-def calculateDaDd(drainageBasinLayer, streamLayer, feedback, precisionSnapCoordinates, minimumChannelLength, nPoints, da, dd, useLongestRiver, nPointsMidline):
+def calculateDaDd(drainageBasinLayer, streamLayer, feedback, nPoints, da, dd, useLongestRiver, nPointsMidline):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
     streamsInside = getStreamsInsideLayer(
         streamLayer, drainageBasinLayer,
-        feedback, precisionSnapCoordinates
+        feedback
     )
 
     gdfStream = createGdfStream(streamsInside)
@@ -433,8 +431,8 @@ def calculateDaDd(drainageBasinLayer, streamLayer, feedback, precisionSnapCoordi
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         gdfShape = createGdfShape(basin)
-        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape)
-        calculateStreamLength(gdfStreamsInside,minimumChannelLength)
+        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape, basin, feedback, streams=True)
+        calculateStreamLength(gdfStreamsInside)
 
         skeleton = calculateVoronoiSkeleton(gdfShape, nPointsMidline)
         if skeleton is None:
@@ -451,13 +449,12 @@ def calculateDaDd(drainageBasinLayer, streamLayer, feedback, precisionSnapCoordi
             nPoints,
             basin,
             feedback,
-            useLongestRiver,
-            precisionSnapCoordinates
+            useLongestRiver
         )
         if result is not None:
             gdfDa, gdfDd = result
-        gdfDa["basin_id"] = int(basin.id())
-        gdfDd["basin_id"] = int(basin.id())
+            gdfDa["basin_id"] = int(basin.id())
+            gdfDd["basin_id"] = int(basin.id())
         if feedback.isCanceled():
             return
         barProgress = int((idx + 1) * step)

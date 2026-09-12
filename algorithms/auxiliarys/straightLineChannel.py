@@ -56,7 +56,7 @@ def verifyLibs():
     except ImportError:
         raise QgsProcessingException('Shapely library not found, please install it and try again.')
 
-def calculateSinuosityIndex(gdfStream,useLongestRiver, precisionSnapCoordinates, gdfShape):
+def calculateSinuosityIndex(gdfStream,useLongestRiver):
     maxOrder = gdfStream['order'].max()
     filterMaxOrder = gdfStream[gdfStream['order'] == maxOrder]
 
@@ -82,8 +82,7 @@ def calculateSinuosityIndex(gdfStream,useLongestRiver, precisionSnapCoordinates,
 
         mainRiver = longestDrainage(
             merged,
-            tuple(filterMaxOrder.iloc[-1]['last']),
-            precisionSnapCoordinates
+            tuple(filterMaxOrder.iloc[-1]['last'])
         )
 
         filterMaxOrder = gpd.GeoDataFrame(geometry=[mainRiver])
@@ -110,12 +109,12 @@ def calculateSinuosityIndex(gdfStream,useLongestRiver, precisionSnapCoordinates,
     sinuosity = lengthStream / lengthStraightLine
     return straightLine, lengthStraightLine, lengthStream, sinuosity
 
-def calculateSinuosityGeometry(drainageBasinLayer,streamLayer,feedback,precisionSnapCoordinates,minimumChannelLength,useLongestRiver,straightLinesSink):
+def calculateSinuosityGeometry(drainageBasinLayer,streamLayer,feedback,useLongestRiver,straightLinesSink):
     feedback.setProgress(0)
     total = drainageBasinLayer.featureCount()
     step = 100.0 / total if total else 0
 
-    streamsInside = getStreamsInsideLayer(streamLayer, drainageBasinLayer, feedback, precisionSnapCoordinates)
+    streamsInside = getStreamsInsideLayer(streamLayer, drainageBasinLayer, feedback)
     gdfStream = createGdfStream(streamsInside)
     obtainFirstAndLastPoint(gdfStream)
     createOrderColumn(gdfStream)
@@ -125,9 +124,9 @@ def calculateSinuosityGeometry(drainageBasinLayer,streamLayer,feedback,precision
     for idx, basin in enumerate(drainageBasinLayer.getFeatures()):
         feedback.setProgressText('Basin id '+str(basin.id())+' processing starting...')
         gdfShape = createGdfShape(basin)
-        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape)
-        calculateStreamLength(gdfStreamsInside,minimumChannelLength)
-        straightLine, lengthStraightLine, lengthStream, sinuosity = calculateSinuosityIndex(gdfStreamsInside,useLongestRiver, precisionSnapCoordinates, gdfShape)
+        gdfStreamsInside = selectStreamsInsideBasin(gdfStream, gdfShape, basin, feedback, streams=True)
+        calculateStreamLength(gdfStreamsInside)
+        straightLine, lengthStraightLine, lengthStream, sinuosity = calculateSinuosityIndex(gdfStreamsInside,useLongestRiver)
         if feedback.isCanceled():
             return
         barProgress = int((idx + 1) * step)
@@ -140,7 +139,6 @@ def calculateSinuosityGeometry(drainageBasinLayer,streamLayer,feedback,precision
             "length_stream": lengthStream,
             "sinuosity": sinuosity
         })
-    print(type(straightLines))
     if feedback.isCanceled():
         return
     gdfStraightLines = gpd.GeoDataFrame(
@@ -168,6 +166,3 @@ def calculateSinuosityGeometry(drainageBasinLayer,streamLayer,feedback,precision
 
         straightLinesSink.addFeature(feature)
     return
-
-    return
-

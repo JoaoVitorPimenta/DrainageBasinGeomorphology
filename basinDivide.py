@@ -64,8 +64,6 @@ class divideBasinCalc(QgsProcessingAlgorithm):
 
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
-    MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
     BASINS_DIVIDED = 'BASINS_DIVIDED'
     USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
 
@@ -105,29 +103,6 @@ class divideBasinCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterNumber(
-                self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision to snap'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        # We add the minimum channel length input.
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.MINIMUM_CHANNEL_LENGTH,
-                self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.BASINS_DIVIDED,
                 self.tr('Divided basins'))
@@ -144,10 +119,6 @@ class divideBasinCalc(QgsProcessingAlgorithm):
         basinSource = self.parameterAsSource(parameters, self.DRAINAGE_BASINS, context)
 
         channelNetworkSource = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
-
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
-
-        minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
 
         useLongestDrainage = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
 
@@ -191,7 +162,7 @@ class divideBasinCalc(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calculateBasinDivide(basinSource, channelNetworkSource, feedback, precisionSnapCoordinates, minimumChannelLength, dividedBasin, useLongestDrainage)
+        calculateBasinDivide(basinSource, channelNetworkSource, feedback, dividedBasin, useLongestDrainage)
 
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
@@ -246,8 +217,6 @@ class divideBasinCalc(QgsProcessingAlgorithm):
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
         <strong>Use lch as longest drainage and not the main channel: </strong>The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations (see README).
-        <strong>Channel coordinate precision: </strong>It is the precision of the channel coordinates, for example: for a precision of 0.000001 the coordinate xxxxxx.xxxxxxxxxxxx becomes xxxxxx.xxxxxx. It is recommended to use 0.000001 to correct possible geometry errors when selecting channels that intersect the basin. If it is 0, there will be no rounding.
-        <strong>Minimum channel length: </strong>It is used to correct intersection errors, as well as channel network precision.
         <strong>Divided basins: </strong>Layer containing the divided drainage basins (left and right parts).
 
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).

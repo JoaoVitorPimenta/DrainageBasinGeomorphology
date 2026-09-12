@@ -36,17 +36,16 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFeatureSource,
-                        QgsProcessingParameterNumber,
-                        QgsProcessingParameterRasterLayer,
                         QgsProcessingParameterFeatureSink,
+                        QgsProcessingParameterNumber,
                         QgsFields,
                         QgsField,
-                        QgsWkbTypes,
-                        QgsProcessingParameterBoolean
+                        QgsProcessingParameterBoolean,
+                        QgsWkbTypes
                         )
-from .algorithms.auxiliarys.VfVh import calculateVfVh,verifyLibs
+from .algorithms.auxiliarys.basinShape import createGeometryBasinLengthBasinWidth,verifyLibs
 
-class VfVhCalc(QgsProcessingAlgorithm):
+class lengthWidthChannelCalc(QgsProcessingAlgorithm):
     '''
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -66,14 +65,9 @@ class VfVhCalc(QgsProcessingAlgorithm):
 
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    DEM = 'DEM'
-    LIMIT_FOR_VALLEY_FLOOR = 'LIMIT_FOR_VALLEY_FLOOR'
-    MIN_FOR_VALLEY_HEIGHT = 'MIN_FOR_VALLEY_HEIGHT'
-    VALLEY_HEIGHT = 'VALLEY_HEIGHT'
-    VALLEY_FLOOR_WIDTH = 'VALLEY_FLOOR_WIDTH'
+    BASIN_LENGTH = 'BASIN_LENGTH'
+    BASIN_WIDTH = 'BASIN_WIDTH'
     USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
-    LIMIT_DESCEND = 'LIMIT_DESCEND'
-    N_POINTS_VALLEY = 'N_POINTS_VALLEY'
 
     def initAlgorithm(self, config):
         '''
@@ -91,63 +85,14 @@ class VfVhCalc(QgsProcessingAlgorithm):
             )
         )
 
-        # We add the channel network input.
+        # We add a feature sink in which to store our processed features (this
+        # usually takes the form of a newly created vector layer when the
+        # algorithm is run in QGIS).
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.CHANNEL_NETWORK,
                 self.tr('Channel network'),
                 [QgsProcessing.SourceType.TypeVectorLine]
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                self.DEM,
-                self.tr('DEM'),
-                [QgsProcessing.SourceType.TypeRaster]
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.N_POINTS_VALLEY,
-                self.tr('Number of points for valley floor to valley height calculation'),
-                type=QgsProcessingParameterNumber.Type.Integer,
-                minValue=1,
-                defaultValue=10
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.LIMIT_FOR_VALLEY_FLOOR,
-                self.tr('Limit height for valley floor'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.1,
-                optional=False
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.LIMIT_DESCEND,
-                self.tr('Limit descend to consider valley'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.1,
-                optional=False
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.MIN_FOR_VALLEY_HEIGHT,
-                self.tr('Minimum height for valley peak'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=1.0,
-                optional=False
             )
         )
 
@@ -159,22 +104,17 @@ class VfVhCalc(QgsProcessingAlgorithm):
             )
         )
 
-        # We add a feature sink in which to store our processed features (this
-        # usually takes the form of a newly created vector layer when the
-        # algorithm is run in QGIS).
         self.addParameter(
             QgsProcessingParameterFeatureSink(
-                self.VALLEY_HEIGHT,
-                self.tr('Valley distances')
+                self.BASIN_LENGTH,
+                self.tr('Basin lenghts'))
             )
-        )
 
         self.addParameter(
             QgsProcessingParameterFeatureSink(
-                self.VALLEY_FLOOR_WIDTH,
-                self.tr('Valley floor widths')
+                self.BASIN_WIDTH,
+                self.tr('Basin widths'))
             )
-        )
 
     def processAlgorithm(self, parameters, context, feedback):
         '''
@@ -188,149 +128,93 @@ class VfVhCalc(QgsProcessingAlgorithm):
 
         channelNetworkSource = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
 
-        demSource = self.parameterAsRasterLayer(parameters, self.DEM, context)
+        useLongestDrainage = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
 
-        limitForValleyFloor = self.parameterAsDouble(parameters, self.LIMIT_FOR_VALLEY_FLOOR, context)
+        basinLengthFields = QgsFields()
 
-        minForValleyHeight = self.parameterAsDouble(parameters, self.MIN_FOR_VALLEY_HEIGHT, context)
-
-        useLongestDrainage = self.parameterAsBoolean(parameters, self.USE_LONGEST_DRAINAGE, context)
-
-        limitDescendValley = self.parameterAsDouble(parameters, self.LIMIT_DESCEND, context)
-
-        nPointsValley = self.parameterAsInt(parameters, self.N_POINTS_VALLEY, context)
-
-        fieldsLimits = QgsFields()
-
-        fieldsLimits.append(
+        basinLengthFields.append(
             QgsField(
                 "basin_id",
                 QVariant.Int
             )
         )
 
-        fieldsLimits.append(
+        basinLengthFields.append(
             QgsField(
-                "eld",
+                "bas_length",
                 QVariant.Double
             )
         )
 
-        fieldsLimits.append(
+        basinLengthFields.append(
             QgsField(
-                "erd",
+                "bas_width",
                 QVariant.Double
             )
         )
 
-        fieldsLimits.append(
+        basinLengthFields.append(
             QgsField(
-                "esc",
+                "bas_shape",
                 QVariant.Double
             )
         )
 
-        fieldsLimits.append(
-            QgsField(
-                "vfw",
-                QVariant.Double
-            )
-        )
+        basinWidthFields = QgsFields()
 
-        fieldsLimits.append(
-            QgsField(
-                "vf_ratio",
-                QVariant.Double
-            )
-        )
-
-        fieldsLimits.append(
-            QgsField(
-                "vf_rat_mean",
-                QVariant.Double
-            )
-        )
-
-        fields1m = QgsFields()
-
-        fields1m.append(
+        basinWidthFields.append(
             QgsField(
                 "basin_id",
                 QVariant.Int
             )
         )
 
-        fields1m.append(
+        basinWidthFields.append(
             QgsField(
-                "eld",
+                "bas_length",
                 QVariant.Double
             )
         )
 
-        fields1m.append(
+        basinWidthFields.append(
             QgsField(
-                "erd",
+                "bas_width",
                 QVariant.Double
             )
         )
 
-        fields1m.append(
+        basinWidthFields.append(
             QgsField(
-                "esc",
+                "bas_shape",
                 QVariant.Double
             )
         )
 
-        fields1m.append(
-            QgsField(
-                "vfw",
-                QVariant.Double
-            )
-        )
-
-        fields1m.append(
-            QgsField(
-                "vf_ratio",
-                QVariant.Double
-            )
-        )
-
-        fields1m.append(
-            QgsField(
-                "vf_rat_mean",
-                QVariant.Double
-            )
-        )
-
-        valleyHeight, pathVh = self.parameterAsSink(
+        basinLength, pathLength = self.parameterAsSink(
             parameters,
-            self.VALLEY_HEIGHT,
+            self.BASIN_LENGTH,
             context,
-            fieldsLimits,
+            basinLengthFields,
             QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 
-        valleyFloorWidth, pathVf = self.parameterAsSink(
+        basinWidth, pathWidth = self.parameterAsSink(
             parameters,
-            self.VALLEY_FLOOR_WIDTH,
+            self.BASIN_WIDTH,
             context,
-            fields1m,
+            basinWidthFields,
             QgsWkbTypes.Type.LineString,
             basinSource.sourceCrs()
         )
 
         verifyLibs()
-        calculateVfVh(basinSource, channelNetworkSource, feedback, valleyHeight, valleyFloorWidth, demSource, nPointsValley, limitForValleyFloor, minForValleyHeight, useLongestDrainage, limitDescendValley)
+        createGeometryBasinLengthBasinWidth(basinSource, channelNetworkSource, feedback, useLongestDrainage, basinLength, basinWidth)
 
-        # Return the results of the algorithm. In this case our only result is
-        # the feature sink which contains the processed features, but some
-        # algorithms may return multiple feature sinks, calculated numeric
-        # statistics, etc. These should all be included in the returned
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
-        return {self.VALLEY_HEIGHT: pathVh, 
-                self.VALLEY_FLOOR_WIDTH: pathVf}
+        return {self.BASIN_LENGTH: pathLength, 
+                self.BASIN_WIDTH: pathWidth}
 
     def name(self):
         '''
@@ -340,7 +224,7 @@ class VfVhCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate basin Vf'
+        return 'Calculate basin length and width'
 
     def displayName(self):
         '''
@@ -374,20 +258,15 @@ class VfVhCalc(QgsProcessingAlgorithm):
         <html>
             <body>
                 <p>       
-        This tool calculates valley distance and valley floor width.              
+        This tool calculates the length and width of the drainage basin.             
                 </p>
-        It is related to the calculation of the valley floor to valley height ratio.
+        It is related to the calculation of the basin shape index.
                 <p>
         <strong>Drainage basins: </strong>Layer containing drainage basins as features.
         <strong>Channel network: </strong>Layer containing the drainage network of the drainage basins.
-        <strong>DEM: </strong>Raster containing the band with the altimetry of the drainage basins. 
-        <strong>Limit for valley floor: </strong>Its the height limit to calculate the valley floor.
-        <strong>Minimum height for valley peak: </strong>Its the minimum height difference between one point and and next point to consider a valley peak. A valley peak is defined as the first point preceding a downward slope. A minimum threshold is applied to prevent minor dips which could result from inaccuracies from being counted.
-        <strong>Number of points for midline: </strong>Its the number of points to create the midline of the basin.
-        <strong>Number of points for TTSF: </strong>Its the number of points in the midline to calculate the TTSF.
         <strong>Use lch as longest drainage and not the main channel: </strong>The plugin default is to use the lch as main channel (hightest strahler order) but in some cases lch as longest drainage can be more useful. If this box is checked, the largest channel will be used as LCH in the calculations (see README).
-        <strong>Valley distance: </strong>Layer containing the calculated valley distances.
-        <strong>Valley floor width: </strong>Layer containing the calculated valley floor widths.
+        <strong>Basins lengths: </strong>Vector containing features with the basin lenghts, and basin shape calculated.
+        <strong>Basins widths: </strong>Vector containing features with the basin widths, and basin shape calculated.
 
         The use of a projected CRS is recommended (the plugin calculation assumes that all input layers are in projected coordinate reference systems).
                        
@@ -403,4 +282,4 @@ class VfVhCalc(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return VfVhCalc()
+        return lengthWidthChannelCalc()

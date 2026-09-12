@@ -65,8 +65,6 @@ class straightChannelCalc(QgsProcessingAlgorithm):
 
     DRAINAGE_BASINS = 'DRAINAGE_BASINS'
     CHANNEL_NETWORK = 'CHANNEL_NETWORK'
-    CHANNEL_COORDINATE_PRECISION = 'CHANNEL_COORDINATE_PRECISION'
-    MINIMUM_CHANNEL_LENGTH = 'MINIMUM_CHANNEL_LENGTH'
     STRAIGHT_LINES = 'STRAIGHT_LINES'
     USE_LONGEST_DRAINAGE = 'USE_LONGEST_DRAINAGE'
 
@@ -106,29 +104,6 @@ class straightChannelCalc(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterNumber(
-                self.CHANNEL_COORDINATE_PRECISION,
-                self.tr('Channel coordinate precision to snap'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        # We add the minimum channel length input.
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.MINIMUM_CHANNEL_LENGTH,
-                self.tr('Minimum channel length'),
-                type=QgsProcessingParameterNumber.Type.Double,
-                minValue=0,
-                defaultValue=0.01,
-                optional=True
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.STRAIGHT_LINES,
                 self.tr('Straight lines'))
@@ -145,10 +120,6 @@ class straightChannelCalc(QgsProcessingAlgorithm):
         basinSource = self.parameterAsSource(parameters, self.DRAINAGE_BASINS, context)
 
         channelNetworkSource = self.parameterAsSource(parameters, self.CHANNEL_NETWORK, context)
-
-        precisionSnapCoordinates = self.parameterAsDouble(parameters, self.CHANNEL_COORDINATE_PRECISION, context)
-
-        minimumChannelLength = self.parameterAsDouble(parameters, self.MINIMUM_CHANNEL_LENGTH, context)
 
         useLongestDrainage = self.parameterAsBool(parameters, self.USE_LONGEST_DRAINAGE, context)
 
@@ -192,7 +163,7 @@ class straightChannelCalc(QgsProcessingAlgorithm):
         )
 
         verifyLibs()
-        calculateSinuosityGeometry(basinSource, channelNetworkSource, feedback, precisionSnapCoordinates, minimumChannelLength, useLongestDrainage, straightLines)
+        calculateSinuosityGeometry(basinSource, channelNetworkSource, feedback, useLongestDrainage, straightLines)
 
         # dictionary, with keys matching the feature corresponding parameter
         # or output names.
@@ -206,7 +177,7 @@ class straightChannelCalc(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         '''
-        return 'Calculate channel straight lines'
+        return 'Calculate channel straight line'
 
     def displayName(self):
         '''
