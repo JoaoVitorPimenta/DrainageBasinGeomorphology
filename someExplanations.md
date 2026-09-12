@@ -1,22 +1,15 @@
 # Some explanations
 Here I will give some explanitions of things that maybe aren't so obvious for who will use the plugin.
 
-## Channel coordinate precision and minimum channel length
-Sometimes in the processing of intersections, because the decimals of coordinates and imperfections in the generation of drainage networks/basins.  
-
-The intersection cuts and can split a line into multiple lines (resolved by snap coordinate), or micro-segments of a line belonging to one basin may be cut off and appear in the neighboring basin (resolved by minimum coordinate length).
-
-![Channel coordinate precision and minimum channel length use example](imagesSomeExplanations/minsnap.png)
-
 ## Limit valley floor and minimum height valley
-The "valley floor limit" is the height above the drainage channel below which the area is considered the "floor," while the "minimum relief for valley height" represents the minimum relief drop required to determine the Eld or Efd (the algorithm selects the last point before the terrain "descends"—a minimum slope threshold is established so that minor dips are not mistaken for summits).
+The "valley floor limit" is the height above the drainage channel below which the area is considered the "floor," while the "Limit descend to consider valley" represents the minimum relief drop required to determine the Eld or Efd (the algorithm selects the last point before the terrain "descends"—a minimum slope threshold is established so that minor dips are not mistaken for summits). Additionally, If (Eld - Ecd) or (Efd - Ecd) is less than minimum height for valley peak input, the valley is discarded.
 
 ![Channel coordinate precision and minimum channel length use example](imagesSomeExplanations/vf.png)
 
 ## Transverse topographic symmetric factor and valley floor width to valley height ratio
 
 For the TTSF, lines perpendicular to the midline are generated (spanning 10% to 90% of the midline length to minimize errors associated with the endpoints); the user defines the number of points where these perpendicular lines are created. If a perpendicular line fails to intersect the drainage line, it is discarded.  
-A similar process applies to the valley floor-to-valley height calculation: a line perpendicular to the drainage line is generated (spanning 10% to 90% of the drainage length), and the cross-section is discarded if the Eld or Erd value equals the Ecd value.
+A similar process applies to the valley floor-to-valley height calculation: a line perpendicular to the drainage line is generated (spanning 10% to 90% of the drainage length).
 
 ## Main channel or longest channel?
 
