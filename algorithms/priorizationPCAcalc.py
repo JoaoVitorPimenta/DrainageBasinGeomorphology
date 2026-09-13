@@ -35,58 +35,6 @@ import geopandas as gpd
 import numpy as np
 from .parametersProcessing import (
     createGdfParameters,
-    getStreamsInsideLayer,
-    createGdfStream,
-    obtainFirstAndLastPoint,
-    createOrderColumn,
-    fillOrder,
-    mergeStreams,
-    createGdfShape,
-    selectStreamsInsideBasin,
-    calculateStreamLength,
-    createGdfLinear,
-    calculateStreamNumber,
-    calculateTotalStreamLength,
-    calculateMeanStreamLength,
-    calculateStreamLengthRatio,
-    calculateStreamLengthRatioMean,
-    calculateBifurcationRatio,
-    calculateBifurcationRatioMean,
-    calculateRhoCoefficient,
-    calculateSinuosityIndex,
-    calculateAreaPerimeter,
-    calculateFitnessRatio,
-    calculateBasinLength,
-    calculateWanderingRatio,
-    calculateDrainageDensity,
-    calculateStreamFrequency,
-    calculateDrainageTexture,
-    calculateLengthOverlandFlow,
-    calculateConstantChannel,
-    calculateDrainageIntensity,
-    calculateInfiltrationNumber,
-    calculateCirculatoryRatio,
-    calculateElongationRatio,
-    calculateFormFactor,
-    calculateLemniscateRatio,
-    calculateShapeIndex,
-    calculateCompactnessCoefficient,
-    createGdfRelief,
-    calculateMinMaxMeanElevation,
-    calculateRelief,
-    calculateReliefRatio,
-    calculateRelativeRelief,
-    calculateRuggednessNumber,
-    calculateDissectionIndex,
-    calculateGradientRatio,
-    createGdfTectonic,
-    calculateVoronoiSkeleton,
-    longestPath,
-    TransverseTopographicSymmetryFactor,
-    assimetryIndex,
-    calculateSLindexMainChannel,
-    valleyFloorWidthHeight,
-    createGdfConcatenated,
     loadDEM
 )
 
@@ -180,7 +128,10 @@ def jenksBreaks(data, n_classes):
     return breaks
 
 def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL,pointsMidline,mountainFronts,nPointsValley,limitDescend,nPointsBs):
-
+    if drainageBasinLayer.featureCount() == 1:
+        raise QgsProcessingException(
+            'There is only one basin, making comparison impossible. '
+        )
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
     if selectedParametersDirectly and selectedParametersInversely is None:

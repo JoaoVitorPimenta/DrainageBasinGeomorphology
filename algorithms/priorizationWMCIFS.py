@@ -99,7 +99,10 @@ def jenksBreaks(data, n_classes):
     return breaks
 
 def calcWMCIFS(drainageBasinLayer,streamLayer,demLayer,feedback,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,pathCorrMatrix,pathRankCp,basinsRanked,pathParameters,pathParametersStandardized,nPoints,limitForValleyFloor,minForValleyHeight,useLongestRiver,nSectionsSL,pointsMidline,mountainFronts,nPointsValley,limitDescend,nPointsBs):
-
+    if drainageBasinLayer.featureCount() == 1:
+        raise QgsProcessingException(
+            'There is only one basin, making comparison impossible. '
+        )
     demArray, noData, gt, proj, rows, cols = loadDEM(demLayer)
 
     if selectedParametersDirectly and selectedParametersInversely is None:
