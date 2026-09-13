@@ -127,7 +127,7 @@ def jenksBreaks(data, n_classes):
     breaks[-1] = float('inf')
     return breaks
 
-def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL,pointsMidline,mountainFronts,nPointsValley,limitDescend,nPointsBs):
+def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,decimalPlaces,selectedParametersDirectly,selectedParametersInversely,useSimpleCpFormula,pathCorrMatrix,pathVarExplained,pathRotUnrot,pathRankCp,basinsRanked,pathParameters,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,pointsMidline,nSectionsSL,mountainFronts,nPointsValley,limitDescend,nPointsBs):
     if drainageBasinLayer.featureCount() == 1:
         raise QgsProcessingException(
             'There is only one basin, making comparison impossible. '
@@ -149,7 +149,7 @@ def calcPCA(drainageBasinLayer,streamLayer,demLayer,feedback,decimalPlaces,selec
     if 'None' in allSelectedParameters:
         allSelectedParameters.remove('None')
 
-    gdfMorpParam = createGdfParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,nSectionsSL,pointsMidline,mountainFronts,nPointsValley,limitDescend,nPointsBs)
+    gdfMorpParam = createGdfParameters(demArray,noData,gt,proj,rows,cols,drainageBasinLayer,streamLayer,demLayer,feedback,nPoints,limitForValleyFloor,minForValleyHeight,useLongestDrainage,pointsMidline,nSectionsSL,mountainFronts,nPointsValley,limitDescend,nPointsBs)
     gdfMorpParam = gdfMorpParam[allSelectedParameters]
     gdfMorpParam.to_csv(pathParameters, index=True, header=True, float_format='%.' + str(decimalPlaces)+ 'f')
 
