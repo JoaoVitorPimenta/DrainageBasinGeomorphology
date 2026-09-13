@@ -7,7 +7,7 @@ name=Drainage Basin Geomorphology
 qgisMinimumVersion=4.00
 qgisMaximumVersion=4.99
 description=This plugin provides tools for geomorphological analysis in drainage basins.
-version=2.1.0
+version=2.2.0
 author=João Vitor Pimenta
 email=jvpjoaopimentadev@gmail.com
 
@@ -22,6 +22,13 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        2.2.0
+        -add mountain sinuosity index calc
+        -add basin width calc
+        -add basin shape calc
+        -add new inputs
+        -corrected some bugs
+
         2.1.0
         -add TTSF calc
         -add SL index calc
