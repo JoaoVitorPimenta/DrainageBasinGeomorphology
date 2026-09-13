@@ -800,13 +800,13 @@ The classifications are based on Jenks' natural breaks (Jenks, 1967) and on five
 # Additional information
 ## Observation
 All code results are reviewed by a human (me) before being committed. However, this does not rule out the possibility that, in specific cases, things might not go as expected. Therefore, it is essential that users review the output when using the plugin. Use at your own risk!
+The user agrees to methodically check the results, and the creator promises to resolve any bugs or errors as soon as possible.
 I add specific informations about how plugin works in someExplanations.md, which are included with the plugin files. I strongly recommend reading the file.
 
 ## Context
 Hi! My name is João Vitor Pimenta, I created this software in my graduation to automatize subject works, but its scope kept expanding (I started programming as a hobby/learning project) and then I thought, "what if this is useful to other people?" and decided to publish it on the GitHub repository and the official QGIS repository. Because I don't have formal training in computer science (although I seek knowledge and know things about it), I naturally use AI to assist me. I only use it for writing code, and I analyze/test the code myself.
 
 ## Next steps
-- Add mountain front sinuosity index.
 - Organize the code/README.
 - Create a video tutorial to use the plugin.
 - Provide practical examples of using the plugin.
