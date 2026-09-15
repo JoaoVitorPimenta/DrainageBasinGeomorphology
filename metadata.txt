@@ -28,6 +28,7 @@ changelog=
         -add basin shape calc
         -add new inputs
         -corrected some bugs
+        -removed snap coordinates and minimum channel length (now the algorithm have automatic ways to detect inconsistent streams and correct/remove them)
 
         2.1.0
         -add TTSF calc
