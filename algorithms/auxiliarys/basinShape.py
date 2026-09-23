@@ -257,7 +257,7 @@ def createGeometryBasinLengthBasinWidth(drainageBasinLayer,streamLayer,feedback,
         if feedback.isCanceled():
             return
         gdfShape = createGdfShape(basin)
-        gdfLength, gdfWidth = calculateBasinLength(gdfStreamsInside, gdfShape, basin, feedback, useLongestRiver)
+        gdfWidth, gdfLength  = calculateBasinLength(gdfStreamsInside, gdfShape, basin, feedback, useLongestRiver)
         gdfsLength.append(gdfLength)
         gdfsWidth.append(gdfWidth)
         barProgress = int((idx + 1) * step)
