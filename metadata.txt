@@ -22,6 +22,9 @@ repository=https://github.com/JoaoVitorPimenta/qgis-plugin-Drainage-Basin-Geomor
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+        2.2.1
+        -corrected the changed name of basin length and width
+
         2.2.0
         -add mountain sinuosity index calc
         -add basin width calc
