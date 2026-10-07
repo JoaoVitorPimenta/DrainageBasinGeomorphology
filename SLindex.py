@@ -229,6 +229,41 @@ class slIndexCalc(QgsProcessingAlgorithm):
 
         slIndexPointsFields.append(
             QgsField(
+                "total_L",
+                QVariant.Double
+            )
+        )
+
+        slIndexPointsFields.append(
+            QgsField(
+                "ln_total_L",
+                QVariant.Double
+            )
+        )
+
+        slIndexPointsFields.append(
+            QgsField(
+                "up_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexPointsFields.append(
+            QgsField(
+                "down_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexPointsFields.append(
+            QgsField(
+                "diff_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexPointsFields.append(
+            QgsField(
                 "SLt",
                 QVariant.Double
             )
@@ -236,14 +271,7 @@ class slIndexCalc(QgsProcessingAlgorithm):
 
         slIndexPointsFields.append(
             QgsField(
-                "SLtm",
-                QVariant.Double
-            )
-        )
-
-        slIndexPointsFields.append(
-            QgsField(
-                "SLm/SLtm",
+                "SLm/SLt",
                 QVariant.Double
             )
         )
@@ -315,6 +343,41 @@ class slIndexCalc(QgsProcessingAlgorithm):
 
         slIndexStepsFields.append(
             QgsField(
+                "total_L",
+                QVariant.Double
+            )
+        )
+
+        slIndexStepsFields.append(
+            QgsField(
+                "ln_total_L",
+                QVariant.Double
+            )
+        )
+
+        slIndexStepsFields.append(
+            QgsField(
+                "up_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexStepsFields.append(
+            QgsField(
+                "down_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexStepsFields.append(
+            QgsField(
+                "diff_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexStepsFields.append(
+            QgsField(
                 "SLt",
                 QVariant.Double
             )
@@ -322,14 +385,7 @@ class slIndexCalc(QgsProcessingAlgorithm):
 
         slIndexStepsFields.append(
             QgsField(
-                "SLtm",
-                QVariant.Double
-            )
-        )
-
-        slIndexStepsFields.append(
-            QgsField(
-                "SLm/SLtm",
+                "SLm/SLt",
                 QVariant.Double
             )
         )
@@ -401,6 +457,41 @@ class slIndexCalc(QgsProcessingAlgorithm):
 
         slIndexDistancesFields.append(
             QgsField(
+                "total_L",
+                QVariant.Double
+            )
+        )
+
+        slIndexDistancesFields.append(
+            QgsField(
+                "ln_total_L",
+                QVariant.Double
+            )
+        )
+
+        slIndexDistancesFields.append(
+            QgsField(
+                "up_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexDistancesFields.append(
+            QgsField(
+                "down_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexDistancesFields.append(
+            QgsField(
+                "diff_elev_t",
+                QVariant.Double
+            )
+        )
+
+        slIndexDistancesFields.append(
+            QgsField(
                 "SLt",
                 QVariant.Double
             )
@@ -408,14 +499,7 @@ class slIndexCalc(QgsProcessingAlgorithm):
 
         slIndexDistancesFields.append(
             QgsField(
-                "SLtm",
-                QVariant.Double
-            )
-        )
-
-        slIndexDistancesFields.append(
-            QgsField(
-                "SLm/SLtm",
+                "SLm/SLt",
                 QVariant.Double
             )
         )

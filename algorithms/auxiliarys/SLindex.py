@@ -129,6 +129,48 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, nSect
         )
 
         sections.append(section)
+    firstPoint = filterMaxOrder.iloc[-1]['last']
+    lastPoint = filterMaxOrder.iloc[0]['first']
+
+    geometry = filterMaxOrder.geometry.iloc[0]
+
+    if geometry.geom_type == "LineString":
+        x1, y1 = geometry.coords[-1]
+        x2, y2 = geometry.coords[-2]
+
+    elif geometry.geom_type == "MultiLineString":
+        line = geometry.geoms[-1]
+        x1, y1 = line.coords[-1]
+        x2, y2 = line.coords[-2]
+
+    pixelWidth = abs(dem.rasterUnitsPerPixelX())
+    halfPixel = pixelWidth / 2
+
+    dx = x2 - x1
+    dy = y2 - y1
+    length = (dx ** 2 + dy ** 2) ** 0.5
+
+    if length > 0:
+        firstPoint = (
+            x1 + (dx / length) * halfPixel,
+            y1 + (dy / length) * halfPixel
+        )
+
+    identificatorDownstreamHtotal = dem.dataProvider().identify(
+        QgsPointXY(
+            firstPoint[0],
+            firstPoint[1]
+        ),
+        QgsRaster.IdentifyFormat.IdentifyFormatValue
+    )
+    identificatorUpstreamHtotal = dem.dataProvider().identify(
+        QgsPointXY(
+            lastPoint[0],
+            lastPoint[1]
+        ),
+        QgsRaster.IdentifyFormat.IdentifyFormatValue
+    )
+    deltaHTotal = identificatorUpstreamHtotal.results().get(1) - identificatorDownstreamHtotal.results().get(1)
 
     filterMaxOrder = gpd.GeoDataFrame(
         {
@@ -207,20 +249,23 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver, nSect
     filterMaxOrder['downstream_elevation'] = downstreamElevations
     filterMaxOrder['elevation_difference'] = elevationDifferences
 
+    filterMaxOrder['total_length'] = riverLength
+    filterMaxOrder['ln_total_length'] = np.log(riverLength)
+    filterMaxOrder['upstream_elevation_total'] = identificatorUpstreamHtotal.results().get(1)
+    filterMaxOrder['downstream_elevation_total'] = identificatorDownstreamHtotal.results().get(1)
+    filterMaxOrder['elevation_difference_total'] = deltaHTotal
+
     filterMaxOrder['SL'] = (
         (filterMaxOrder['elevation_difference']
         / filterMaxOrder['length'])
         * filterMaxOrder['distance']
     )
-    filterMaxOrder['SLt'] = filterMaxOrder['elevation_difference'] / np.log(filterMaxOrder['distance'])
+    filterMaxOrder['SLt'] = deltaHTotal / np.log(riverLength)
 
     filterMaxOrder['Stream-Length index mean (SLm)'] = None
     filterMaxOrder['Stream-Length index mean (SLm)'] = filterMaxOrder['SL'].mean()
 
-    filterMaxOrder['Stream-Length index total (SLt)'] = None
-    filterMaxOrder['Stream-Length index total (SLt)'] = filterMaxOrder['SLt'].mean()
-
-    filterMaxOrder['Stream-Length index (SLm/SLt)'] = filterMaxOrder['Stream-Length index mean (SLm)']/filterMaxOrder['Stream-Length index total (SLt)']
+    filterMaxOrder['Stream-Length index (SLm/SLt)'] = filterMaxOrder['Stream-Length index mean (SLm)']/filterMaxOrder['SLt']
 
     gdfSections = filterMaxOrder.copy()
 
@@ -302,8 +347,12 @@ def calculateSLindexGeometry(drainageBasinLayer,streamLayer,dem,feedback,useLong
             float(row["elevation_difference"]),
             float(row["SL"]),
             float(row["Stream-Length index mean (SLm)"]),
+            float(row["total_length"]),
+            float(row["ln_total_length"]),
+            float(row["upstream_elevation_total"]),
+            float(row["downstream_elevation_total"]),
+            float(row["elevation_difference_total"]),
             float(row["SLt"]),
-            float(row["Stream-Length index total (SLt)"]),
             float(row["Stream-Length index (SLm/SLt)"])
         ])
 
@@ -329,8 +378,12 @@ def calculateSLindexGeometry(drainageBasinLayer,streamLayer,dem,feedback,useLong
             float(row["elevation_difference"]),
             float(row["SL"]),
             float(row["Stream-Length index mean (SLm)"]),
+            float(row["total_length"]),
+            float(row["ln_total_length"]),
+            float(row["upstream_elevation_total"]),
+            float(row["downstream_elevation_total"]),
+            float(row["elevation_difference_total"]),
             float(row["SLt"]),
-            float(row["Stream-Length index total (SLt)"]),
             float(row["Stream-Length index (SLm/SLt)"])
         ])
 
@@ -356,8 +409,12 @@ def calculateSLindexGeometry(drainageBasinLayer,streamLayer,dem,feedback,useLong
             float(row["elevation_difference"]),
             float(row["SL"]),
             float(row["Stream-Length index mean (SLm)"]),
+            float(row["total_length"]),
+            float(row["ln_total_length"]),
+            float(row["upstream_elevation_total"]),
+            float(row["downstream_elevation_total"]),
+            float(row["elevation_difference_total"]),
             float(row["SLt"]),
-            float(row["Stream-Length index total (SLt)"]),
             float(row["Stream-Length index (SLm/SLt)"])
         ])
 

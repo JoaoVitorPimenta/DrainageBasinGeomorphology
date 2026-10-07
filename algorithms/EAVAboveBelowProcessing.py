@@ -320,7 +320,7 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
             mode='lines',
             name=f'Volume - Elevation basin id {basin.id()}',
             yaxis='y',
-            xaxis='x'   # padrão
+            xaxis='x'
         ))
 
         fig.add_trace(go.Scatter(
@@ -328,15 +328,14 @@ def runEAVAboveBelow(drainageBasinLayer,demLayer,pathCsv,pathHtml,distanceContou
             y=elevations,
             mode='lines',
             name=f'Area - Elevation basin id {basin.id()}',
-            yaxis='y2',   # eixo y secundário
-            xaxis='x2'    # eixo x secundário
+            yaxis='y2',
+            xaxis='x2'
         ))
 
         barProgress = int((idx + 1) * step)
         feedback.setProgress(barProgress)
         feedback.setProgressText(f'Basin id {basin.id()} graph completed')
 
-    # Configura layout com eixos secundários (x2 e y2)
     fig.update_layout(
         title='Elevation - Area - Volume graph',
         xaxis=dict(title='Volume (m³)'),

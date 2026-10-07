@@ -942,7 +942,29 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief,useLongestRiver):
 
             firstPoint = tuple(firstLine.coords[-1])
             lastPoint = tuple(lastLine.coords[0])
-    
+    geometry = filterMaxOrder.geometry.iloc[0]
+
+    if geometry.geom_type == "LineString":
+        x1, y1 = geometry.coords[-1]
+        x2, y2 = geometry.coords[-2]
+
+    elif geometry.geom_type == "MultiLineString":
+        line = geometry.geoms[-1]
+        x1, y1 = line.coords[-1]
+        x2, y2 = line.coords[-2]
+
+    pixelWidth = abs(dem.rasterUnitsPerPixelX())
+    halfPixel = pixelWidth / 2
+
+    dx = x2 - x1
+    dy = y2 - y1
+    length = (dx ** 2 + dy ** 2) ** 0.5
+
+    if length > 0:
+        firstPoint = (
+            x1 + (dx / length) * halfPixel,
+            y1 + (dy / length) * halfPixel
+        )
     firstPointQgs = QgsPointXY(firstPoint[0], firstPoint[1])
     lastPointQgs = QgsPointXY(lastPoint[0], lastPoint[1])
 
@@ -952,6 +974,8 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief,useLongestRiver):
     lowestPointKm = identificatorFirst.results()[1]/1000
     hightestPointKm = identificatorLast.results()[1]/1000
 
+    print(identificatorFirst.results()[1])
+    print(identificatorLast.results()[1])
     if lowestPointKm is None or hightestPointKm is None:
         gdfRelief['Gradient ratio (Gr)'] = None
         return
@@ -1866,7 +1890,50 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver,nSecti
         )
 
         sections.append(section)
+    firstPoint = filterMaxOrder.iloc[-1]['last']
+    lastPoint = filterMaxOrder.iloc[0]['first']
 
+    geometry = filterMaxOrder.geometry.iloc[0]
+
+    if geometry.geom_type == "LineString":
+        x1, y1 = geometry.coords[-1]
+        x2, y2 = geometry.coords[-2]
+
+    elif geometry.geom_type == "MultiLineString":
+        line = geometry.geoms[-1]
+        x1, y1 = line.coords[-1]
+        x2, y2 = line.coords[-2]
+
+    pixelWidth = abs(dem.rasterUnitsPerPixelX())
+    halfPixel = pixelWidth / 2
+
+    dx = x2 - x1
+    dy = y2 - y1
+    length = (dx ** 2 + dy ** 2) ** 0.5
+
+    if length > 0:
+        firstPoint = (
+            x1 + (dx / length) * halfPixel,
+            y1 + (dy / length) * halfPixel
+        )
+
+    identificatorDownstreamHtotal = dem.dataProvider().identify(
+        QgsPointXY(
+            firstPoint[0],
+            firstPoint[1]
+        ),
+        QgsRaster.IdentifyFormat.IdentifyFormatValue
+    )
+    identificatorUpstreamHtotal = dem.dataProvider().identify(
+        QgsPointXY(
+            lastPoint[0],
+            lastPoint[1]
+        ),
+        QgsRaster.IdentifyFormat.IdentifyFormatValue
+    )
+    print(identificatorDownstreamHtotal.results().get(1))
+    print(identificatorUpstreamHtotal.results().get(1))
+    deltaHTotal = identificatorUpstreamHtotal.results().get(1) - identificatorDownstreamHtotal.results().get(1)
     filterMaxOrder = gpd.GeoDataFrame(
         {
             'section': range(1, nSections + 1),
@@ -1949,15 +2016,15 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver,nSecti
         / filterMaxOrder['length'])
         * filterMaxOrder['distance']
     )
-    filterMaxOrder['SLt'] = filterMaxOrder['elevation_difference'] / np.log(filterMaxOrder['distance'])
+    filterMaxOrder['SLt'] = deltaHTotal / np.log(riverLength)
 
     gdfTectonic['Stream-Length index mean (SLm)'] = None
     gdfTectonic['Stream-Length index mean (SLm)'] = filterMaxOrder['SL'].mean()
 
-    gdfTectonic['Stream-Length index total mean (SLtm)'] = None
-    gdfTectonic['Stream-Length index total mean (SLtm)'] = filterMaxOrder['SLt'].mean()
+    gdfTectonic['Stream-Length index total (SLt)'] = None
+    gdfTectonic['Stream-Length index total (SLt)'] = filterMaxOrder['SLt']
 
-    gdfTectonic['Stream-Length index (SLm/SLtm)'] = gdfTectonic['Stream-Length index mean (SLm)']/gdfTectonic['Stream-Length index total mean (SLtm)']
+    gdfTectonic['Stream-Length index (SLm/SLt)'] = gdfTectonic['Stream-Length index mean (SLm)']/gdfTectonic['Stream-Length index total (SLt)']
     return
 
 def valleyFloorWidthHeight(gdfStreamsInside, gdfShape, nPoints, dem, gdfTectonic, limitForValleyFloor, minForValleyHeight, feedback, useLongestRiver, limitDescendValley):
