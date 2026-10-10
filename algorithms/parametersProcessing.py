@@ -133,7 +133,7 @@ def filterIsolatedLines(gdf):
 def filterShortLines(geometry, minimumLength):
     if geometry.geom_type == 'LineString':
 
-        if geometry.length > minimumLength:
+        if geometry.length >= minimumLength:
             return geometry
 
         return None
@@ -143,7 +143,7 @@ def filterShortLines(geometry, minimumLength):
         lines = [
             line
             for line in geometry.geoms
-            if line.length > minimumLength
+            if line.length >= minimumLength
         ]
 
         if len(lines) == 0:
@@ -188,7 +188,7 @@ def selectStreamsInsideBasin(streamGdf, drainageBasinGdf, basin, feedback, strea
     linesInBasins = linesInBasins[
         linesInBasins.geometry.geom_type.isin(["LineString", "MultiLineString"])
     ]
-    print(linesInBasins.length)
+
     if streams is False:
         if linesInBasins.empty:
             feedback.pushWarning(
