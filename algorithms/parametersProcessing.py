@@ -205,10 +205,11 @@ def selectStreamsInsideBasin(streamGdf, drainageBasinGdf, basin, feedback, strea
                 + ' and the calculation of some parameters for this basin may be compromised'
             )
             return linesInBasins
-    linesInBasins.geometry = linesInBasins.geometry.apply(
-        lambda geometry: filterShortLines(geometry, minimumLength)
-    )
-    
+    if streams is True:
+        linesInBasins.geometry = linesInBasins.geometry.apply(
+            lambda geometry: filterShortLines(geometry, minimumLength)
+        )
+        
     linesInBasins = linesInBasins[
         linesInBasins.geometry.notna()
     ]
