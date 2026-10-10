@@ -38,7 +38,7 @@ from osgeo import gdal, ogr
 from scipy.spatial import Voronoi
 import math
 from shapely.geometry import LineString, MultiLineString, Point, GeometryCollection
-from shapely import intersection, wkt
+from shapely import intersection, wkt, get_coordinates
 import numpy as np
 from shapely.ops import unary_union, linemerge, split, snap, substring
 
@@ -130,12 +130,65 @@ def filterIsolatedLines(gdf):
             keepIndices.append(idx)
     
     return gdf.loc[keepIndices]
+def filterShortLines(geometry, minimumLength):
+    if geometry.geom_type == 'LineString':
 
+        if geometry.length > minimumLength:
+            return geometry
+
+        return None
+
+    if geometry.geom_type == 'MultiLineString':
+
+        lines = [
+            line
+            for line in geometry.geoms
+            if line.length > minimumLength
+        ]
+
+        if len(lines) == 0:
+            return None
+
+        if len(lines) == 1:
+            return lines[0]
+
+        return MultiLineString(lines)
+
+    return None
 def selectStreamsInsideBasin(streamGdf, drainageBasinGdf, basin, feedback, streams):
+    minimumLength = float('inf')
+    minimumCoordinates = None
+
+    for geom in streamGdf.geometry:
+        if geom is None or geom.is_empty:
+            continue
+
+        coordinates = get_coordinates(geom)
+
+        if len(coordinates) < 2:
+            continue
+
+        segmentLengths = np.hypot(
+            np.diff(coordinates[:, 0]),
+            np.diff(coordinates[:, 1])
+        )
+
+        index = segmentLengths.argmin()
+
+        if segmentLengths[index] < minimumLength:
+            minimumLength = segmentLengths[index]
+            minimumCoordinates = (
+                tuple(coordinates[index]),
+                tuple(coordinates[index + 1])
+            )
+
+    minimumLength = minimumLength.round(6)/2
+
     linesInBasins = gpd.overlay(streamGdf, drainageBasinGdf, how="intersection", keep_geom_type=True)
     linesInBasins = linesInBasins[
         linesInBasins.geometry.geom_type.isin(["LineString", "MultiLineString"])
     ]
+    print(linesInBasins.length)
     if streams is False:
         if linesInBasins.empty:
             feedback.pushWarning(
@@ -152,7 +205,13 @@ def selectStreamsInsideBasin(streamGdf, drainageBasinGdf, basin, feedback, strea
                 + ' and the calculation of some parameters for this basin may be compromised'
             )
             return linesInBasins
-
+    linesInBasins.geometry = linesInBasins.geometry.apply(
+        lambda geometry: filterShortLines(geometry, minimumLength)
+    )
+    
+    linesInBasins = linesInBasins[
+        linesInBasins.geometry.notna()
+    ]
     linesInBasins.geometry = linesInBasins.geometry.apply(toSingleLine)
     if streams is True:
         linesInBasins = filterIsolatedLines(linesInBasins)
@@ -974,8 +1033,6 @@ def calculateGradientRatio(gdfStream,gdfLinear,dem,gdfRelief,useLongestRiver):
     lowestPointKm = identificatorFirst.results()[1]/1000
     hightestPointKm = identificatorLast.results()[1]/1000
 
-    print(identificatorFirst.results()[1])
-    print(identificatorLast.results()[1])
     if lowestPointKm is None or hightestPointKm is None:
         gdfRelief['Gradient ratio (Gr)'] = None
         return
@@ -1931,8 +1988,7 @@ def calculateSLindexMainChannel(gdfStream,dem,gdfTectonic,useLongestRiver,nSecti
         ),
         QgsRaster.IdentifyFormat.IdentifyFormatValue
     )
-    print(identificatorDownstreamHtotal.results().get(1))
-    print(identificatorUpstreamHtotal.results().get(1))
+
     deltaHTotal = identificatorUpstreamHtotal.results().get(1) - identificatorDownstreamHtotal.results().get(1)
     filterMaxOrder = gpd.GeoDataFrame(
         {
