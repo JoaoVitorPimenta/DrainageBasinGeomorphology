@@ -181,8 +181,8 @@ def selectStreamsInsideBasin(streamGdf, drainageBasinGdf, basin, feedback, strea
                 tuple(coordinates[index]),
                 tuple(coordinates[index + 1])
             )
-
-    minimumLength = minimumLength.round(6)/2
+    if streams is True:
+        minimumLength = minimumLength.round(6)/2
 
     linesInBasins = gpd.overlay(streamGdf, drainageBasinGdf, how="intersection", keep_geom_type=True)
     linesInBasins = linesInBasins[
