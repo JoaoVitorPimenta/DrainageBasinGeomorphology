@@ -156,34 +156,7 @@ def filterShortLines(geometry, minimumLength):
 
     return None
 def selectStreamsInsideBasin(streamGdf, drainageBasinGdf, basin, feedback, streams):
-    minimumLength = float('inf')
-    minimumCoordinates = None
-
-    for geom in streamGdf.geometry:
-        if geom is None or geom.is_empty:
-            continue
-
-        coordinates = get_coordinates(geom)
-
-        if len(coordinates) < 2:
-            continue
-
-        segmentLengths = np.hypot(
-            np.diff(coordinates[:, 0]),
-            np.diff(coordinates[:, 1])
-        )
-
-        index = segmentLengths.argmin()
-
-        if segmentLengths[index] < minimumLength:
-            minimumLength = segmentLengths[index]
-            minimumCoordinates = (
-                tuple(coordinates[index]),
-                tuple(coordinates[index + 1])
-            )
-    if streams is True:
-        minimumLength = minimumLength.round(6)/2
-
+    minimumLength = 0.000001
     linesInBasins = gpd.overlay(streamGdf, drainageBasinGdf, how="intersection", keep_geom_type=True)
     linesInBasins = linesInBasins[
         linesInBasins.geometry.geom_type.isin(["LineString", "MultiLineString"])
